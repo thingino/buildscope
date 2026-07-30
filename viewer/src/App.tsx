@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Drift from "./components/Drift";
 import Drop from "./components/Drop";
 import Files from "./components/Files";
+import DeviceTree from "./components/DeviceTree";
 import Env from "./components/Env";
 import Flash from "./components/Flash";
 import Modules from "./components/Modules";
@@ -13,10 +14,11 @@ import { dateOf, humanBytes, seconds } from "./format";
 import { I18nContext, useI18nState, useT } from "./i18n";
 import { IndexEntry, Report } from "./types";
 
-type Tab = "flash" | "env" | "packages" | "files" | "modules" | "time" | "drift";
+type Tab = "flash" | "env" | "dtb" | "packages" | "files" | "modules" | "time" | "drift";
 const TABS: { id: Tab; key: string }[] = [
   { id: "flash", key: "tab_flash" },
   { id: "env", key: "tab_env" },
+  { id: "dtb", key: "tab_dtb" },
   { id: "packages", key: "tab_packages" },
   { id: "files", key: "tab_files" },
   { id: "modules", key: "tab_modules" },
@@ -37,6 +39,15 @@ function tabHasData(tab: Tab, r: Report, reportCount: number): boolean {
           i.format === "uboot-env" &&
           Array.isArray((i.detail as { vars?: unknown[] }).vars) &&
           (i.detail as { vars: unknown[] }).vars.length > 0
+      );
+    case "dtb":
+      // A tree of its own, or one found inside something else.
+      return r.images.some(
+        (i) =>
+          i.format === "dtb" ||
+          i.format === "dtbo" ||
+          Array.isArray((i.detail as { builtin_device_trees?: unknown[] }).builtin_device_trees) ||
+          Array.isArray((i.detail as { device_trees?: unknown[] }).device_trees)
       );
     case "packages":
       return r.packages.length > 0 || r.rootfs !== null;
@@ -271,6 +282,7 @@ function Viewer() {
           <main key={`${current}:${effectiveTab}`} className="content">
             {effectiveTab === "flash" && <Flash report={report} />}
             {effectiveTab === "env" && <Env report={report} />}
+            {effectiveTab === "dtb" && <DeviceTree report={report} />}
             {effectiveTab === "packages" && <Packages report={report} />}
             {effectiveTab === "files" && <Files report={report} />}
             {effectiveTab === "modules" && <Modules report={report} />}

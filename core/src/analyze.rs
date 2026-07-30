@@ -362,6 +362,8 @@ pub(crate) fn classify(name: &str, size: u64, bytes: Option<&[u8]>) -> Classifie
                 "strings_bytes": info.strings_bytes,
                 "overlay_targets": info.targets,
                 "padding_bytes": size.saturating_sub(info.total_bytes),
+                "nodes": dtb_tree_json(&info),
+                "nodes_truncated": info.nodes_truncated,
             });
             c.content_end = info.total_bytes.min(size);
             c.dtb = Some(info);
@@ -528,6 +530,23 @@ pub(crate) fn env_vars_json(info: &ubootenv::UbootEnvInfo) -> (serde_json::Value
     (json!(out), truncated)
 }
 
+/// The whole tree, node by node, with each property already rendered.
+fn dtb_tree_json(info: &dtb::DtbInfo) -> serde_json::Value {
+    json!(info
+        .nodes
+        .iter()
+        .map(|n| json!({
+            "path": n.path,
+            "depth": n.depth,
+            "properties": n
+                .properties
+                .iter()
+                .map(|(k, v)| json!([k, v]))
+                .collect::<Vec<_>>(),
+        }))
+        .collect::<Vec<_>>())
+}
+
 /// Describe device trees found inside another artifact.
 fn embedded_dtb_json(found: &[(usize, dtb::DtbInfo)]) -> serde_json::Value {
     json!(found
@@ -537,7 +556,11 @@ fn embedded_dtb_json(found: &[(usize, dtb::DtbInfo)]) -> serde_json::Value {
             "bytes": d.total_bytes,
             "model": d.model,
             "compatible": d.compatible,
+            "bootargs": d.bootargs,
             "node_count": d.node_count,
+            "property_count": d.property_count,
+            "nodes": dtb_tree_json(d),
+            "nodes_truncated": d.nodes_truncated,
         }))
         .collect::<Vec<_>>())
 }

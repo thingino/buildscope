@@ -57,7 +57,8 @@ buildscope scan output/
     with `CONFIG_BUILTIN_DTB` carries one inside, behind the kernel's own
     compression. Both cost real flash and neither appears in `images/`, so both
     are reported where they sit -- which is also the only way to confirm that
-    the board's intended tree is the one that actually got built in.
+    the board's intended tree is the one that actually got built in. Whole
+    trees are carried in the report, so the viewer can show one as source.
   - uImage: declared payload size, compression type, load and entry address,
     header CRC check
   - U-Boot environment images: CRC validity, bytes used vs environment size,

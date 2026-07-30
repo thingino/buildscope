@@ -14,6 +14,16 @@
 
 use super::fdt::{self, Event};
 
+/// One node of the tree, with its properties in the order they were written
+/// and their values already rendered the way `dtc` would print them.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct DtbNode {
+    pub path: String,
+    /// Depth below the root, so a reader can indent without re-parsing paths.
+    pub depth: u32,
+    pub properties: Vec<(String, String)>,
+}
+
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct DtbInfo {
     /// The board's own name, from the root `model` property.
@@ -32,6 +42,48 @@ pub struct DtbInfo {
     pub is_overlay: bool,
     /// Fragments an overlay applies, and what each targets.
     pub targets: Vec<String>,
+    /// The whole tree, for reading.
+    pub nodes: Vec<DtbNode>,
+    pub nodes_truncated: bool,
+}
+
+/// Ceiling on how much of a tree is carried in a report. A kernel's tree runs
+/// to a few hundred nodes; this only bounds a malformed one.
+const MAX_NODES: usize = 4000;
+
+/// Render a property value the way `dtc` prints it, by the same guesswork:
+/// nothing at all is a flag, printable NUL-terminated text is a string list,
+/// a multiple of four bytes is a list of cells, and anything else is bytes.
+fn render_value(value: &[u8]) -> String {
+    if value.is_empty() {
+        return String::new();
+    }
+    let printable = |b: u8| (0x20..0x7F).contains(&b);
+    let is_text = value.last() == Some(&0)
+        && value[..value.len() - 1]
+            .iter()
+            .all(|&b| printable(b) || b == 0)
+        && value[..value.len() - 1].iter().any(|&b| printable(b));
+    if is_text {
+        let parts: Vec<String> = value[..value.len() - 1]
+            .split(|&b| b == 0)
+            .map(|s| format!("\"{}\"", String::from_utf8_lossy(s)))
+            .collect();
+        return parts.join(", ");
+    }
+    if value.len() % 4 == 0 && value.len() <= 64 {
+        let cells: Vec<String> = value
+            .chunks_exact(4)
+            .map(|c| format!("0x{:x}", u32::from_be_bytes([c[0], c[1], c[2], c[3]])))
+            .collect();
+        return format!("<{}>", cells.join(" "));
+    }
+    let hex: Vec<String> = value.iter().take(64).map(|b| format!("{b:02x}")).collect();
+    format!(
+        "[{}{}]",
+        hex.join(" "),
+        if value.len() > 64 { " ..." } else { "" }
+    )
 }
 
 /// A `compatible` property is several NUL-separated strings in one value.
@@ -56,6 +108,15 @@ pub fn parse(data: &[u8]) -> Option<DtbInfo> {
         match e {
             Event::Node { path } => {
                 info.node_count += 1;
+                if info.nodes.len() < MAX_NODES {
+                    info.nodes.push(DtbNode {
+                        depth: path.matches('/').count() as u32 - if path == "/" { 1 } else { 0 },
+                        path: path.clone(),
+                        properties: Vec::new(),
+                    });
+                } else {
+                    info.nodes_truncated = true;
+                }
                 // An overlay is a set of fragments, each naming its target.
                 if path.starts_with("/fragment@") && !path[1..].contains("/__overlay__") {
                     info.is_overlay = true;
@@ -63,6 +124,11 @@ pub fn parse(data: &[u8]) -> Option<DtbInfo> {
             }
             Event::Prop { path, name, value } => {
                 info.property_count += 1;
+                if let Some(n) = info.nodes.last_mut() {
+                    if n.path == path {
+                        n.properties.push((name.to_string(), render_value(value)));
+                    }
+                }
                 match (path, name) {
                     ("/", "model") => {
                         info.model = fdt::prop_str(value).unwrap_or("").to_string()
@@ -173,6 +239,36 @@ mod tests {
         assert!(d.is_overlay);
         assert_eq!(d.targets, vec!["/soc/mmc@1c0f000"]);
         assert!(d.model.is_empty(), "an overlay names its target, not itself");
+    }
+
+    #[test]
+    fn carries_the_whole_tree_with_values_rendered() {
+        let d = parse(&board()).expect("dtb");
+        let paths: Vec<&str> = d.nodes.iter().map(|n| n.path.as_str()).collect();
+        assert_eq!(paths, vec!["/", "/chosen", "/soc", "/soc/serial@1c28000"]);
+        assert_eq!(d.nodes[0].depth, 0);
+        assert_eq!(d.nodes[3].depth, 2);
+
+        let root: Vec<(&str, &str)> = d.nodes[0]
+            .properties
+            .iter()
+            .map(|(k, v)| (k.as_str(), v.as_str()))
+            .collect();
+        assert_eq!(root[0], ("model", "\"Acme Widget Board\""));
+        assert_eq!(root[1], ("compatible", "\"acme,widget-c\", \"acme,widget\""));
+        assert!(!d.nodes_truncated);
+    }
+
+    #[test]
+    fn renders_values_the_way_dtc_would() {
+        assert_eq!(render_value(b""), "", "a flag has no value");
+        assert_eq!(render_value(b"okay\0"), "\"okay\"");
+        assert_eq!(render_value(b"a\0b\0"), "\"a\", \"b\"");
+        assert_eq!(render_value(&0x1c28000u32.to_be_bytes()), "<0x1c28000>");
+        let two = [0x01u8, 0xc2, 0x80, 0x00, 0x00, 0x00, 0x04, 0x00];
+        assert_eq!(render_value(&two), "<0x1c28000 0x400>");
+        // not text, not a whole number of cells
+        assert_eq!(render_value(&[0xDE, 0xAD, 0xBE]), "[de ad be]");
     }
 
     #[test]

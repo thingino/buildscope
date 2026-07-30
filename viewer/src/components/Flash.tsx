@@ -273,6 +273,7 @@ function UbiVolumes({ img, t }: { img: ImageReport; t: TFn }) {
   );
 }
 
+
 export default function Flash({ report }: { report: Report }) {
   const t = useT();
   const flash = report.flash;

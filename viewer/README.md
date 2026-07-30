@@ -44,6 +44,17 @@ source its layout came from, the map already states in its own header. Values
 are shown in full and wrap rather than truncate, because the interesting part of
 a `bootcmd` is usually its tail. The tab appears only for a report that has one.
 
+## The Device tree tab
+
+Every device tree the firmware carries, and the whole of the selected one as
+source. A board that boots from raw flash usually ships none of these as a
+file, so this is the only place they can be collected: the bootloader keeps
+its tree appended to its binary, and the kernel carries one inside itself
+behind the kernel's own compression. The table says which board each is for
+and what it costs; picking a row shows its nodes and properties, rendered the
+way `dtc` prints them, with a filter over node paths, property names and
+values. The tab appears only for a report that has one.
+
 ## The Files tab
 
 Browses a listing as a collapsible directory tree with per-directory totals,

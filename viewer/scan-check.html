@@ -1,0 +1,156 @@
+<!doctype html>
+<!-- Development-only harness: exercises src/scan.ts (browser classification +
+     WASM core) against a synthetic Buildroot output tree built in-page, so the
+     whole browser path is covered without a real filesystem pick.
+     Run with `npm run dev` and open /scan-check.html. -->
+<meta charset="utf-8" />
+<title>buildscope scan check</title>
+<body style="background: #0d1117; color: #c9d1d9; font: 13px ui-monospace, monospace; padding: 20px">
+  <pre id="o">running…</pre>
+  <script type="module">
+    import { scanPickedTree, groupByRoot, looksLikeBuild } from "/src/scan.ts";
+
+    const o = document.getElementById("o");
+    const log = (s) => (o.textContent += "\n" + s);
+    let fails = 0;
+    const check = (label, got, want) => {
+      const ok = JSON.stringify(got) === JSON.stringify(want);
+      if (!ok) fails++;
+      log(`${ok ? "  ok  " : " FAIL "} ${label}${ok ? "" : ` (got ${JSON.stringify(got)}, want ${JSON.stringify(want)})`}`);
+    };
+
+    // --- CRC-32 (reflected, poly 0xEDB88320) in both conventions we need ---
+    const TABLE = (() => {
+      const t = new Uint32Array(256);
+      for (let i = 0; i < 256; i++) {
+        let c = i;
+        for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+        t[i] = c >>> 0;
+      }
+      return t;
+    })();
+    const crcRaw = (seed, bytes) => {
+      let c = seed >>> 0;
+      for (const b of bytes) c = (TABLE[(c ^ b) & 0xff] ^ (c >>> 8)) >>> 0;
+      return c >>> 0;
+    };
+    const crcIeee = (b) => (~crcRaw(0xffffffff, b)) >>> 0;
+    const crcJffs2 = (b) => crcRaw(0, b);
+
+    const u32le = (v) => new Uint8Array(new Uint32Array([v]).buffer);
+    const u32be = (v) => u32le(v).slice().reverse();
+
+    // --- synthetic artifacts ---
+    function squashfs(bytesUsed, size) {
+      const d = new Uint8Array(size);
+      d.set(u32le(0x73717368), 0);
+      d.set(u32le(1060), 4); // inodes
+      d.set(u32le(131072), 12); // block size
+      d.set(new Uint8Array([4, 0]), 20); // xz
+      d.set(new Uint8Array([17, 0]), 22); // block log
+      d.set(new Uint8Array([4, 0]), 28); // major 4
+      d.set(u32le(bytesUsed), 40); // bytes_used (low half of u64)
+      return d;
+    }
+    function uimage(payloadLen, size) {
+      const d = new Uint8Array(size);
+      const payload = new Uint8Array(payloadLen).fill(0xab);
+      d.set(u32be(0x27051956), 0);
+      d.set(u32be(payloadLen), 12);
+      d.set(u32be(0x80010000), 16);
+      d.set(u32be(0x80010000), 20);
+      d.set(u32be(crcIeee(payload)), 24);
+      d[28] = 5; d[29] = 5; d[30] = 2; d[31] = 3; // linux/mips/kernel/lzma
+      d.set(new TextEncoder().encode("Linux-3.10.14"), 32);
+      d.set(u32be(crcIeee(d.slice(0, 64))), 4);
+      d.set(payload, 64);
+      return d;
+    }
+    function ubootenv(pairs, size) {
+      const enc = new TextEncoder();
+      const parts = [];
+      for (const [k, v] of pairs) parts.push(enc.encode(`${k}=${v}`), new Uint8Array([0]));
+      parts.push(new Uint8Array([0]));
+      const body = new Uint8Array(size - 4);
+      let off = 0;
+      for (const p of parts) { body.set(p, off); off += p.length; }
+      const out = new Uint8Array(size);
+      out.set(u32le(crcIeee(body)), 0);
+      out.set(body, 4);
+      return out;
+    }
+    function jffs2(size) {
+      const d = new Uint8Array(size).fill(0xff);
+      const h = new Uint8Array(12);
+      h.set(new Uint8Array([0x85, 0x19]), 0); // magic
+      h.set(new Uint8Array([0x03, 0x20]), 2); // cleanmarker
+      h.set(u32le(12), 4);
+      h.set(u32le(crcJffs2(h.slice(0, 8))), 8);
+      d.set(h, 0);
+      return d;
+    }
+
+    const K = 1024;
+    const f = (path, data) => ({ path, file: new File([data], path.split("/").pop()) });
+    const txt = (path, s) => f(path, new TextEncoder().encode(s));
+
+    // 64k boot, 64k env, 256k kernel, 512k rootfs, 128k data
+    const MTDPARTS = "nor0:64k(boot),64k(env),256k(kernel),512k(rootfs),128k(data)";
+    const picked = [
+      txt("b/.config", 'BR2_ARCH="mipsel"\nBR2_TOOLCHAIN_USES_UCLIBC=y\nBR2_TARGET_ROOTFS_SQUASHFS=y\nBR2_TARGET_ROOTFS_SQUASHFS4_XZ=y\n'),
+      txt("b/build/packages-file-list.txt", "busybox,./bin/busybox\nkmod,./lib/modules/3.10.14/kernel/x.ko\ngone,./usr/bin/removed\n"),
+      txt("b/build/build-time.log", "100.0:start:build   :  busybox\n150.0:end  :build   :  busybox\n"),
+      txt("b/uenv.txt", `mtdparts=${MTDPARTS}\n`),
+      txt("b/target/etc/modules", "x\n"),
+      f("b/target/bin/busybox", new Uint8Array(500000)),
+      f("b/target/etc/overlayfile", new Uint8Array(2000)),
+      f("b/target/lib/modules/3.10.14/kernel/x.ko", new Uint8Array(5000)),
+      f("b/per-package/gone/target/usr/bin/removed", new Uint8Array(4242)),
+      f("b/images/u-boot.bin", new Uint8Array(10000).fill(0xaa)),
+      f("b/images/u-boot-env.bin", ubootenv([["bootcmd", "sf probe"], ["mtdparts", MTDPARTS]], 64 * K)),
+      f("b/images/uImage", uimage(100000, 150000)),
+      f("b/images/rootfs.squashfs", squashfs(300000, 400000)),
+      f("b/images/data.jffs2", jffs2(128 * K)),
+    ];
+
+    try {
+      const groups = groupByRoot(picked);
+      check("one build group", [...groups.keys()], ["b"]);
+      check("recognized as a build", looksLikeBuild(groups.get("b")), true);
+
+      const stages = [];
+      const r = await scanPickedTree("b", groups.get("b"), (s) => stages.push(s));
+      log(`\nscanned: ${stages.length} progress stages, report schema ${r.schema}`);
+
+      check("scan_mode", r.scan.scan_mode, "browser");
+      check("context_source", r.scan.context_source, "inferred");
+      check("arch from .config", r.build.arch, "mipsel");
+      check("libc from .config", r.build.libc, "uclibc");
+      check("kernel from modules dir", r.build.kernel_version, "3.10.14");
+      check("build time from log", r.build.build_active_seconds, 50);
+
+      check("layout source", r.flash.source, "mtdparts (uenv.txt)");
+      const part = (n) => r.flash.partitions.find((p) => p.name === n);
+      check("partition count", r.flash.partitions.length, 5);
+      check("rootfs used", part("rootfs").used_bytes, 300000);
+      check("rootfs image matched", part("rootfs").image, "rootfs.squashfs");
+      check("kernel used", part("kernel").used_bytes, 100064);
+      check("data used", part("data").used_bytes, 12);
+      check("env used", part("env").used_bytes, "bootcmd=sf probe".length + 1 + `mtdparts=${MTDPARTS}`.length + 1 + 1 + 4);
+      check("boot used", part("boot").used_bytes, 10000);
+
+      // 500000 + 2000 + 5000 target files, plus the 2-byte target/etc/modules
+      // which is part of the tree as well as an input we read.
+      check("rootfs uncompressed", r.rootfs.uncompressed_bytes, 507002);
+      check("rootfs compressed", r.rootfs.compressed_bytes, 300000);
+      check("packages", r.packages.map((p) => p.name).sort(), ["_unattributed", "busybox", "kmod"]);
+      check("module autoloaded", r.modules[0].autoloaded, true);
+      check("timings", r.timings.length, 1);
+      check("not-shipped from per-package", r.removed_not_shipped.map((x) => [x.path, x.source_bytes]), [["/usr/bin/removed", 4242]]);
+
+      log(`\n${fails === 0 ? "BROWSER TREE SCAN OK" : `${fails} FAILURE(S)`}`);
+    } catch (e) {
+      log("FAILED: " + ((e && e.stack) || e));
+    }
+  </script>
+</body>

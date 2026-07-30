@@ -119,10 +119,23 @@ reports on the same tree; the report records which mode produced it.
 - No host tools required: all image formats are parsed natively.
 - If something cannot be determined, the report says unknown. It never guesses.
 
+## In the browser
+
+The analysis core also compiles to WebAssembly, so the viewer can scan
+locally with no server and no uploads: drop a Buildroot output directory for
+the full breakdown, or a bare firmware image to carve. The File API supplies
+names and sizes as metadata, so enumerating a target tree is free and only the
+small build inputs and the files in `images/` are actually read.
+
+Browser scans record `scan_mode: browser`, which differs from a native scan in
+exactly one way: the File API exposes no inode links, so hardlinked files
+cannot be charged once. Buildroot target trees rarely contain any.
+
 ## Building
 
 ```
 cargo build --release        # CLI at target/release/buildscope
+cargo build --release --target wasm32-unknown-unknown -p buildscope-wasm
 ```
 
 The viewer is a separate npm project under `viewer/`; see `viewer/README.md`.

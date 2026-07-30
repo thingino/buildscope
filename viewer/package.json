@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "build": "node scripts/copy-wasm.mjs && tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "wasm": "node scripts/copy-wasm.mjs"
   },
   "dependencies": {
     "@fontsource/montserrat": "^5.3.0",

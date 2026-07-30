@@ -26,15 +26,26 @@
   partition, and flags truncated images. `diff`, `export`, `scan` and `serve`
   all accept bare artifacts and directories of them.
 
-## Phase 3
+## Phase 3a (done)
 
-- WASM build of the core; browser-side scanning of a dropped output directory
-  (File API supplies names and sizes as metadata; only small inputs and the
-  images are actually read)
-- Static deployment (GitHub Pages) usable in two modes: drag-and-drop local
-  scanning, and rendering CI-published report.json files
+- `buildscope-wasm`: the analysis core compiled to WebAssembly behind a plain
+  C ABI (byte buffers and integers only, no binding generator)
+- Browser-side scanning: drop a Buildroot output directory for the full
+  breakdown, or a bare firmware image to carve. The File API supplies names
+  and sizes as metadata, so only the small build inputs and the files in
+  `images/` are read; nothing is uploaded
+- Parity proven against the native CLI for both the tree path and the
+  artifact path (`wasm/test/*.mjs`), plus an in-browser harness for the
+  classification layer (`viewer/scan-check.html`)
+
+## Phase 3b
+
+- Static deployment (GitHub Pages) usable in two modes: the browser scanner
+  above, and rendering CI-published report.json files
 - CI aggregation recipe: publish one report per build, retain history, trends
   over time
+- Fleet-scale viewer work: search in the build picker, and an overview table
+  across builds (which are nearest their partition limits)
 
 ## Distant / recorded, not planned
 

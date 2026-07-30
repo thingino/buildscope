@@ -1,0 +1,21 @@
+[package]
+name = "buildscope-wasm"
+description = "WebAssembly build of the buildscope analysis core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+path = "src/lib.rs"
+
+[dependencies]
+buildscope-core = { path = "../core" }
+serde_json = "1"
+
+[profile.release]
+opt-level = "z"
+lto = true
+panic = "abort"
+codegen-units = 1
+strip = true

@@ -77,6 +77,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "buildscope-wasm"
+version = "0.1.0"
+dependencies = [
+ "buildscope-core",
+ "serde_json",
+]
+
+[[package]]
 name = "chunked_transfer"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

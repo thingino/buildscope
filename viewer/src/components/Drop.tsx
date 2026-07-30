@@ -1,6 +1,13 @@
 import { useCallback, useRef, useState } from "react";
 import { parseReportJson } from "../data";
-import { isArtifactName, readDirectoryShallow, scanArtifact } from "../scan";
+import {
+  canPickDirectory,
+  isArtifactName,
+  pickDirectory,
+  readDirectoryShallow,
+  scanArtifact,
+  scanDirectoryHandle,
+} from "../scan";
 import { useT } from "../i18n";
 import { Report } from "../types";
 
@@ -43,6 +50,23 @@ export default function Drop({ onReports }: { onReports: (r: Report[]) => void }
     },
     [onReports, t]
   );
+
+  const pickBuild = useCallback(async () => {
+    const handle = await pickDirectory();
+    if (!handle) return; // cancelled
+    setError(null);
+    setBusy(t("stage_scanning", { name: handle.name }));
+    try {
+      const report = await scanDirectoryHandle(handle, (key, params) =>
+        setBusy(t(key, params))
+      );
+      onReports([report]);
+    } catch (e) {
+      setError(msg(e));
+    } finally {
+      setBusy(null);
+    }
+  }, [onReports, t]);
 
   const onDrop = useCallback(
     async (e: React.DragEvent) => {
@@ -108,6 +132,14 @@ export default function Drop({ onReports }: { onReports: (r: Report[]) => void }
         <button className="btn" disabled={busy !== null} onClick={() => filesRef.current?.click()}>
           {t("choose_files")}
         </button>
+        {/* Opening a build directory needs a directory handle, which only
+            Chromium-based browsers offer; elsewhere the button is absent
+            rather than present and broken. */}
+        {canPickDirectory() && (
+          <button className="btn btn-quiet" disabled={busy !== null} onClick={() => void pickBuild()}>
+            {t("choose_build_dir")}
+          </button>
+        )}
       </div>
       <div className="drop-hint" dangerouslySetInnerHTML={{ __html: t("drop_cli_hint") }} />
       {busy && <div className="drop-busy">{t("working", { what: busy })}</div>}

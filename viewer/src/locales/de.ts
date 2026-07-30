@@ -180,6 +180,7 @@ const de: Record<string, string> = {
   drop_cli_hint:
     "Die Analyse eines Buildroot-Ausgabeverzeichnisses braucht dessen Build-Baum und läuft daher lokal: <code>buildscope export output/my-build</code>.",
   choose_files: "Dateien wählen",
+  choose_build_dir: "Build-Verzeichnis wählen",
   working: "läuft: {what}",
   stage_reading: "{name} wird gelesen",
   stage_scanning: "{name} wird gescannt",

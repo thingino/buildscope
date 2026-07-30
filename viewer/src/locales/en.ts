@@ -185,6 +185,7 @@ const en: Record<string, string> = {
   drop_cli_hint:
     "Analyzing a Buildroot output directory needs its build tree, so that runs locally: <code>buildscope export output/my-build</code>.",
   choose_files: "choose files",
+  choose_build_dir: "choose a build directory",
   working: "working: {what}",
   stage_reading: "reading {name}",
   stage_scanning: "scanning {name}",

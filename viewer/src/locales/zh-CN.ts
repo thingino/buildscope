@@ -180,6 +180,7 @@ const zhCN: Record<string, string> = {
   drop_cli_hint:
     "分析 Buildroot 输出目录需要它的构建目录树，因此这一步在本地运行：<code>buildscope export output/my-build</code>。",
   choose_files: "选择文件",
+  choose_build_dir: "选择构建目录",
   working: "正在处理：{what}",
   stage_reading: "正在读取 {name}",
   stage_scanning: "正在扫描 {name}",

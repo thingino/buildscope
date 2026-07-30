@@ -180,6 +180,7 @@ const nl: Record<string, string> = {
   drop_cli_hint:
     "Voor het analyseren van een Buildroot-uitvoermap is de build-boom nodig, dus dat gebeurt lokaal: <code>buildscope export output/my-build</code>.",
   choose_files: "bestanden kiezen",
+  choose_build_dir: "kies een build-map",
   working: "bezig: {what}",
   stage_reading: "{name} lezen",
   stage_scanning: "{name} scannen",

@@ -617,6 +617,17 @@ body {
 
 /* Header icon button: the family's gear is a small outline-secondary button
    with tight padding carrying only the glyph. */
+.btn-quiet {
+  background: var(--surface-2);
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+.btn-quiet:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .iconbtn {
   display: inline-flex;
   align-items: center;

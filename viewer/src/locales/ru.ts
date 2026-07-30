@@ -179,6 +179,7 @@ const ru: Record<string, string> = {
   drop_cli_hint:
     "Для анализа каталога output Buildroot нужно дерево сборки, поэтому он выполняется локально: <code>buildscope export output/my-build</code>.",
   choose_files: "выбрать файлы",
+  choose_build_dir: "выбрать каталог сборки",
   working: "выполняется: {what}",
   stage_reading: "чтение {name}",
   stage_scanning: "сканирование {name}",

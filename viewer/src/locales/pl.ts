@@ -180,6 +180,7 @@ const pl: Record<string, string> = {
   drop_cli_hint:
     "Analiza katalogu wynikowego Buildroot wymaga drzewa kompilacji, dlatego odbywa się lokalnie: <code>buildscope export output/my-build</code>.",
   choose_files: "wybierz pliki",
+  choose_build_dir: "wybierz katalog kompilacji",
   working: "w toku: {what}",
   stage_reading: "czytanie {name}",
   stage_scanning: "skanowanie {name}",

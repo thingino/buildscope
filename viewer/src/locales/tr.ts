@@ -180,6 +180,7 @@ const tr: Record<string, string> = {
   drop_cli_hint:
     "Bir Buildroot çıktı dizinini analiz etmek için derleme ağacı gerekir, bu yüzden o iş yerelde yapılır: <code>buildscope export output/my-build</code>.",
   choose_files: "dosya seç",
+  choose_build_dir: "derleme dizini seç",
   working: "çalışıyor: {what}",
   stage_reading: "{name} okunuyor",
   stage_scanning: "{name} taranıyor",

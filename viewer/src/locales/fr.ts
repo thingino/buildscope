@@ -180,6 +180,7 @@ const fr: Record<string, string> = {
   drop_cli_hint:
     "Analyser un répertoire de sortie Buildroot nécessite son arborescence de génération, cela se fait donc en local : <code>buildscope export output/my-build</code>.",
   choose_files: "choisir des fichiers",
+  choose_build_dir: "choisir un répertoire de build",
   working: "en cours : {what}",
   stage_reading: "lecture de {name}",
   stage_scanning: "scan de {name}",

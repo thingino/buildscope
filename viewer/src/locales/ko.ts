@@ -180,6 +180,7 @@ const ko: Record<string, string> = {
   drop_cli_hint:
     "Buildroot 출력 디렉터리를 분석하려면 빌드 트리가 필요하므로 이 작업은 로컬에서 실행합니다: <code>buildscope export output/my-build</code>.",
   choose_files: "파일 선택",
+  choose_build_dir: "빌드 디렉터리 선택",
   working: "처리 중: {what}",
   stage_reading: "{name} 읽는 중",
   stage_scanning: "{name} 스캔 중",

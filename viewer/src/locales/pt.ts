@@ -180,6 +180,7 @@ const pt: Record<string, string> = {
   drop_cli_hint:
     "Analisar um diretório de saída do Buildroot exige a sua árvore de compilação, pelo que isso corre localmente: <code>buildscope export output/my-build</code>.",
   choose_files: "escolher ficheiros",
+  choose_build_dir: "escolher uma pasta de build",
   working: "em curso: {what}",
   stage_reading: "a ler {name}",
   stage_scanning: "a examinar {name}",

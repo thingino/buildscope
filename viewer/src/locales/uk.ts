@@ -180,6 +180,7 @@ const uk: Record<string, string> = {
   drop_cli_hint:
     "Для аналізу каталогу виводу Buildroot потрібне дерево збірки, тому він виконується локально: <code>buildscope export output/my-build</code>.",
   choose_files: "виберіть файли",
+  choose_build_dir: "вибрати каталог збірки",
   working: "виконується: {what}",
   stage_reading: "читання {name}",
   stage_scanning: "сканування {name}",

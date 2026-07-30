@@ -20,14 +20,18 @@ thingino-family theme, and the chart colors are a CVD-validated palette.
    Drop a firmware image, a folder of images, or a `buildscope-report.json`.
    Nothing is uploaded.
 
-Picking a *build directory* is deliberately not offered. Both
-`webkitdirectory` and dropped-directory recursion enumerate every file beneath
-the directory before any code can filter, and an output tree is mostly
-`build/` and `per-package/` (a real one measured 1,053,413 files, of which a
-scan reads about a dozen). `scanPickedTree()` in `src/scan.ts` still implements
-that path and `scan-check.html` still tests it; reaching it from a browser
-needs a directory *handle* (File System Access API) so only `target/`,
-`images/` and named files are ever visited.
+Picking a *build directory* is offered where the browser can do it without
+melting. `webkitdirectory` and dropped-directory recursion both hand over every
+file beneath the directory before any code can filter, and an output tree is
+mostly `build/` and `per-package/` -- a real one measures 1,158,991 entries, of
+which a scan wants about 1,090. So the affordance uses `showDirectoryPicker()`
+instead: a directory *handle* can be navigated, so `build/packages-file-list.txt`
+is opened by name without `build/` ever being listed, and only `target/` and
+`images/` are walked. That API is Chromium-only, so the button is absent
+elsewhere rather than present and broken.
+
+`per-package/` is not visited -- it is 804,325 entries on its own and feeds one
+section of the report, which says so rather than appearing empty.
 
 ## The Flash tab
 

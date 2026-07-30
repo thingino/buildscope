@@ -179,6 +179,7 @@ const ar: Record<string, string> = {
   drop_cli_hint:
     "تحليل مجلد output الخاص بـ Buildroot يحتاج إلى شجرة البناء، لذا يجري محليًا: <code>buildscope export output/my-build</code>.",
   choose_files: "اختيار ملفات",
+  choose_build_dir: "اختر مجلد البناء",
   working: "جارٍ العمل: {what}",
   stage_reading: "قراءة {name}",
   stage_scanning: "فحص {name}",

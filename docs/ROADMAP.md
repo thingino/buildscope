@@ -75,16 +75,17 @@
 
 ## Considered and deferred
 
-- Browser scanning of a Buildroot output directory. The WASM core implements
-  it and `viewer/scan-check.html` tests it, but no browser file picker can
-  offer it usefully: both `webkitdirectory` and dropped-directory recursion
-  enumerate everything beneath the directory first, and an output tree is
-  mostly `build/` and `per-package/`. Bringing it back means traversing a
-  directory *handle* (File System Access API, Chromium only) so only
-  `target/`, `images/` and named files are visited. Worth doing only if people
-  actually ask for it: anyone with a build tree can run the CLI.
+- Reading `per-package/` in the browser, which would restore
+  installed-but-not-shipped to a directory scan. It is 804,325 entries against
+  the ~1,090 the rest of the scan visits, so it would cost more than everything
+  else together for one section of the report.
 
 ## Phase 7 (done)
+
+- Browser scanning of a build directory, by directory handle
+  (`showDirectoryPicker`, Chromium only): the named inputs are opened by name
+  and only `target/` and `images/` are walked, so a scan touches about 1,090
+  entries of a 1,158,991-entry tree and never lists `build/` or `per-package/`
 
 - `export` takes any number of builds and inlines them all, so a local file
   has a build picker and a drift comparison with nothing running

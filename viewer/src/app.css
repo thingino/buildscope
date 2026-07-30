@@ -25,7 +25,11 @@
   --warn: #d29922;
   --serious: #f0883e;
   --crit: #f85149;
-  --sans: "Montserrat", system-ui, sans-serif;
+  /* Montserrat carries no Arabic or CJK glyphs, so those scripts fall through
+     to a named face where one exists and the system font otherwise. Nothing
+     extra is bundled: only the Latin subsets ship with the app. */
+  --sans: "Montserrat", "Noto Sans Arabic", "Noto Sans CJK SC", "Noto Sans",
+    system-ui, sans-serif;
   --mono: ui-monospace, "Cascadia Code", "JetBrains Mono", Menlo, Consolas,
     "DejaVu Sans Mono", monospace;
 }
@@ -107,16 +111,16 @@ body {
 
 .readout-item {
   padding: 0 12px;
-  border-left: 1px solid var(--line);
+  border-inline-start: 1px solid var(--line);
   white-space: nowrap;
 }
 .readout-item:first-child {
-  border-left: none;
-  padding-left: 0;
+  border-inline-start: none;
+  padding-inline-start: 0;
 }
 
 .top-right {
-  margin-left: auto;
+  margin-inline-start: auto;
   display: flex;
   gap: 10px;
   align-items: center;
@@ -225,7 +229,7 @@ body {
 }
 
 .tbl th {
-  text-align: left;
+  text-align: start;
   font-family: var(--sans);
   font-size: 10px;
   letter-spacing: 0.14em;
@@ -249,13 +253,13 @@ body {
 
 .tbl .num,
 .num {
-  text-align: right;
+  text-align: end;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
 
 .tbl th.num {
-  text-align: right;
+  text-align: end;
 }
 
 .mono-dim {
@@ -315,7 +319,7 @@ body {
 
 .warnings {
   margin: 0;
-  padding-left: 18px;
+  padding-inline-start: 18px;
   color: var(--ink-2);
 }
 
@@ -367,7 +371,7 @@ body {
   width: 8px;
   height: 8px;
   border-radius: 2px;
-  margin-right: 7px;
+  margin-inline-end: 7px;
   vertical-align: baseline;
 }
 
@@ -432,7 +436,7 @@ body {
 .seg-fillpct {
   position: absolute;
   bottom: 13px;
-  left: 9px;
+  inset-inline-start: 9px;
   font-family: var(--mono);
   font-size: 10.5px;
   color: var(--ink-3);
@@ -697,7 +701,7 @@ body {
   font-size: 12.5px;
   padding: 3px 4px;
   cursor: pointer;
-  text-align: left;
+  text-align: start;
   border-radius: 4px;
 }
 
@@ -735,7 +739,8 @@ body {
 }
 
 .timing-steps {
-  padding: 4px 4px 10px 18px;
+  padding: 4px 4px 10px;
+  padding-inline-start: 18px;
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -980,16 +985,26 @@ body {
   }
 
   .readout-item:first-child {
-    padding-left: 0;
+    padding-inline-start: 0;
   }
 
   .top-right {
     width: 100%;
-    margin-left: 0;
+    margin-inline-start: 0;
   }
 
-  .top-right .select {
-    width: 100%;
+  .top-right {
+    flex-wrap: wrap;
+  }
+  /* The language picker is used once; the build name matters on every
+     glance, so it keeps the rest of the row. */
+  .lang-select {
+    flex: 0 0 auto;
+    max-width: 7.5rem;
+  }
+  .top-right .select:not(.lang-select) {
+    flex: 1 1 8rem;
+    min-width: 0;
   }
 
   .buildline {
@@ -1094,7 +1109,7 @@ body {
   }
   .seg-fillpct {
     position: static;
-    text-align: right;
+    text-align: end;
   }
   .diemap-note {
     display: none;
@@ -1131,4 +1146,69 @@ body {
   .tooltip {
     max-width: calc(100vw - 32px);
   }
+}
+
+/* ---------- right-to-left ---------- */
+
+/* Layout mirrors itself through the logical properties used above. Two kinds
+   of content must NOT mirror, in any language:
+   the flash map and treemap are geometry (a flash address space runs low to
+   high left to right, and a treemap's rectangles are a fixed layout), and
+   paths, identifiers and hex offsets are machine text that is always read
+   left to right. */
+.diemap,
+.diemap-axis,
+.treemap {
+  direction: ltr;
+}
+
+[dir="rtl"] .mono-dim,
+[dir="rtl"] .pkg-name,
+[dir="rtl"] .trunc,
+[dir="rtl"] .topfile,
+[dir="rtl"] .timing-name,
+[dir="rtl"] .drop-sub code {
+  direction: ltr;
+  text-align: start;
+}
+
+/* Measurements are LTR runs: a value like "320.0 KiB" reorders to
+   "KiB 320.0" and "<0.1%" flips its comparator if the surrounding
+   paragraph is RTL. Keep the value itself left-to-right while the column
+   stays where the mirrored table put it, and keep digits aligned on one
+   edge so they remain comparable down a column. */
+[dir="rtl"] .num,
+[dir="rtl"] .stat-value,
+[dir="rtl"] .readout-item,
+[dir="rtl"] .timing-sec,
+[dir="rtl"] .foot {
+  direction: ltr;
+}
+
+[dir="rtl"] .num {
+  text-align: right;
+}
+
+/* Diagnostics come from the analysis core and stay English in every
+   language, so they must read left to right even on an RTL page: as RTL
+   paragraphs their leading counts and parentheses get reordered. */
+[dir="rtl"] .warnings li,
+[dir="rtl"] .drop-error,
+[dir="rtl"] .page-empty {
+  direction: ltr;
+  text-align: start;
+}
+
+[dir="rtl"] .stat-value,
+[dir="rtl"] .foot {
+  text-align: center;
+}
+
+[dir="rtl"] .stat-value {
+  text-align: start;
+}
+
+/* The picker sits at the inline end of the header in both directions. */
+.lang-select {
+  max-width: 9.5rem;
 }

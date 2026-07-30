@@ -7,15 +7,16 @@ import Packages from "./components/Packages";
 import Timings from "./components/Timings";
 import { inlineReports, Loaded, parseReportJson, tryApi } from "./data";
 import { dateOf, humanBytes, seconds } from "./format";
+import { I18nContext, Lang, NAMES, SUPPORTED, useI18n, useI18nState, useT } from "./i18n";
 import { IndexEntry, Report } from "./types";
 
 type Tab = "flash" | "packages" | "modules" | "time" | "drift";
-const TABS: { id: Tab; label: string }[] = [
-  { id: "flash", label: "Flash" },
-  { id: "packages", label: "Packages" },
-  { id: "modules", label: "Modules" },
-  { id: "time", label: "Build time" },
-  { id: "drift", label: "Drift" },
+const TABS: { id: Tab; key: string }[] = [
+  { id: "flash", key: "tab_flash" },
+  { id: "packages", key: "tab_packages" },
+  { id: "modules", key: "tab_modules" },
+  { id: "time", key: "tab_time" },
+  { id: "drift", key: "tab_drift" },
 ];
 
 /// An artifact-only report (a carved .bin) has no packages, modules or
@@ -45,6 +46,17 @@ function readHash(): { b: number; t: Tab } {
 }
 
 export default function App() {
+  const i18n = useI18nState();
+  return (
+    <I18nContext.Provider value={i18n}>
+      <Viewer />
+    </I18nContext.Provider>
+  );
+}
+
+function Viewer() {
+  const { lang, setLang } = useI18n();
+  const t = useT();
   const [api, setApi] = useState<Loaded | null | "loading">("loading");
   const [staticReports, setStaticReports] = useState<Report[]>([]);
   const [current, setCurrent] = useState(() => readHash().b);
@@ -145,7 +157,9 @@ export default function App() {
             {report.build.arch && <span className="readout-item">{report.build.arch}</span>}
             {report.build.libc && <span className="readout-item">{report.build.libc}</span>}
             {report.build.kernel_version && (
-              <span className="readout-item">linux {report.build.kernel_version}</span>
+              <span className="readout-item">
+                {t("kernel_prefix")} {report.build.kernel_version}
+              </span>
             )}
             {report.build.build_active_seconds !== null && (
               <span className="readout-item">{seconds(report.build.build_active_seconds)}</span>
@@ -154,11 +168,23 @@ export default function App() {
               <span className="readout-item muted">{dateOf(report.build.completed_at_unix)}</span>
             )}
             <span className={`chip ctx-${report.scan.context_source}`}>
-              {report.scan.context_source}
+              {t(`ctx_${report.scan.context_source}`)}
             </span>
           </div>
         )}
         <div className="top-right">
+          <select
+            className="select lang-select"
+            aria-label={t("lang_label")}
+            value={lang}
+            onChange={(e) => setLang(e.target.value as Lang)}
+          >
+            {SUPPORTED.map((l) => (
+              <option key={l} value={l}>
+                {NAMES[l]}
+              </option>
+            ))}
+          </select>
           {entries.length > 1 && (
             <select
               className="select"
@@ -174,7 +200,7 @@ export default function App() {
           )}
           {staticMode && staticReports.length > 0 && (
             <label className="btn btn-sm">
-              add report
+              {t("add_report")}
               <input
                 type="file"
                 accept=".json,application/json"
@@ -209,18 +235,20 @@ export default function App() {
             <span className="buildname">{report.build.name}</span>
             {report.scan.warnings.length > 0 && (
               <button className="chip chip-warn" onClick={() => setTab("flash")}>
-                {report.scan.warnings.length} warning{report.scan.warnings.length > 1 ? "s" : ""}
+                {report.scan.warnings.length === 1
+                  ? t("warning_one")
+                  : t("warning_many", { n: report.scan.warnings.length })}
               </button>
             )}
           </div>
           <nav className="tabs">
-            {TABS.filter((t) => tabHasData(t.id, report, entries.length)).map((t) => (
+            {TABS.filter((tab) => tabHasData(tab.id, report, entries.length)).map((tab) => (
               <button
-                key={t.id}
-                className={`tab ${effectiveTab === t.id ? "active" : ""}`}
-                onClick={() => setTab(t.id)}
+                key={tab.id}
+                className={`tab ${effectiveTab === tab.id ? "active" : ""}`}
+                onClick={() => setTab(tab.id)}
               >
-                {t.label}
+                {t(tab.key)}
               </button>
             ))}
           </nav>
@@ -235,7 +263,7 @@ export default function App() {
           </main>
         </>
       ) : (
-        <div className="empty page-empty">{loadError ?? "loading"}</div>
+        <div className="empty page-empty">{loadError ?? t("loading")}</div>
       )}
 
       <footer className="foot">
@@ -250,11 +278,20 @@ export default function App() {
         v{__APP_VERSION__}-{__GIT_SHA__}
         {report && (
           <>
-            {" · "}report schema {report.schema}
-            {" · "}scan {report.scan.scan_mode}/{report.scan.context_source}
+            {" · "}
+            {t("report_schema", { n: report.schema })}
+            {" · "}
+            {t("scan_mode", {
+              mode: report.scan.scan_mode,
+              context: report.scan.context_source,
+            })}
             {report.generator.version !== __APP_VERSION__ && (
               <>
-                {" · "}report by {report.generator.name} {report.generator.version}
+                {" · "}
+                {t("report_by", {
+                  name: report.generator.name,
+                  version: report.generator.version,
+                })}
               </>
             )}
           </>

@@ -1,8 +1,10 @@
 import { useMemo, useState } from "react";
 import { humanBytes } from "../format";
+import { useT } from "../i18n";
 import { Report } from "../types";
 
 export default function Modules({ report }: { report: Report }) {
+  const t = useT();
   const [onDemandOnly, setOnDemandOnly] = useState(false);
 
   const modules = useMemo(
@@ -16,7 +18,7 @@ export default function Modules({ report }: { report: Report }) {
     return (
       <div className="pane">
         <div className="panel">
-          <div className="empty">No kernel modules in this rootfs.</div>
+          <div className="empty">{t("no_modules")}</div>
         </div>
       </div>
     );
@@ -26,24 +28,24 @@ export default function Modules({ report }: { report: Report }) {
     <div className="pane">
       <div className="statrow">
         <div className="stat">
-          <div className="stat-label">modules</div>
+          <div className="stat-label">{t("stat_modules")}</div>
           <div className="stat-value">{report.modules.length}</div>
         </div>
         <div className="stat">
-          <div className="stat-label">total size</div>
+          <div className="stat-label">{t("stat_total_size")}</div>
           <div className="stat-value">{humanBytes(totalBytes)}</div>
         </div>
         <div className="stat">
-          <div className="stat-label">autoloaded (/etc/modules)</div>
+          <div className="stat-label">{t("stat_autoloaded")}</div>
           <div className="stat-value">{autoCount}</div>
         </div>
         <div className="stat">
-          <div className="stat-label">kernel</div>
+          <div className="stat-label">{t("stat_kernel")}</div>
           <div className="stat-value">{report.modules_meta?.kernel_version ?? "–"}</div>
         </div>
         {report.modules_meta && report.modules_meta.builtin.length > 0 && (
           <div className="stat">
-            <div className="stat-label">built-in (in kernel image)</div>
+            <div className="stat-label">{t("stat_builtin")}</div>
             <div className="stat-value">{report.modules_meta.builtin.length}</div>
           </div>
         )}
@@ -56,7 +58,7 @@ export default function Modules({ report }: { report: Report }) {
             checked={onDemandOnly}
             onChange={(e) => setOnDemandOnly(e.target.checked)}
           />
-          on-demand only (not autoloaded)
+          {t("on_demand_only")}
         </label>
       </div>
 
@@ -65,11 +67,11 @@ export default function Modules({ report }: { report: Report }) {
               <table className="tbl">
           <thead>
             <tr>
-              <th>module</th>
-              <th className="num">bytes</th>
-              <th>package</th>
-              <th>load</th>
-              <th>path</th>
+              <th>{t("th_module")}</th>
+              <th className="num">{t("th_bytes")}</th>
+              <th>{t("th_package")}</th>
+              <th>{t("th_load")}</th>
+              <th>{t("th_path")}</th>
             </tr>
           </thead>
           <tbody>
@@ -80,9 +82,9 @@ export default function Modules({ report }: { report: Report }) {
                 <td>{m.package ?? <span className="muted">–</span>}</td>
                 <td>
                   {m.autoloaded ? (
-                    <span className="chip chip-auto">auto</span>
+                    <span className="chip chip-auto">{t("load_auto")}</span>
                   ) : (
-                    <span className="muted">on demand</span>
+                    <span className="muted">{t("load_on_demand")}</span>
                   )}
                 </td>
                 <td className="mono-dim trunc">{m.path}</td>

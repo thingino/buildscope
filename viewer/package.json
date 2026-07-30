@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/copy-wasm.mjs && tsc --noEmit && vite build",
+    "build": "node scripts/copy-wasm.mjs && node scripts/check-locales.mjs && tsc --noEmit && vite build",
     "preview": "vite preview",
-    "wasm": "node scripts/copy-wasm.mjs"
+    "wasm": "node scripts/copy-wasm.mjs",
+    "check:locales": "node scripts/check-locales.mjs"
   },
   "dependencies": {
     "@fontsource/montserrat": "^5.3.0",

@@ -1,5 +1,6 @@
 import { Fragment } from "react";
 import { hex, humanBytes, pct } from "../format";
+import { TFn, useT } from "../i18n";
 import { ImageReport, PartitionReport, Report } from "../types";
 import { useTooltip } from "../tooltip";
 
@@ -10,12 +11,16 @@ function fillStatus(frac: number): string {
   return "good";
 }
 
-function VerifiedMark({ v }: { v: boolean | null }) {
+function VerifiedMark({ v, t }: { v: boolean | null; t: TFn }) {
   if (v === null) return <span className="muted">–</span>;
   return v ? (
-    <span className="ok" title="content verified against the flash image">✓ verified</span>
+    <span className="ok" title={t("verified_title")}>
+      ✓ {t("verified")}
+    </span>
   ) : (
-    <span className="crit" title="content does not match the flash image">✕ mismatch</span>
+    <span className="crit" title={t("mismatch_title")}>
+      ✕ {t("mismatch")}
+    </span>
   );
 }
 
@@ -43,6 +48,7 @@ function imageNote(i: ImageReport): string {
 
 function DieMap({ parts, total }: { parts: PartitionReport[]; total: number }) {
   const { node, show, hide } = useTooltip();
+  const t = useT();
   const sized = parts.filter((p) => !p.overlaps && p.size !== null);
   if (sized.length === 0 || total === 0) return null;
 
@@ -71,10 +77,14 @@ function DieMap({ parts, total }: { parts: PartitionReport[]; total: number }) {
                   <div>
                     <div className="tt-title">{p.name}{p.read_only ? " (ro)" : ""}</div>
                     <div>{hex(p.offset)} – {hex(p.offset + size)}</div>
-                    <div>partition {humanBytes(size)}</div>
-                    {p.image && <div>image {p.image} ({humanBytes(p.content_bytes ?? 0)})</div>}
-                    <div>used {humanBytes(used)} ({pct(frac)})</div>
-                    <div>free {humanBytes(Math.max(0, size - used))}</div>
+                    <div>{t("tt_partition")} {humanBytes(size)}</div>
+                    {p.image && (
+                      <div>
+                        {t("tt_image")} {p.image} ({humanBytes(p.content_bytes ?? 0)})
+                      </div>
+                    )}
+                    <div>{t("tt_used")} {humanBytes(used)} ({pct(frac)})</div>
+                    <div>{t("tt_free")} {humanBytes(Math.max(0, size - used))}</div>
                   </div>
                 )
               }
@@ -84,10 +94,14 @@ function DieMap({ parts, total }: { parts: PartitionReport[]; total: number }) {
                   <div>
                     <div className="tt-title">{p.name}{p.read_only ? " (ro)" : ""}</div>
                     <div>{hex(p.offset)} – {hex(p.offset + size)}</div>
-                    <div>partition {humanBytes(size)}</div>
-                    {p.image && <div>image {p.image} ({humanBytes(p.content_bytes ?? 0)})</div>}
-                    <div>used {humanBytes(used)} ({pct(frac)})</div>
-                    <div>free {humanBytes(Math.max(0, size - used))}</div>
+                    <div>{t("tt_partition")} {humanBytes(size)}</div>
+                    {p.image && (
+                      <div>
+                        {t("tt_image")} {p.image} ({humanBytes(p.content_bytes ?? 0)})
+                      </div>
+                    )}
+                    <div>{t("tt_used")} {humanBytes(used)} ({pct(frac)})</div>
+                    <div>{t("tt_free")} {humanBytes(Math.max(0, size - used))}</div>
                   </div>
                 )
               }
@@ -105,7 +119,7 @@ function DieMap({ parts, total }: { parts: PartitionReport[]; total: number }) {
       </div>
       <div className="diemap-axis">
         <span>{hex(0)}</span>
-        <span className="muted diemap-note">widths proportional, small partitions clamped for legibility</span>
+        <span className="muted diemap-note">{t("diemap_note")}</span>
         <span>{hex(total)}</span>
       </div>
       {node}
@@ -114,6 +128,7 @@ function DieMap({ parts, total }: { parts: PartitionReport[]; total: number }) {
 }
 
 export default function Flash({ report }: { report: Report }) {
+  const t = useT();
   const flash = report.flash;
   return (
     <div className="pane">
@@ -121,9 +136,9 @@ export default function Flash({ report }: { report: Report }) {
         <>
           <div className="panel">
             <div className="panel-head">
-              <span className="panel-title">Flash map</span>
+              <span className="panel-title">{t("flash_map")}</span>
               <span className="muted">
-                {flash.mtd_id ?? "device"} · {humanBytes(flash.total_bytes)} · {flash.source}
+                {flash.mtd_id ?? t("device")} · {humanBytes(flash.total_bytes)} · {flash.source}
               </span>
             </div>
             <DieMap parts={flash.partitions} total={flash.total_bytes} />
@@ -131,15 +146,15 @@ export default function Flash({ report }: { report: Report }) {
               <table className="tbl">
               <thead>
                 <tr>
-                  <th>partition</th>
-                  <th>range</th>
-                  <th className="num">size</th>
-                  <th>image</th>
-                  <th className="num">content</th>
-                  <th className="num">used</th>
-                  <th className="num">free</th>
-                  <th className="num">fill</th>
-                  <th>check</th>
+                  <th>{t("th_partition")}</th>
+                  <th>{t("th_range")}</th>
+                  <th className="num">{t("th_size")}</th>
+                  <th>{t("th_image")}</th>
+                  <th className="num">{t("th_content")}</th>
+                  <th className="num">{t("th_used")}</th>
+                  <th className="num">{t("th_free")}</th>
+                  <th className="num">{t("th_fill")}</th>
+                  <th>{t("th_check")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -151,8 +166,8 @@ export default function Flash({ report }: { report: Report }) {
                     <tr key={p.name} className={p.overlaps ? "dim" : ""}>
                       <td>
                         {p.name}
-                        {p.read_only ? <span className="muted"> ro</span> : null}
-                        {p.overlaps ? <span className="muted"> (spans)</span> : null}
+                        {p.read_only ? <span className="muted"> {t("read_only_short")}</span> : null}
+                        {p.overlaps ? <span className="muted"> {t("spans")}</span> : null}
                       </td>
                       <td className="mono-dim">
                         {hex(p.offset)}–{hex(p.offset + size)}
@@ -163,7 +178,7 @@ export default function Flash({ report }: { report: Report }) {
                       <td className="num">{p.used_bytes !== null ? humanBytes(p.used_bytes) : "–"}</td>
                       <td className="num">{size > 0 && !p.overlaps ? humanBytes(Math.max(0, size - used)) : "–"}</td>
                       <td className="num">{size > 0 && !p.overlaps ? pct(frac) : "–"}</td>
-                      <td><VerifiedMark v={p.verified} /></td>
+                      <td><VerifiedMark v={p.verified} t={t} /></td>
                     </tr>
                   );
                 })}
@@ -175,26 +190,26 @@ export default function Flash({ report }: { report: Report }) {
       ) : (
         <div className="panel">
           <div className="panel-head">
-            <span className="panel-title">Flash map</span>
+            <span className="panel-title">{t("flash_map")}</span>
           </div>
-          <div className="empty">No partition layout found for this build (no mtdparts source or partition table). Artifact sizes below are still exact.</div>
+          <div className="empty">{t("no_layout")}</div>
         </div>
       )}
 
       <div className="panel">
         <div className="panel-head">
-          <span className="panel-title">images/</span>
-          <span className="muted">{report.images.length} files</span>
+          <span className="panel-title">{t("images_dir")}</span>
+          <span className="muted">{t("n_files", { n: report.images.length })}</span>
         </div>
         <div className="tbl-wrap">
               <table className="tbl">
           <thead>
             <tr>
-              <th>file</th>
-              <th className="num">size</th>
-              <th>format</th>
-              <th>partition</th>
-              <th>introspection</th>
+              <th>{t("th_file")}</th>
+              <th className="num">{t("th_size")}</th>
+              <th>{t("th_format")}</th>
+              <th>{t("th_partition")}</th>
+              <th>{t("th_introspection")}</th>
             </tr>
           </thead>
           <tbody>
@@ -219,7 +234,7 @@ export default function Flash({ report }: { report: Report }) {
       {report.scan.warnings.length > 0 && (
         <div className="panel">
           <div className="panel-head">
-            <span className="panel-title">Warnings</span>
+            <span className="panel-title">{t("warnings_title")}</span>
           </div>
           <ul className="warnings">
             {report.scan.warnings.map((w, i) => (

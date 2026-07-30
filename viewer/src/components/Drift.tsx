@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { computeDrift, NamedDelta } from "../drift";
 import { humanBytes } from "../format";
+import { useT } from "../i18n";
 import { IndexEntry, Report } from "../types";
 
 function sdelta(d: number): string {
@@ -15,24 +16,25 @@ function opt(v: number | null): string {
   return v === null ? "–" : humanBytes(v);
 }
 
-function DeltaTable({ title, list }: { title: string; list: NamedDelta[] }) {
+function DeltaTable({ titleKey, list }: { titleKey: string; list: NamedDelta[] }) {
+  const t = useT();
   const [showAll, setShowAll] = useState(false);
   if (list.length === 0) return null;
   const rows = showAll ? list : list.slice(0, 20);
   return (
     <div className="panel">
       <div className="panel-head">
-        <span className="panel-title">{title}</span>
-        <span className="muted">{list.length} changed</span>
+        <span className="panel-title">{t(titleKey)}</span>
+        <span className="muted">{t("n_changed", { n: list.length })}</span>
       </div>
       <div className="tbl-wrap">
               <table className="tbl">
         <thead>
           <tr>
-            <th>name</th>
-            <th className="num">baseline</th>
-            <th className="num">current</th>
-            <th className="num">delta</th>
+            <th>{t("th_name")}</th>
+            <th className="num">{t("th_baseline")}</th>
+            <th className="num">{t("th_current")}</th>
+            <th className="num">{t("th_delta")}</th>
             <th></th>
           </tr>
         </thead>
@@ -46,8 +48,8 @@ function DeltaTable({ title, list }: { title: string; list: NamedDelta[] }) {
                 <DeltaCell d={n.delta} />
               </td>
               <td>
-                {n.before === null && <span className="chip chip-new">new</span>}
-                {n.after === null && <span className="chip chip-gone">removed</span>}
+                {n.before === null && <span className="chip chip-new">{t("chip_new")}</span>}
+                {n.after === null && <span className="chip chip-gone">{t("chip_removed")}</span>}
               </td>
             </tr>
           ))}
@@ -56,7 +58,7 @@ function DeltaTable({ title, list }: { title: string; list: NamedDelta[] }) {
               </div>
       {list.length > 20 && (
         <button className="linkbtn" onClick={() => setShowAll(!showAll)}>
-          {showAll ? "show top" : `show all ${list.length}`}
+          {showAll ? t("show_top") : t("show_all", { n: list.length })}
         </button>
       )}
     </div>
@@ -74,6 +76,7 @@ export default function Drift({
   current: Report;
   getReport: (i: number) => Promise<Report>;
 }) {
+  const t = useT();
   // Prefer the previous build in the list as the baseline.
   const firstOther =
     currentIdx > 0 ? currentIdx - 1 : entries.findIndex((_, i) => i !== currentIdx);
@@ -98,7 +101,7 @@ export default function Drift({
   return (
     <div className="pane">
       <div className="controls">
-        <span className="muted">baseline</span>
+        <span className="muted">{t("baseline")}</span>
         <select className="select" value={baseIdx} onChange={(e) => setBaseIdx(Number(e.target.value))}>
           {entries.map((b, i) =>
             i === currentIdx ? null : (
@@ -108,34 +111,40 @@ export default function Drift({
             )
           )}
         </select>
-        <span className="muted">compared against the current build ({current.build.name})</span>
+        <span className="muted">{t("compared_against", { name: current.build.name })}</span>
       </div>
 
       {error && <div className="panel empty">{error}</div>}
-      {!drift && !error && <div className="panel empty">loading baseline</div>}
+      {!drift && !error && <div className="panel empty">{t("loading_baseline")}</div>}
 
       {drift && (
         <>
           <div className="statrow">
             {drift.rootfsCompressed && (
               <div className="stat">
-                <div className="stat-label">rootfs compressed</div>
+                <div className="stat-label">{t("stat_rootfs_compressed")}</div>
                 <div className="stat-value">
                   <DeltaCell d={drift.rootfsCompressed.delta} />
                 </div>
                 <div className="stat-sub">
-                  {humanBytes(drift.rootfsCompressed.before)} to {humanBytes(drift.rootfsCompressed.after)}
+                  {t("range_from_to", {
+                    from: humanBytes(drift.rootfsCompressed.before),
+                    to: humanBytes(drift.rootfsCompressed.after),
+                  })}
                 </div>
               </div>
             )}
             {drift.rootfsUncompressed && (
               <div className="stat">
-                <div className="stat-label">rootfs uncompressed</div>
+                <div className="stat-label">{t("stat_rootfs_uncompressed")}</div>
                 <div className="stat-value">
                   <DeltaCell d={drift.rootfsUncompressed.delta} />
                 </div>
                 <div className="stat-sub">
-                  {humanBytes(drift.rootfsUncompressed.before)} to {humanBytes(drift.rootfsUncompressed.after)}
+                  {t("range_from_to", {
+                    from: humanBytes(drift.rootfsUncompressed.before),
+                    to: humanBytes(drift.rootfsUncompressed.after),
+                  })}
                 </div>
               </div>
             )}
@@ -143,19 +152,19 @@ export default function Drift({
                 all, so a zero count there would be noise, not a finding. */}
             {(current.packages.length > 0 || (baseline?.packages.length ?? 0) > 0) && (
               <div className="stat">
-                <div className="stat-label">packages changed</div>
+                <div className="stat-label">{t("stat_packages_changed")}</div>
                 <div className="stat-value">{drift.packages.length}</div>
               </div>
             )}
             {(current.modules.length > 0 || (baseline?.modules.length ?? 0) > 0) && (
               <div className="stat">
-                <div className="stat-label">modules changed</div>
+                <div className="stat-label">{t("stat_modules_changed")}</div>
                 <div className="stat-value">{drift.modules.length}</div>
               </div>
             )}
             {drift.partitions.length > 0 && !drift.rootfsCompressed && (
               <div className="stat">
-                <div className="stat-label">partitions changed</div>
+                <div className="stat-label">{t("stat_partitions_changed")}</div>
                 <div className="stat-value">{drift.partitions.length}</div>
               </div>
             )}
@@ -164,17 +173,17 @@ export default function Drift({
           {drift.partitions.length > 0 && (
             <div className="panel">
               <div className="panel-head">
-                <span className="panel-title">Partitions (used bytes)</span>
+                <span className="panel-title">{t("partitions_used_bytes")}</span>
               </div>
               <div className="tbl-wrap">
               <table className="tbl">
                 <thead>
                   <tr>
-                    <th>partition</th>
-                    <th className="num">baseline</th>
-                    <th className="num">current</th>
-                    <th className="num">delta</th>
-                    <th className="num">partition size</th>
+                    <th>{t("th_partition")}</th>
+                    <th className="num">{t("th_baseline")}</th>
+                    <th className="num">{t("th_current")}</th>
+                    <th className="num">{t("th_delta")}</th>
+                    <th className="num">{t("th_partition_size")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -189,7 +198,7 @@ export default function Drift({
                       <td className="num mono-dim">
                         {p.sizeBefore === p.sizeAfter
                           ? opt(p.sizeAfter)
-                          : `${opt(p.sizeBefore)} to ${opt(p.sizeAfter)}`}
+                          : t("range_from_to", { from: opt(p.sizeBefore), to: opt(p.sizeAfter) })}
                       </td>
                     </tr>
                   ))}
@@ -199,15 +208,15 @@ export default function Drift({
             </div>
           )}
 
-          <DeltaTable title="Packages" list={drift.packages} />
-          <DeltaTable title="Images" list={drift.images} />
-          <DeltaTable title="Kernel modules" list={drift.modules} />
+          <DeltaTable titleKey="drift_packages" list={drift.packages} />
+          <DeltaTable titleKey="drift_images" list={drift.images} />
+          <DeltaTable titleKey="drift_modules" list={drift.modules} />
 
           {drift.partitions.length === 0 &&
             drift.packages.length === 0 &&
             drift.images.length === 0 &&
             drift.modules.length === 0 && (
-              <div className="panel empty">No differences between these two builds.</div>
+              <div className="panel empty">{t("no_differences")}</div>
             )}
         </>
       )}

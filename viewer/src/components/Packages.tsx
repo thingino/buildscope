@@ -1,14 +1,15 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { CATEGORY_COLOR, CATEGORY_LABEL, CATEGORY_ORDER, Category, categorize } from "../categorize";
+import { CATEGORY_COLOR, CATEGORY_KEY, CATEGORY_ORDER, Category, categorize } from "../categorize";
 import { humanBytes, pct } from "../format";
+import { TFn, useT } from "../i18n";
 import { squarify } from "../treemap";
 import { PackageReport, Report, UNATTRIBUTED } from "../types";
 import { useTooltip } from "../tooltip";
 
 type SortKey = "bytes" | "approx" | "files" | "name";
 
-function displayName(p: string): string {
-  return p === UNATTRIBUTED ? "(overlay / post-build)" : p;
+function displayName(p: string, t: TFn): string {
+  return p === UNATTRIBUTED ? t("overlay_post_build") : p;
 }
 
 const MAP_W = 900;
@@ -17,6 +18,7 @@ const NARROW_PX = 760;
 
 function Treemap({ packages, total }: { packages: PackageReport[]; total: number }) {
   const { node, show, hide } = useTooltip();
+  const t = useT();
   // A phone renders the map a third as wide, so whether a label fits has to be
   // decided in real pixels, not layout units. Measure the box and derive the
   // scale from it; cells too small for a label stay tappable for the tooltip.
@@ -87,14 +89,18 @@ function Treemap({ packages, total }: { packages: PackageReport[]; total: number
                 show(
                   e,
                   <div>
-                    <div className="tt-title">{displayName(r.data.name)}</div>
-                    <div>{CATEGORY_LABEL[cat]}</div>
+                    <div className="tt-title">{displayName(r.data.name, t)}</div>
+                    <div>{t(CATEGORY_KEY[cat])}</div>
                     <div>
-                      {humanBytes(r.data.bytes)} · {pct(r.data.bytes / total)} of rootfs
+                      {humanBytes(r.data.bytes)} · {pct(r.data.bytes / total)} {t("of_rootfs")}
                     </div>
-                    <div>{r.data.file_count} files</div>
+                    <div>{t("n_files", { n: r.data.file_count })}</div>
                     {r.data.compressed_bytes_approx !== null && (
-                      <div>~{humanBytes(r.data.compressed_bytes_approx)} compressed (approx)</div>
+                      <div>
+                        {t("compressed_approx", {
+                          size: humanBytes(r.data.compressed_bytes_approx),
+                        })}
+                      </div>
                     )}
                   </div>
                 )
@@ -103,12 +109,12 @@ function Treemap({ packages, total }: { packages: PackageReport[]; total: number
                 show(
                   e,
                   <div>
-                    <div className="tt-title">{displayName(r.data.name)}</div>
-                    <div>{CATEGORY_LABEL[cat]}</div>
+                    <div className="tt-title">{displayName(r.data.name, t)}</div>
+                    <div>{t(CATEGORY_KEY[cat])}</div>
                     <div>
-                      {humanBytes(r.data.bytes)} · {pct(r.data.bytes / total)} of rootfs
+                      {humanBytes(r.data.bytes)} · {pct(r.data.bytes / total)} {t("of_rootfs")}
                     </div>
-                    <div>{r.data.file_count} files</div>
+                    <div>{t("n_files", { n: r.data.file_count })}</div>
                   </div>
                 )
               }
@@ -117,7 +123,7 @@ function Treemap({ packages, total }: { packages: PackageReport[]; total: number
               <div className="tm-fill" style={{ background: CATEGORY_COLOR[cat] }}>
                 {showLabel && (
                   <div className="tm-label">
-                    <div className="tm-name">{displayName(r.data.name)}</div>
+                    <div className="tm-name">{displayName(r.data.name, t)}</div>
                     {showBytes && <div className="tm-bytes">{humanBytes(r.data.bytes)}</div>}
                   </div>
                 )}
@@ -132,6 +138,7 @@ function Treemap({ packages, total }: { packages: PackageReport[]; total: number
 }
 
 export default function Packages({ report }: { report: Report }) {
+  const t = useT();
   const [sort, setSort] = useState<SortKey>("bytes");
   const [query, setQuery] = useState("");
   const [cats, setCats] = useState<Set<Category>>(new Set(CATEGORY_ORDER));
@@ -172,11 +179,11 @@ export default function Packages({ report }: { report: Report }) {
     <div className="pane">
       <div className="statrow">
         <div className="stat">
-          <div className="stat-label">rootfs uncompressed</div>
+          <div className="stat-label">{t("stat_rootfs_uncompressed")}</div>
           <div className="stat-value">{report.rootfs ? humanBytes(report.rootfs.uncompressed_bytes) : "–"}</div>
         </div>
         <div className="stat">
-          <div className="stat-label">compressed ({report.rootfs?.compression ?? "?"})</div>
+          <div className="stat-label">{t("stat_compressed", { algo: report.rootfs?.compression ?? "?" })}</div>
           <div className="stat-value">
             {report.rootfs?.compressed_bytes ? humanBytes(report.rootfs.compressed_bytes) : "–"}
             {report.rootfs?.compression_ratio && (
@@ -185,11 +192,11 @@ export default function Packages({ report }: { report: Report }) {
           </div>
         </div>
         <div className="stat">
-          <div className="stat-label">packages</div>
+          <div className="stat-label">{t("stat_packages")}</div>
           <div className="stat-value">{report.packages.length}</div>
         </div>
         <div className="stat">
-          <div className="stat-label">files in rootfs</div>
+          <div className="stat-label">{t("stat_files_in_rootfs")}</div>
           <div className="stat-value">{report.rootfs?.file_count ?? "–"}</div>
         </div>
       </div>
@@ -197,15 +204,15 @@ export default function Packages({ report }: { report: Report }) {
       <div className="controls">
         <input
           className="search"
-          placeholder="filter packages"
+          placeholder={t("filter_packages")}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
         <select className="select" value={sort} onChange={(e) => setSort(e.target.value as SortKey)}>
-          <option value="bytes">by uncompressed size</option>
-          <option value="approx">by approx compressed</option>
-          <option value="files">by file count</option>
-          <option value="name">by name</option>
+          <option value="bytes">{t("sort_bytes")}</option>
+          <option value="approx">{t("sort_approx")}</option>
+          <option value="files">{t("sort_files")}</option>
+          <option value="name">{t("sort_name")}</option>
         </select>
         <div className="legend">
           {CATEGORY_ORDER.map((c) => (
@@ -213,10 +220,10 @@ export default function Packages({ report }: { report: Report }) {
               key={c}
               className={`chip legend-chip ${cats.has(c) ? "" : "off"}`}
               onClick={() => toggleCat(c)}
-              title={`toggle ${CATEGORY_LABEL[c]}`}
+              title={t("toggle_category", { name: t(CATEGORY_KEY[c]) })}
             >
               <span className="dot" style={{ background: CATEGORY_COLOR[c] }} />
-              {CATEGORY_LABEL[c]}
+              {t(CATEGORY_KEY[c])}
             </button>
           ))}
         </div>
@@ -228,11 +235,11 @@ export default function Packages({ report }: { report: Report }) {
               <table className="tbl">
             <thead>
               <tr>
-                <th className="pkg-name">package</th>
-                <th className="num">bytes</th>
-                <th className="num col-approx">~flash</th>
-                <th className="num">files</th>
-                <th className="bar-col">share</th>
+                <th className="pkg-name">{t("th_package")}</th>
+                <th className="num">{t("th_bytes")}</th>
+                <th className="num col-approx">{t("th_flash_approx")}</th>
+                <th className="num">{t("th_files")}</th>
+                <th className="bar-col">{t("th_share")}</th>
               </tr>
             </thead>
             <tbody>
@@ -247,7 +254,7 @@ export default function Packages({ report }: { report: Report }) {
                     >
                       <td className="pkg-name">
                         <span className="dot" style={{ background: CATEGORY_COLOR[cat] }} />
-                        {displayName(p.name)}
+                        {displayName(p.name, t)}
                       </td>
                       <td className="num">{humanBytes(p.bytes)}</td>
                       <td className="num col-approx">
@@ -295,6 +302,7 @@ export default function Packages({ report }: { report: Report }) {
 }
 
 function NotShipped({ report }: { report: Report }) {
+  const t = useT();
   const [showAll, setShowAll] = useState(false);
   const removed = report.removed_not_shipped ?? [];
   if (removed.length === 0) return null;
@@ -303,18 +311,18 @@ function NotShipped({ report }: { report: Report }) {
   return (
     <div className="panel">
       <div className="panel-head">
-        <span className="panel-title">Installed but not shipped</span>
+        <span className="panel-title">{t("not_shipped_title")}</span>
         <span className="muted">
-          {removed.length} files removed before imaging · {humanBytes(totalBytes)} at install time
+          {t("not_shipped_sub", { n: removed.length, size: humanBytes(totalBytes) })}
         </span>
       </div>
       <div className="tbl-wrap">
               <table className="tbl">
         <thead>
           <tr>
-            <th>path</th>
-            <th className="pkg-name">package</th>
-            <th className="num">install size</th>
+            <th>{t("th_path")}</th>
+            <th className="pkg-name">{t("th_package")}</th>
+            <th className="num">{t("th_install_size")}</th>
           </tr>
         </thead>
         <tbody>
@@ -330,7 +338,7 @@ function NotShipped({ report }: { report: Report }) {
               </div>
       {removed.length > 20 && (
         <button className="linkbtn" onClick={() => setShowAll(!showAll)}>
-          {showAll ? "show top" : `show all ${removed.length}`}
+          {showAll ? t("show_top") : t("show_all", { n: removed.length })}
         </button>
       )}
     </div>

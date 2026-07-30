@@ -8,11 +8,13 @@ import {
   scanArtifact,
   scanPickedTree,
 } from "../scan";
+import { useT } from "../i18n";
 import { Report } from "../types";
 
 type Picked = { path: string; file: File };
 
 export default function Drop({ onReports }: { onReports: (r: Report[]) => void }) {
+  const t = useT();
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [over, setOver] = useState(false);
@@ -37,11 +39,11 @@ export default function Drop({ onReports }: { onReports: (r: Report[]) => void }
             // A directory of firmware images rather than a build tree.
             const artifacts = files.filter((f) => isArtifactName(f.file.name));
             if (artifacts.length === 0) {
-              problems.push(`${root}: not a Buildroot output directory`);
+              problems.push(t("not_a_build_dir", { name: root }));
               continue;
             }
             for (const a of artifacts) {
-              setBusy(`analyzing ${a.file.name}`);
+              setBusy(t("stage_analyzing_file", { name: a.file.name }));
               try {
                 reports.push(await scanArtifact(a.file));
               } catch (e) {
@@ -50,10 +52,12 @@ export default function Drop({ onReports }: { onReports: (r: Report[]) => void }
             }
             continue;
           }
-          setBusy(`scanning ${root}`);
+          setBusy(t("stage_scanning", { name: root }));
           try {
             reports.push(
-              await scanPickedTree(root, files, (stage) => setBusy(`${root}: ${stage}`))
+              await scanPickedTree(root, files, (stageKey, params) =>
+                setBusy(`${root}: ${t(stageKey, params)}`)
+              )
             );
           } catch (e) {
             problems.push(`${root}: ${msg(e)}`);
@@ -71,7 +75,7 @@ export default function Drop({ onReports }: { onReports: (r: Report[]) => void }
             continue;
           }
           if (!isArtifactName(file.name)) continue;
-          setBusy(`analyzing ${file.name}`);
+          setBusy(t("stage_analyzing_file", { name: file.name }));
           try {
             reports.push(await scanArtifact(file));
           } catch (e) {
@@ -85,7 +89,7 @@ export default function Drop({ onReports }: { onReports: (r: Report[]) => void }
       if (reports.length > 0) onReports(reports);
       setError(problems.length > 0 ? problems.join(" · ") : null);
     },
-    [onReports]
+    [onReports, t]
   );
 
   const onDrop = useCallback(
@@ -101,7 +105,7 @@ export default function Drop({ onReports }: { onReports: (r: Report[]) => void }
         const picked: Picked[] = [];
         for (const entry of entries) {
           if (entry.isDirectory) {
-            setBusy(`reading ${entry.name}`);
+            setBusy(t("stage_reading", { name: entry.name }));
             const files = await readDirectoryEntry(entry as FileSystemDirectoryEntry);
             picked.push(...files.map((f) => ({ path: `${entry.name}/${f.path}`, file: f.file })));
           } else {
@@ -145,26 +149,24 @@ export default function Drop({ onReports }: { onReports: (r: Report[]) => void }
     >
       <div className="drop-glyph">▤</div>
       <div className="drop-title">
-        {busy ? busy : "drop a build directory, a firmware image, or a report"}
+        {busy ? busy : t("drop_title")}
       </div>
-      <div className="drop-sub">
-        Everything is analyzed in this browser: a Buildroot output directory gets the full
-        breakdown, a bare <code>.bin</code> gets its partition map carved out of the image
-        itself, and a <code>buildscope-report.json</code> is rendered as-is. No uploads.
-      </div>
+      {/* Carries inline <code> markup, so it is set as HTML from the
+          dictionary, which is trusted content shipped with the app. */}
+      <div className="drop-sub" dangerouslySetInnerHTML={{ __html: t("drop_sub_html") }} />
       <div className="drop-actions">
         <button className="btn" disabled={busy !== null} onClick={() => dirRef.current?.click()}>
-          choose build directory
+          {t("choose_directory")}
         </button>
         <button
           className="btn btn-quiet"
           disabled={busy !== null}
           onClick={() => filesRef.current?.click()}
         >
-          choose files
+          {t("choose_files")}
         </button>
       </div>
-      {busy && <div className="drop-busy">working: {busy}</div>}
+      {busy && <div className="drop-busy">{t("working", { what: busy })}</div>}
       <input
         ref={dirRef}
         type="file"

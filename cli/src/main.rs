@@ -55,9 +55,10 @@ enum Cmd {
         dirs: Vec<PathBuf>,
         #[arg(long, default_value_t = 8380)]
         port: u16,
-        /// Address to bind (use 0.0.0.0 to expose on the network)
-        #[arg(long, default_value = "127.0.0.1")]
-        bind: String,
+        /// Addresses to listen on, comma separated. Both loopbacks by
+        /// default; "all" means every interface on both IP families
+        #[arg(long, value_delimiter = ',', default_value = "127.0.0.1,::1")]
+        bind: Vec<String>,
         /// Directory with the built viewer (index.html + assets)
         #[arg(long)]
         viewer_dir: Option<PathBuf>,

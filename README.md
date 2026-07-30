@@ -70,9 +70,25 @@ buildscope export output/my-build        # one self-contained HTML file
 buildscope carve firmware.bin            # a released image, with no build tree
 ```
 
-`serve` binds to localhost by default; `--bind 0.0.0.0` exposes it on your
-network. `diff` takes reports, build directories, or bare images, and `--json`
-gives the full delta for scripting.
+`diff` takes reports, build directories, or bare images, and `--json` gives the
+full delta for scripting.
+
+`serve` listens on **both IP families**: by default on both loopbacks
+(`127.0.0.1` and `::1`), so an IPv6-only client works with no extra flags.
+`--bind` takes a comma-separated list of addresses, or `all` for every
+interface on both families:
+
+```
+buildscope serve output/                      # 127.0.0.1 and [::1]
+buildscope serve output/ --bind all           # every interface, IPv4 + IPv6
+buildscope serve output/ --bind ::1           # IPv6 loopback only
+buildscope serve output/ --bind 2001:db8::5   # a specific IPv6 address
+```
+
+It prints every URL it is listening on, with IPv6 literals bracketed the way a
+browser needs them. Addresses are bound IPv6-first, because a wildcard IPv6
+socket on a dual-stack host also carries IPv4: binding IPv4 first would make
+the IPv6 bind fail and silently drop IPv6 support.
 
 ## Analyzing firmware you did not build
 
@@ -129,6 +145,15 @@ in `images/` on every build. Projects that assemble their final image after
 Buildroot's image step should instead call `buildscope scan "$OUTPUT_DIR"` at
 the end of that step. Both modes produce identical reports for the same tree;
 the report records which one produced it.
+
+## Languages
+
+The viewer is translated into 15 languages, picked up from the browser with an
+in-page override, and mirrors itself for right-to-left languages. `?lang=de`
+opens a link in a specific language without changing the reader's preference.
+Report content is never translated: package and partition names, image formats,
+and the analysis core's diagnostics are the same words everywhere. See
+[`viewer/README.md`](viewer/README.md) to add or fix a translation.
 
 ## Design rules
 

@@ -22,13 +22,14 @@ export const CATEGORY_ORDER: Category[] = [
   "overlay",
 ];
 
-export const CATEGORY_LABEL: Record<Category, string> = {
-  apps: "Applications",
-  kernel: "Kernel + modules",
-  libraries: "Libraries",
-  firmware: "Firmware / blobs",
-  base: "Base system",
-  overlay: "Overlay / post-build",
+/** Translation keys; the legend and tooltips resolve these at render time. */
+export const CATEGORY_KEY: Record<Category, string> = {
+  apps: "cat_apps",
+  kernel: "cat_kernel",
+  libraries: "cat_libraries",
+  firmware: "cat_firmware",
+  base: "cat_base",
+  overlay: "cat_overlay",
 };
 
 // Slots 1..6 of the validated categorical palette (dark).

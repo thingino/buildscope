@@ -13,9 +13,6 @@ path = "src/lib.rs"
 buildscope-core = { path = "../core" }
 serde_json = "1"
 
-[profile.release]
-opt-level = "z"
-lto = true
-panic = "abort"
-codegen-units = 1
-strip = true
+# Profiles live at the workspace root: cargo ignores a member's own
+# [profile.*] and warns about it on every invocation, including the ones
+# Buildroot's cargo infrastructure makes.

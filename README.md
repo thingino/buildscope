@@ -32,8 +32,14 @@ buildscope scan output/
   file sizes:
   - squashfs: real bytes used, compression algorithm, block size (padding
     excluded, straight from the superblock)
+  - ext2/ext3/ext4: used vs free from the block counts in the superblock, plus
+    inode usage, block size, label and UUID
   - jffs2: actual used bytes vs free space from a node-level scan, because a
     jffs2 image padded to its partition size is not "full"
+  - FAT12/16/32: used vs free counted from the allocation table itself rather
+    than assumed from the partition size, plus cluster size and volume label
+  - cpio (`newc`/`crc`): the whole archive listing with names, sizes and kinds,
+    so an initramfs rootfs is as browsable as a build tree
   - uImage: declared payload size, compression type, load and entry address,
     header CRC check
   - U-Boot environment images: CRC validity, bytes used vs environment size,
@@ -49,10 +55,12 @@ buildscope scan output/
   - composite flash images: trailing-padding detection, and verification that
     each partition really holds what its name implies
 - **Partition budgets** parsed from the build itself (a `mtdparts=` string in
-  an environment source, a genimage configuration, a partition table inside a
-  disk image, or UBI's own volume table), never from a hardcoded table: content
-  size vs partition size vs true used bytes, for every partition. `--flash-map`
-  and `--genimage` cover layouts kept somewhere unusual.
+  an environment source, a genimage configuration, a GUID or MBR partition
+  table, or UBI's own volume table), never from a hardcoded table: content size
+  vs partition size vs true used bytes, for every partition. `--flash-map` and
+  `--genimage` cover layouts kept somewhere unusual. Raw flash and card images
+  are both covered: NOR, NAND, and a GPT card with a FAT boot partition and an
+  ext4 root all resolve to the same report.
 - **Per-package sizes**: every file in the final rootfs attributed to the
   Buildroot package that installed it via `packages-file-list.txt`, with a
   per-package approximate compressed cost from the measured rootfs compression

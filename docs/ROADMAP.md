@@ -54,6 +54,14 @@
 - jffs2 listings rebuilt from dirent and inode nodes, so the contents of a data
   partition are visible with or without a build tree
 
+## Phase 5 (done)
+
+- Block-device coverage, so the tool is not just a raw-flash tool: ext2/3/4
+  superblocks, GUID partition tables, FAT12/16/32 with usage counted from the
+  allocation table, and cpio archives with a full listing. A Buildroot card
+  image (GPT + vfat boot + ext4 root) now resolves end to end, validated
+  against parted, dumpe2fs, fsck.fat and cpio.
+
 ## Considered and deferred
 
 - Browser scanning of a Buildroot output directory. The WASM core implements
@@ -84,7 +92,6 @@
   lz4 (pure-Rust ones exist, at maybe 150-400 KB of WASM) plus a real squashfs
   reader. Worth it to browse a released rootfs with no build tree.
 - FIT image parsing (needs a minimal DTB reader)
-- ext4 superblock stats
 - Listing UBIFS contents. Harder than squashfs: the index is a wandering B-tree
   that has to be walked, and its nodes are LZO or zlib compressed, so it needs
   both a reader and decompressors. The superblock already gives the size,

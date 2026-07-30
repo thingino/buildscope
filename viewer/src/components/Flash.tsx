@@ -49,6 +49,29 @@ function imageNote(i: ImageReport): string {
         `${humanBytes(d.total_bytes as number)} · ${d.leb_count} blocks · ${d.compression}` +
         (d.autoresize_pending ? ` · grows to ${humanBytes(d.max_bytes as number)}` : "")
       );
+    case "ext2":
+    case "ext3":
+    case "ext4":
+      return (
+        `${humanBytes(d.used_bytes as number)} used · ${humanBytes(d.free_bytes as number)} free · ` +
+        `${humanBytes(d.block_size as number)} blocks · ${d.inode_count} inodes` +
+        (d.label ? ` · ${d.label}` : "") +
+        (d.clean === false ? " · NOT CLEAN" : "")
+      );
+    case "fat12":
+    case "fat16":
+    case "fat32":
+      return (
+        `${humanBytes(d.used_bytes as number)} used · ${humanBytes(d.free_bytes as number)} free · ` +
+        `${humanBytes(d.cluster_bytes as number)} clusters` +
+        (d.label ? ` · ${d.label}` : "")
+      );
+    case "cpio":
+      return `${d.entry_count} entries · ${humanBytes(d.content_bytes as number)} of content · ${d.cpio_format}`;
+    case "disk-image": {
+      const n = Array.isArray(d.partitions) ? (d.partitions as unknown[]).length : 0;
+      return `${d.table ?? "?"} · ${n} partitions`;
+    }
     case "flash-image":
       return `content to ${humanBytes(d.content_end as number)}`;
     case "raw":

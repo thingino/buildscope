@@ -2,13 +2,14 @@
 //!
 //! The layout is recovered from the image itself: a CRC-valid U-Boot
 //! environment block found by scanning (its `mtdparts` spec is the partition
-//! table), an MBR for disk images, or UBI's own volume table on NAND. Each
+//! table), a GUID or MBR partition table for card and disk images, or UBI's
+//! own volume table on NAND. Each
 //! partition is then carved and classified with the same format parsers used
 //! everywhere else. Package attribution is impossible in this mode and is
 //! reported as such.
 
 use crate::analyze::{classify, env_vars_json, partition_role, ubi_detail, used_bytes_of, Role};
-use crate::parsers::{mbr, mtdparts, padding, ubi, ubootenv};
+use crate::parsers::{gpt, mbr, mtdparts, padding, ubi, ubootenv};
 use crate::report::*;
 use crate::snapshot::{ContextSource, ScanMode};
 use serde_json::{json, Map, Value};
@@ -249,6 +250,41 @@ pub fn carve_flash_image(file_name: &str, data: &[u8], root: &str, scan_mode: Sc
                     "embedded environment found at 0x{off:X} but it carries no mtdparts"
                 ));
             }
+        }
+    }
+    // A GUID table before an MBR: a GPT disk carries a protective MBR that
+    // describes one partition covering the lot, which would hide the real one.
+    if layout.is_none() {
+        if let Some(g) = gpt::parse(data) {
+            let span = g
+                .partitions
+                .iter()
+                .map(|p| p.offset + p.size)
+                .max()
+                .unwrap_or(0);
+            layout = Some(CarvedLayout {
+                source: format!(
+                    "gpt (embedded, {}-byte sectors{})",
+                    g.sector_size,
+                    if g.header_crc_ok { "" } else { ", header crc BAD" }
+                ),
+                mtd_id: None,
+                partitions: g
+                    .partitions
+                    .iter()
+                    .map(|p| mtdparts::MtdPartition {
+                        name: if p.name.is_empty() {
+                            format!("p{}", p.index)
+                        } else {
+                            p.name.clone()
+                        },
+                        offset: p.offset,
+                        size: Some(p.size),
+                        read_only: false,
+                    })
+                    .collect(),
+                device_bytes: span.max(total),
+            });
         }
     }
     if layout.is_none() {
@@ -516,11 +552,16 @@ pub fn carve_flash_image(file_name: &str, data: &[u8], root: &str, scan_mode: Sc
             let role = partition_role(&p.name);
             let verified = match role {
                 Role::Kernel => Some(c.uimage.is_some()),
-                Role::Rootfs => Some(c.squash.is_some()),
-                // NOR keeps the writable area in jffs2, NAND in a UBIFS volume.
-                Role::Data => {
-                    Some(c.jffs2.is_some() || c.ubifs.is_some() || slice_pad.content_end == 0)
-                }
+                // Raw flash ships squashfs; a card image ships ext or cpio.
+                Role::Rootfs => Some(c.squash.is_some() || c.ext.is_some() || c.cpio.is_some()),
+                // NOR keeps the writable area in jffs2, NAND in a UBIFS
+                // volume, a card image in an ext filesystem.
+                Role::Data => Some(
+                    c.jffs2.is_some()
+                        || c.ubifs.is_some()
+                        || c.ext.is_some()
+                        || slice_pad.content_end == 0,
+                ),
                 Role::Env => Some(c.env.as_ref().map(|e| e.crc_ok).unwrap_or(false)),
                 // Only reached when the area could not be expanded into
                 // volumes, which is itself the finding.

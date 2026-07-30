@@ -4,3 +4,8 @@ cli/target
 viewer/node_modules
 viewer/dist
 *.log
+
+# editor scratch
+*.swp
+*.swo
+*~

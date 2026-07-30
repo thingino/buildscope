@@ -365,6 +365,17 @@ body {
 .fmt-uboot-env { color: var(--magenta); border-color: rgba(213, 81, 129, 0.45); }
 .fmt-flash-image { color: var(--accent); border-color: rgba(255, 140, 0, 0.45); }
 .fmt-disk-image { color: var(--accent); border-color: rgba(255, 140, 0, 0.45); }
+/* Filesystems share a hue with their nearest relative: the read-only images
+   aqua, the writable ones yellow, containers blue. */
+.fmt-ext2,
+.fmt-ext3,
+.fmt-ext4 { color: var(--blue); border-color: rgba(57, 135, 229, 0.45); }
+.fmt-fat12,
+.fmt-fat16,
+.fmt-fat32 { color: var(--yellow); border-color: rgba(201, 133, 0, 0.45); }
+.fmt-cpio { color: var(--aqua); border-color: rgba(25, 158, 112, 0.45); }
+.fmt-ubi { color: var(--blue); border-color: rgba(57, 135, 229, 0.45); }
+.fmt-ubifs { color: var(--yellow); border-color: rgba(201, 133, 0, 0.45); }
 
 .dot {
   display: inline-block;

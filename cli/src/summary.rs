@@ -189,6 +189,63 @@ pub fn print_report(r: &Report) {
                         ""
                     }
                 )),
+                "ext2" | "ext3" | "ext4" => {
+                    let num = |k: &str| i.detail.get(k).and_then(|v| v.as_u64()).unwrap_or(0);
+                    let label = i.detail.get("label").and_then(|v| v.as_str()).unwrap_or("");
+                    Some(format!(
+                        "{} used, {} free, {} blocks{}{}",
+                        human(num("used_bytes")),
+                        human(num("free_bytes")),
+                        human(num("block_size")),
+                        if label.is_empty() {
+                            String::new()
+                        } else {
+                            format!(", '{label}'")
+                        },
+                        if i.detail.get("clean").and_then(|v| v.as_bool()) == Some(false) {
+                            ", NOT CLEAN"
+                        } else {
+                            ""
+                        }
+                    ))
+                }
+                "fat12" | "fat16" | "fat32" => {
+                    let num = |k: &str| i.detail.get(k).and_then(|v| v.as_u64()).unwrap_or(0);
+                    let label = i.detail.get("label").and_then(|v| v.as_str()).unwrap_or("");
+                    Some(format!(
+                        "{} used, {} free, {} clusters{}",
+                        human(num("used_bytes")),
+                        human(num("free_bytes")),
+                        human(num("cluster_bytes")),
+                        if label.is_empty() {
+                            String::new()
+                        } else {
+                            format!(", '{label}'")
+                        }
+                    ))
+                }
+                "cpio" => {
+                    let num = |k: &str| i.detail.get(k).and_then(|v| v.as_u64()).unwrap_or(0);
+                    Some(format!(
+                        "{} entries, {} of content, {}",
+                        num("entry_count"),
+                        human(num("content_bytes")),
+                        i.detail
+                            .get("cpio_format")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("?")
+                    ))
+                }
+                "disk-image" => {
+                    let n = i
+                        .detail
+                        .get("partitions")
+                        .and_then(|v| v.as_array())
+                        .map(|a| a.len())
+                        .unwrap_or(0);
+                    let table = i.detail.get("table").and_then(|v| v.as_str()).unwrap_or("?");
+                    Some(format!("{table}, {n} partitions"))
+                }
                 "flash-image" => i
                     .detail
                     .get("content_end")

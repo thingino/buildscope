@@ -2,7 +2,8 @@
 
 use crate::inputs::{buildtime, config::BrConfig, pfl};
 use crate::parsers::{
-    genimage, jffs2, mbr, mtdparts, padding, squashfs, ubi, ubifs, ubootenv, uimage,
+    cpio, ext, fat, genimage, gpt, jffs2, mbr, mtdparts, padding, squashfs, ubi, ubifs, ubootenv,
+    uimage,
 };
 use crate::report::*;
 use crate::snapshot::Snapshot;
@@ -20,8 +21,12 @@ pub(crate) struct Classified {
     pub(crate) uimage: Option<uimage::UimageInfo>,
     pub(crate) env: Option<ubootenv::UbootEnvInfo>,
     pub(crate) mbr: Option<Vec<mbr::MbrPartition>>,
+    pub(crate) gpt: Option<gpt::GptInfo>,
     pub(crate) ubi: Option<ubi::UbiInfo>,
     pub(crate) ubifs: Option<ubifs::UbifsInfo>,
+    pub(crate) ext: Option<ext::ExtInfo>,
+    pub(crate) fat: Option<fat::FatInfo>,
+    pub(crate) cpio: Option<cpio::CpioInfo>,
     pub(crate) content_end: u64,
     pub(crate) partition: Option<String>,
 }
@@ -57,8 +62,12 @@ pub(crate) fn classify(name: &str, size: u64, bytes: Option<&[u8]>) -> Classifie
         uimage: None,
         env: None,
         mbr: None,
+        gpt: None,
         ubi: None,
         ubifs: None,
+        ext: None,
+        fat: None,
+        cpio: None,
         content_end: size,
         partition: None,
     };
@@ -153,12 +162,100 @@ pub(crate) fn classify(name: &str, size: u64, bytes: Option<&[u8]>) -> Classifie
         c.uimage = Some(info);
         return c;
     }
+    // A cpio archive names itself in its first six bytes.
+    if let Some(info) = cpio::parse(data) {
+        c.format = "cpio".into();
+        c.detail = json!({
+            "cpio_format": info.format,
+            "entry_count": info.entry_count,
+            "file_count": info.file_count,
+            "dir_count": info.dir_count,
+            "link_count": info.link_count,
+            "content_bytes": info.content_bytes,
+            "archive_bytes": info.archive_bytes,
+            "padding_bytes": size.saturating_sub(info.archive_bytes),
+            "entries_truncated": info.entries_truncated,
+            "entries": info.entries.iter().map(|e| json!({
+                "path": e.path,
+                "bytes": e.bytes,
+                "kind": e.kind,
+            })).collect::<Vec<_>>(),
+        });
+        c.content_end = info.archive_bytes;
+        c.cpio = Some(info);
+        return c;
+    }
+    // GPT before MBR: a GPT disk carries a protective MBR describing one
+    // partition covering everything, which is true but useless.
+    if let Some(info) = gpt::parse(data) {
+        c.format = "disk-image".into();
+        c.detail = json!({
+            "table": "gpt",
+            "sector_size": info.sector_size,
+            "disk_guid": info.disk_guid,
+            "header_crc_ok": info.header_crc_ok,
+            "entries_crc_ok": info.entries_crc_ok,
+            "partitions": info.partitions.iter().map(|p| json!({
+                "index": p.index,
+                "name": p.name,
+                "type": p.type_guid,
+                "type_name": p.type_name,
+                "offset": p.offset,
+                "size": p.size,
+            })).collect::<Vec<_>>(),
+        });
+        c.gpt = Some(info);
+        return c;
+    }
+    if let Some(info) = ext::parse(data) {
+        c.format = info.version.into();
+        c.detail = json!({
+            "block_size": info.block_size,
+            "block_count": info.block_count,
+            "free_blocks": info.free_blocks,
+            "reserved_blocks": info.reserved_blocks,
+            "inode_count": info.inode_count,
+            "free_inodes": info.free_inodes,
+            "inode_size": info.inode_size,
+            "total_bytes": info.total_bytes,
+            "used_bytes": info.used_bytes,
+            "free_bytes": info.free_bytes,
+            "label": info.label,
+            "uuid": info.uuid,
+            "clean": info.clean,
+            "padding_bytes": size.saturating_sub(info.total_bytes),
+        });
+        c.content_end = info.total_bytes.min(size);
+        c.ext = Some(info);
+        return c;
+    }
+    if let Some(info) = fat::parse(data) {
+        c.format = info.kind.to_ascii_lowercase().into();
+        c.detail = json!({
+            "label": info.label,
+            "oem": info.oem,
+            "bytes_per_sector": info.bytes_per_sector,
+            "sectors_per_cluster": info.sectors_per_cluster,
+            "cluster_bytes": info.cluster_bytes,
+            "cluster_count": info.cluster_count,
+            "used_clusters": info.used_clusters,
+            "total_bytes": info.total_bytes,
+            "used_bytes": info.used_bytes,
+            "free_bytes": info.free_bytes,
+            "overhead_bytes": info.overhead_bytes,
+            "padding_bytes": size.saturating_sub(info.total_bytes),
+        });
+        c.content_end = info.total_bytes.min(size);
+        c.fat = Some(info);
+        return c;
+    }
     if let Some(parts) = mbr::parse(data) {
         // Only believe an MBR in a file big enough to hold its partitions.
         let span = parts.iter().map(|p| p.offset + p.size).max().unwrap_or(0);
         if span <= size && size >= 1024 * 1024 {
             c.format = "disk-image".into();
             c.detail = json!({
+                "table": "mbr",
                 "partitions": parts.iter().map(|p| json!({
                     "index": p.index,
                     "type": format!("0x{:02x}", p.part_type),
@@ -308,16 +405,21 @@ fn image_stem(name: &str) -> String {
 fn image_fits_role(img: &Classified, role: Role) -> bool {
     match role {
         Role::Kernel => img.uimage.is_some(),
-        Role::Rootfs => img.squash.is_some(),
-        // NOR keeps its writable area in jffs2, NAND in a UBIFS volume.
-        Role::Data => img.jffs2.is_some() || img.ubifs.is_some(),
+        // Raw flash ships squashfs; a card image ships ext or an initramfs.
+        Role::Rootfs => img.squash.is_some() || img.ext.is_some() || img.cpio.is_some(),
+        // NOR keeps its writable area in jffs2, NAND in a UBIFS volume, and a
+        // card image an ext filesystem.
+        Role::Data => img.jffs2.is_some() || img.ubifs.is_some() || img.ext.is_some(),
         Role::Ubi => img.ubi.is_some(),
         Role::Env => img.env.is_some(),
+        // A card image's boot partition is a FAT volume; raw flash puts a
+        // bootloader blob there instead.
         Role::Boot => {
-            img.format == "raw" && {
-                let n = img.name.to_ascii_lowercase();
-                (n.contains("boot") || n.contains("spl")) && !n.contains("env")
-            }
+            img.fat.is_some()
+                || (img.format == "raw" && {
+                    let n = img.name.to_ascii_lowercase();
+                    (n.contains("boot") || n.contains("spl")) && !n.contains("env")
+                })
         }
         _ => false,
     }
@@ -339,6 +441,15 @@ pub(crate) fn used_bytes_of(img: &Classified) -> Option<u64> {
     if let Some(u) = &img.ubi {
         // What the mapped eraseblocks cost, not what the area spans.
         return Some(u.used_bytes());
+    }
+    if let Some(e) = &img.ext {
+        return Some(e.used_bytes);
+    }
+    if let Some(f) = &img.fat {
+        return Some(f.used_bytes);
+    }
+    if let Some(a) = &img.cpio {
+        return Some(a.archive_bytes);
     }
     if img.ubifs.is_some() {
         return Some(img.content_end);
@@ -433,6 +544,37 @@ fn detect_layout(snap: &Snapshot, images: &[Classified], warnings: &mut Vec<Stri
             partitions,
             declared_end,
             image_hints,
+        });
+    }
+    // A GUID table names its partitions, which an MBR cannot do.
+    for img in images {
+        let Some(g) = &img.gpt else { continue };
+        let partitions = g
+            .partitions
+            .iter()
+            .map(|p| mtdparts::MtdPartition {
+                name: if p.name.is_empty() {
+                    format!("p{}", p.index)
+                } else {
+                    p.name.clone()
+                },
+                offset: p.offset,
+                size: Some(p.size),
+                read_only: false,
+            })
+            .collect::<Vec<_>>();
+        let declared_end = g
+            .partitions
+            .iter()
+            .map(|p| p.offset + p.size)
+            .max()
+            .unwrap_or(0);
+        return Some(Layout {
+            source: format!("gpt ({})", img.name),
+            mtd_id: None,
+            partitions,
+            declared_end,
+            image_hints: Vec::new(),
         });
     }
     for img in images {

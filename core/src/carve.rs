@@ -319,7 +319,9 @@ pub fn carve_flash_image(file_name: &str, data: &[u8], root: &str, scan_mode: Sc
         let mut regions: Vec<Region> = Vec::new();
         for p in &layout.partitions {
             let off = p.offset as usize;
-            let end = (off + p.size.unwrap_or(0) as usize).min(data.len());
+            let end = off
+                .saturating_add(p.size.unwrap_or(0) as usize)
+                .min(data.len());
             let found = data
                 .get(off..end)
                 .filter(|s| s.len() > 4)

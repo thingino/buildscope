@@ -73,9 +73,10 @@ fn parse_ec(d: &[u8]) -> Option<EcHeader> {
         image_seq: be_u32(head, 24)?,
     };
     // The header area must precede the payload and leave room for the VID
-    // header; anything else is a CRC coincidence, not an eraseblock.
-    if (h.vid_hdr_offset as usize) < EC_HDR_SIZE
-        || h.vid_hdr_offset + VID_HDR_SIZE as u32 > h.data_offset
+    // header; anything else is a CRC coincidence, not an eraseblock. These are
+    // file-supplied offsets, so the arithmetic is widened rather than trusted.
+    if (h.vid_hdr_offset as u64) < EC_HDR_SIZE as u64
+        || h.vid_hdr_offset as u64 + VID_HDR_SIZE as u64 > h.data_offset as u64
     {
         return None;
     }
@@ -195,6 +196,13 @@ pub fn find_start(data: &[u8]) -> Option<usize> {
     (hits.len() >= MIN_HEADERS).then(|| hits[0])
 }
 
+/// Whether a valid eraseblock header sits exactly here. Cheap enough to use as
+/// a guard, and on its own it is the right check for "does this partition begin
+/// with a UBI area".
+pub fn has_header_at(data: &[u8], off: usize) -> bool {
+    data.get(off..).and_then(parse_ec).is_some()
+}
+
 /// Eraseblock size from the spacing of the headers. Free or erased blocks
 /// leave gaps that are whole multiples, so the smallest gap is the size.
 fn peb_size_from(hits: &[usize]) -> Option<usize> {
@@ -254,6 +262,11 @@ fn parse_vtbl(leb: &[u8]) -> BTreeMap<u32, VtblRecord> {
 
 /// Parse a UBI area that begins exactly at `start`.
 pub fn parse_at(data: &[u8], start: usize) -> Option<UbiInfo> {
+    // Reject before scanning: this runs against every image in a build, and
+    // almost none of them are UBI.
+    if !has_header_at(data, start) {
+        return None;
+    }
     let hits: Vec<usize> = header_offsets(data.get(start..)?)
         .into_iter()
         .map(|o| o + start)
@@ -347,12 +360,14 @@ pub fn parse_at(data: &[u8], start: usize) -> Option<UbiInfo> {
             }
             // A static volume declares its payload per block; a dynamic one
             // uses the whole block less any alignment padding.
+            // Both come from the block header, so neither is trusted to be
+            // sane before it is clamped to what the image actually holds.
             let want = if is_static {
                 vid.data_size as usize
             } else {
                 leb_size.saturating_sub(vid.data_pad as usize)
             };
-            let to = (from + want).min(data.len());
+            let to = from.saturating_add(want).min(data.len());
             content.extend_from_slice(&data[from..to]);
         }
 

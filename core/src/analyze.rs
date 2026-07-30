@@ -952,7 +952,7 @@ fn verify_partition(
                 && (window[..2] == [0x85, 0x19] || window[..2] == [0x19, 0x85] || window[..2] == [0xFF, 0xFF]),
         ),
         Role::Env => ubootenv::parse(window).map(|e| e.crc_ok),
-        Role::Ubi => Some(crate::parsers::ubi::find_start(window) == Some(0)),
+        Role::Ubi => Some(ubi::has_header_at(window, 0)),
         Role::Boot => {
             let probe = &window[..window.len().min(256)];
             Some(!probe.iter().all(|&b| b == 0xFF || b == 0x00))

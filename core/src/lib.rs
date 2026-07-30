@@ -8,6 +8,7 @@
 
 pub mod analyze;
 pub mod crc;
+pub mod diff;
 pub mod inputs;
 pub mod parsers;
 pub mod report;

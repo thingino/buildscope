@@ -1,5 +1,7 @@
 //! Terminal summary of a report: partition bars, image table, top packages.
+//! Also the drift printer for `buildscope diff`.
 
+use buildscope_core::diff::Drift;
 use buildscope_core::report::{Report, UNATTRIBUTED};
 
 pub fn human(bytes: u64) -> String {
@@ -173,8 +175,97 @@ pub fn print_report(r: &Report) {
         }
     }
 
+    if !r.removed_not_shipped.is_empty() {
+        let total: u64 = r.removed_not_shipped.iter().map(|x| x.source_bytes).sum();
+        println!(
+            "   not shipped: {} installed files removed before imaging ({} at install time)",
+            r.removed_not_shipped.len(),
+            human(total)
+        );
+    }
+
     for w in &r.scan.warnings {
         println!("   warning: {w}");
+    }
+    println!();
+}
+
+fn sdelta(d: i64) -> String {
+    if d >= 0 {
+        format!("+{}", human(d as u64))
+    } else {
+        format!("-{}", human((-d) as u64))
+    }
+}
+
+fn opt_h(v: Option<u64>) -> String {
+    v.map(human).unwrap_or_else(|| "(absent)".to_string())
+}
+
+pub fn print_drift(d: &Drift) {
+    println!("== drift: {}  ->  {} ==", d.a.name, d.b.name);
+    if let Some(t) = &d.rootfs_uncompressed {
+        println!(
+            "   rootfs uncompressed {:>10} -> {:>10}   {}",
+            human(t.before),
+            human(t.after),
+            sdelta(t.delta)
+        );
+    }
+    if let Some(t) = &d.rootfs_compressed {
+        println!(
+            "   rootfs compressed   {:>10} -> {:>10}   {}",
+            human(t.before),
+            human(t.after),
+            sdelta(t.delta)
+        );
+    }
+    if !d.partitions.is_empty() {
+        println!("   partitions (used bytes):");
+        for p in &d.partitions {
+            println!(
+                "     {:<10} {:>10} -> {:>10}   {}",
+                p.name,
+                opt_h(p.used_before),
+                opt_h(p.used_after),
+                sdelta(p.used_delta)
+            );
+        }
+    }
+    for (label, list) in [
+        ("images", &d.images),
+        ("packages", &d.packages),
+        ("modules", &d.modules),
+    ] {
+        if list.is_empty() {
+            continue;
+        }
+        println!("   {label}:");
+        for n in list.iter().take(25) {
+            let marker = match (n.before, n.after) {
+                (None, Some(_)) => " [new]",
+                (Some(_), None) => " [removed]",
+                _ => "",
+            };
+            println!(
+                "     {:<34} {:>10} -> {:>10}   {}{}",
+                n.name,
+                opt_h(n.before),
+                opt_h(n.after),
+                sdelta(n.delta),
+                marker
+            );
+        }
+        if list.len() > 25 {
+            println!("     ... {} more (use --json for all)", list.len() - 25);
+        }
+    }
+    if d.partitions.is_empty()
+        && d.images.is_empty()
+        && d.packages.is_empty()
+        && d.modules.is_empty()
+    {
+        println!("   no differences");
     }
     println!();
 }

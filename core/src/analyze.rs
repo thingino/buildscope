@@ -1,7 +1,7 @@
 //! Snapshot in, Report out. Pure: no IO, no clocks, no environment.
 
 use crate::inputs::{buildtime, config::BrConfig, pfl};
-use crate::parsers::{jffs2, mbr, mtdparts, padding, squashfs, ubootenv, uimage};
+use crate::parsers::{genimage, jffs2, mbr, mtdparts, padding, squashfs, ubootenv, uimage};
 use crate::report::*;
 use crate::snapshot::Snapshot;
 use serde_json::json;
@@ -232,6 +232,9 @@ struct Layout {
     mtd_id: Option<String>,
     partitions: Vec<mtdparts::MtdPartition>,
     declared_end: u64,
+    /// partition name -> image filename, when the layout source names the
+    /// content directly (genimage does).
+    image_hints: Vec<(String, String)>,
 }
 
 fn detect_layout(snap: &Snapshot, images: &[Classified], warnings: &mut Vec<String>) -> Option<Layout> {
@@ -242,6 +245,7 @@ fn detect_layout(snap: &Snapshot, images: &[Classified], warnings: &mut Vec<Stri
                 mtd_id: Some(p.mtd_id.clone()),
                 declared_end: p.declared_end,
                 partitions: p.partitions,
+                image_hints: Vec::new(),
             });
         }
     }
@@ -254,6 +258,7 @@ fn detect_layout(snap: &Snapshot, images: &[Classified], warnings: &mut Vec<Stri
                         mtd_id: Some(p.mtd_id.clone()),
                         declared_end: p.declared_end,
                         partitions: p.partitions,
+                        image_hints: Vec::new(),
                     });
                 }
             }
@@ -266,8 +271,47 @@ fn detect_layout(snap: &Snapshot, images: &[Classified], warnings: &mut Vec<Stri
                 mtd_id: Some(p.mtd_id.clone()),
                 declared_end: p.declared_end,
                 partitions: p.partitions,
+                image_hints: Vec::new(),
             });
         }
+    }
+    for t in &snap.genimage_texts {
+        let Some(images_cfg) = genimage::parse(&t.text) else {
+            continue;
+        };
+        // Take the image with the most partitions (the composite).
+        let Some(best) = images_cfg.iter().max_by_key(|im| im.partitions.len()) else {
+            continue;
+        };
+        if best.partitions.is_empty() {
+            continue;
+        }
+        let resolved = genimage::resolve_offsets(&best.partitions);
+        let partitions: Vec<mtdparts::MtdPartition> = resolved
+            .iter()
+            .map(|(name, offset, size, _)| mtdparts::MtdPartition {
+                name: name.clone(),
+                offset: *offset,
+                size: *size,
+                read_only: false,
+            })
+            .collect();
+        let image_hints: Vec<(String, String)> = resolved
+            .iter()
+            .filter_map(|(name, _, _, img)| img.clone().map(|i| (name.clone(), i)))
+            .collect();
+        let declared_end = resolved
+            .iter()
+            .filter_map(|(_, o, s, _)| s.map(|s| o + s))
+            .max()
+            .unwrap_or(0);
+        return Some(Layout {
+            source: format!("genimage ({})", t.name),
+            mtd_id: None,
+            partitions,
+            declared_end,
+            image_hints,
+        });
     }
     for img in images {
         if let Some(parts) = &img.mbr {
@@ -286,11 +330,36 @@ fn detect_layout(snap: &Snapshot, images: &[Classified], warnings: &mut Vec<Stri
                 mtd_id: None,
                 partitions,
                 declared_end,
+                image_hints: Vec::new(),
             });
         }
     }
     warnings.push("no flash layout found (no mtdparts source, no partition table); partition budgets unavailable".into());
     None
+}
+
+/// Paths Buildroot's own target-finalize pass removes on every build:
+/// development and documentation files that never ship. Filtering these
+/// keeps removed_not_shipped down to deliberate, project-level removals.
+fn is_default_finalize_removal(rel: &str) -> bool {
+    const SUFFIXES: &[&str] = &[".a", ".la", ".h", ".hh", ".hpp", ".hxx", ".pc", ".cmake"];
+    const PREFIXES: &[&str] = &[
+        "usr/include/",
+        "usr/lib/pkgconfig/",
+        "usr/share/pkgconfig/",
+        "usr/lib/cmake/",
+        "usr/share/cmake/",
+        "usr/share/man/",
+        "usr/share/doc/",
+        "usr/share/info/",
+        "usr/share/aclocal/",
+        "usr/share/gtk-doc/",
+        "usr/share/locale/",
+        "usr/share/zoneinfo/",
+        "lib/pkgconfig/",
+        "include/",
+    ];
+    SUFFIXES.iter().any(|s| rel.ends_with(s)) || PREFIXES.iter().any(|p| rel.starts_with(p))
 }
 
 pub fn analyze(snap: &Snapshot) -> Report {
@@ -422,9 +491,22 @@ pub fn analyze(snap: &Snapshot) -> Report {
             }
         }
 
-        // Match images to partitions: exact stem first, then role.
+        // Match images to partitions: layout hints first (genimage names the
+        // content file per partition), then exact stem, then role.
         let mut assigned_image: Vec<Option<usize>> = vec![None; n];
         let mut image_taken: HashSet<usize> = HashSet::new();
+        for (pname, iname) in &layout.image_hints {
+            let Some(pi) = parts.partitions.iter().position(|p| &p.name == pname) else {
+                continue;
+            };
+            let Some(ii) = images.iter().position(|img| &img.name == iname) else {
+                continue;
+            };
+            if assigned_image[pi].is_none() && !image_taken.contains(&ii) {
+                assigned_image[pi] = Some(ii);
+                image_taken.insert(ii);
+            }
+        }
         if let Some(ci) = composite_idx {
             if let Some(span_idx) = (0..n).find(|&i| {
                 overlaps[i] && parts.partitions[i].offset == 0 && parts.partitions[i].size == total_bytes
@@ -696,15 +778,30 @@ pub fn analyze(snap: &Snapshot) -> Report {
         })
         .collect();
 
+    // Deliberate removals: installed by a package, absent from the final
+    // rootfs, and not something Buildroot's own finalize always strips.
+    let mut removed_not_shipped: Vec<RemovedReport> = snap
+        .removed_candidates
+        .iter()
+        .filter(|c| !is_default_finalize_removal(&c.path))
+        .map(|c| RemovedReport {
+            path: format!("/{}", c.path),
+            package: c.package.clone(),
+            source_bytes: c.source_bytes,
+        })
+        .collect();
+    removed_not_shipped
+        .sort_by(|a, b| b.source_bytes.cmp(&a.source_bytes).then(a.path.cmp(&b.path)));
+
     Report {
         schema: SCHEMA,
         generator: Generator {
-            name: crate::GENERATOR_NAME,
-            version: crate::GENERATOR_VERSION,
+            name: crate::GENERATOR_NAME.to_string(),
+            version: crate::GENERATOR_VERSION.to_string(),
         },
         scan: ScanInfo {
-            context_source: snap.context_source.as_str(),
-            scan_mode: snap.scan_mode.as_str(),
+            context_source: snap.context_source.as_str().to_string(),
+            scan_mode: snap.scan_mode.as_str().to_string(),
             root: snap.root_path.clone(),
             warnings,
         },
@@ -716,6 +813,7 @@ pub fn analyze(snap: &Snapshot) -> Report {
         modules,
         modules_meta,
         timings,
+        removed_not_shipped,
     }
 }
 

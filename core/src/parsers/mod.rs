@@ -1,6 +1,7 @@
 //! Binary and text format parsers. Each parser is pure: bytes in, facts out,
 //! `None` when the input is not that format. No parser ever guesses.
 
+pub mod genimage;
 pub mod jffs2;
 pub mod mbr;
 pub mod mtdparts;

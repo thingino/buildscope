@@ -86,9 +86,25 @@ pub struct Snapshot {
     pub modules_builtin: Option<String>,
     /// Candidate text files that may carry a flash layout (mtdparts=...).
     pub env_texts: Vec<NamedText>,
+    /// genimage configuration files found near the build (or passed in).
+    pub genimage_texts: Vec<NamedText>,
+
+    /// Files recorded in packages-file-list.txt but absent from target/,
+    /// with source sizes recovered from per-package/ where possible.
+    /// Computed by builders with filesystem access; empty otherwise.
+    pub removed_candidates: Vec<RemovedCandidate>,
 
     /// Newest modification time among images/ files (unix seconds); native only.
     pub images_mtime: Option<i64>,
+}
+
+#[derive(Debug, Clone)]
+pub struct RemovedCandidate {
+    /// Path relative to target/, no leading `./`.
+    pub path: String,
+    pub package: String,
+    /// Size of the file in per-package/<pkg>/target, when recoverable.
+    pub source_bytes: u64,
 }
 
 impl Snapshot {
@@ -107,6 +123,8 @@ impl Snapshot {
             etc_modules: None,
             modules_builtin: None,
             env_texts: Vec::new(),
+            genimage_texts: Vec::new(),
+            removed_candidates: Vec::new(),
             images_mtime: None,
         }
     }

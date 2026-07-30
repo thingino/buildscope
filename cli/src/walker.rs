@@ -1,9 +1,10 @@
 //! Native filesystem snapshot builder: discovers Buildroot output trees and
 //! materializes them into the core's IO-free Snapshot.
 
+use buildscope_core::inputs::pfl;
 use buildscope_core::report::REPORT_FILENAME;
 use buildscope_core::snapshot::{
-    ContextSource, ImageInput, NamedText, ScanMode, Snapshot, TargetEntry,
+    ContextSource, ImageInput, NamedText, RemovedCandidate, ScanMode, Snapshot, TargetEntry,
 };
 use std::collections::HashSet;
 use std::fs;
@@ -249,7 +250,11 @@ fn collect_env_texts(paths: &BuildPaths) -> Vec<NamedText> {
     out
 }
 
-pub fn build_snapshot(paths: &BuildPaths, extra_env_text: Option<&str>) -> io::Result<Snapshot> {
+pub fn build_snapshot(
+    paths: &BuildPaths,
+    extra_env_text: Option<&str>,
+    genimage_path: Option<&Path>,
+) -> io::Result<Snapshot> {
     let root_name = paths
         .root
         .file_name()
@@ -342,5 +347,80 @@ pub fn build_snapshot(paths: &BuildPaths, extra_env_text: Option<&str>) -> io::R
             },
         );
     }
+
+    // genimage configs: explicit path first, then conventional locations.
+    if let Some(p) = genimage_path {
+        if let Ok(text) = fs::read_to_string(p) {
+            snap.genimage_texts.push(NamedText {
+                name: p
+                    .file_name()
+                    .map(|n| n.to_string_lossy().into_owned())
+                    .unwrap_or_else(|| "genimage.cfg".into()),
+                text,
+            });
+        } else {
+            eprintln!("buildscope: cannot read genimage config {}", p.display());
+        }
+    }
+    let mut gi_dirs = vec![paths.root.clone()];
+    if let Some(img) = &paths.images_dir {
+        gi_dirs.push(img.clone());
+    }
+    if let Some(b) = &paths.build_dir {
+        gi_dirs.push(b.clone());
+    }
+    for dir in gi_dirs {
+        let Ok(rd) = fs::read_dir(&dir) else {
+            continue;
+        };
+        let mut names: Vec<PathBuf> = rd
+            .flatten()
+            .map(|e| e.path())
+            .filter(|p| {
+                p.file_name()
+                    .and_then(|n| n.to_str())
+                    .map(|n| n.starts_with("genimage") && n.ends_with(".cfg"))
+                    .unwrap_or(false)
+            })
+            .collect();
+        names.sort();
+        for p in names {
+            let name = p
+                .file_name()
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_default();
+            if snap.genimage_texts.iter().any(|t| t.name == name) {
+                continue;
+            }
+            if let Some(text) = read_text_capped(&p) {
+                snap.genimage_texts.push(NamedText { name, text });
+            }
+        }
+    }
+
+    // Installed-but-not-shipped: paths in packages-file-list.txt missing
+    // from target/, with source sizes recovered from per-package/.
+    if let (Some(pfl_text), false) = (&snap.pfl, snap.target.is_empty()) {
+        let map = pfl::parse(pfl_text);
+        let on_disk: HashSet<&str> = snap.target.iter().map(|e| e.path.as_str()).collect();
+        let per_pkg_root = paths.root.join("per-package");
+        for (rel, pkg) in &map {
+            if on_disk.contains(rel.as_str()) {
+                continue;
+            }
+            let mut source_bytes = 0u64;
+            let candidate = per_pkg_root.join(pkg).join("target").join(rel);
+            if let Ok(md) = fs::symlink_metadata(&candidate) {
+                source_bytes = md.len();
+            }
+            snap.removed_candidates.push(RemovedCandidate {
+                path: rel.clone(),
+                package: pkg.clone(),
+                source_bytes,
+            });
+        }
+        snap.removed_candidates.sort_by(|a, b| a.path.cmp(&b.path));
+    }
+
     Ok(snap)
 }

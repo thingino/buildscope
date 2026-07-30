@@ -1,11 +1,13 @@
+mod export;
 mod serve;
 mod summary;
 mod walker;
 
 use buildscope_core::analyze::analyze;
+use buildscope_core::diff::diff;
 use buildscope_core::report::{Report, REPORT_FILENAME};
 use clap::{Parser, Subcommand};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[derive(Parser)]
 #[command(
@@ -41,6 +43,9 @@ enum Cmd {
         /// Explicit flash layout, e.g. "mtdparts=nor0:256k(boot),-(rootfs)"
         #[arg(long)]
         flash_map: Option<String>,
+        /// Path to a genimage config describing the flash/disk layout
+        #[arg(long)]
+        genimage: Option<PathBuf>,
     },
     /// Scan, then serve reports and the web viewer locally
     Serve {
@@ -56,10 +61,70 @@ enum Cmd {
         viewer_dir: Option<PathBuf>,
         #[arg(long)]
         flash_map: Option<String>,
+        #[arg(long)]
+        genimage: Option<PathBuf>,
+    },
+    /// Compare two builds (report.json files or output dirs)
+    Diff {
+        /// Baseline: report.json or a build dir
+        a: PathBuf,
+        /// Comparison: report.json or a build dir
+        b: PathBuf,
+        /// Emit the full drift as JSON instead of a summary
+        #[arg(long)]
+        json: bool,
+    },
+    /// Write a self-contained HTML report (viewer + data in one file)
+    Export {
+        /// report.json or a build dir
+        input: PathBuf,
+        /// Output file (default: <build-name>.html)
+        #[arg(short, long)]
+        out: Option<PathBuf>,
+        /// Directory with the built viewer (index.html + assets)
+        #[arg(long)]
+        viewer_dir: Option<PathBuf>,
     },
 }
 
-fn scan_dirs(dirs: &[PathBuf], hook: bool, flash_map: Option<&str>) -> Vec<(walker::BuildPaths, Report)> {
+/// Load a report from a JSON file, or scan a directory that resolves to
+/// exactly one build.
+fn load_report(path: &Path) -> Result<Report, String> {
+    if path.is_file() {
+        let text = std::fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;
+        let r: Report = serde_json::from_str(&text)
+            .map_err(|e| format!("{}: not a buildscope report: {e}", path.display()))?;
+        if r.schema != buildscope_core::report::SCHEMA {
+            return Err(format!(
+                "{}: unsupported schema {} (expected {})",
+                path.display(),
+                r.schema,
+                buildscope_core::report::SCHEMA
+            ));
+        }
+        return Ok(r);
+    }
+    let builds = walker::find_builds(path);
+    match builds.len() {
+        0 => Err(format!("{}: no Buildroot output tree found", path.display())),
+        1 => {
+            let snap = walker::build_snapshot(&builds[0], None, None)
+                .map_err(|e| format!("{}: {e}", path.display()))?;
+            Ok(analyze(&snap))
+        }
+        n => Err(format!(
+            "{}: {n} builds found; point at one build dir or a report.json",
+            path.display()
+        )),
+    }
+}
+
+fn scan_dirs(
+    dirs: &[PathBuf],
+    hook: bool,
+    flash_map: Option<&str>,
+    genimage: Option<&std::path::Path>,
+) -> Vec<(walker::BuildPaths, Report)> {
     let mut out = Vec::new();
     if hook {
         if dirs.len() != 1 {
@@ -67,7 +132,7 @@ fn scan_dirs(dirs: &[PathBuf], hook: bool, flash_map: Option<&str>) -> Vec<(walk
             std::process::exit(2);
         }
         let paths = walker::from_hook(&dirs[0]);
-        match walker::build_snapshot(&paths, flash_map) {
+        match walker::build_snapshot(&paths, flash_map, genimage) {
             Ok(snap) => out.push((paths, analyze(&snap))),
             Err(e) => eprintln!("buildscope: {}: {e}", dirs[0].display()),
         }
@@ -83,7 +148,7 @@ fn scan_dirs(dirs: &[PathBuf], hook: bool, flash_map: Option<&str>) -> Vec<(walk
             continue;
         }
         for paths in builds {
-            match walker::build_snapshot(&paths, flash_map) {
+            match walker::build_snapshot(&paths, flash_map, genimage) {
                 Ok(snap) => out.push((paths.clone(), analyze(&snap))),
                 Err(e) => eprintln!("buildscope: {}: {e}", paths.root.display()),
             }
@@ -102,8 +167,9 @@ fn main() {
             no_write,
             quiet,
             flash_map,
+            genimage,
         } => {
-            let results = scan_dirs(&dirs, hook, flash_map.as_deref());
+            let results = scan_dirs(&dirs, hook, flash_map.as_deref(), genimage.as_deref());
             if results.is_empty() {
                 std::process::exit(1);
             }
@@ -146,8 +212,9 @@ fn main() {
             bind,
             viewer_dir,
             flash_map,
+            genimage,
         } => {
-            let results = scan_dirs(&dirs, false, flash_map.as_deref());
+            let results = scan_dirs(&dirs, false, flash_map.as_deref(), genimage.as_deref());
             if results.is_empty() {
                 std::process::exit(1);
             }
@@ -160,6 +227,54 @@ fn main() {
                 .collect();
             let viewer = viewer_dir.or_else(default_viewer_dir);
             serve::serve(&bind, port, reports, viewer);
+        }
+        Cmd::Diff { a, b, json } => {
+            let (ra, rb) = match (load_report(&a), load_report(&b)) {
+                (Ok(ra), Ok(rb)) => (ra, rb),
+                (Err(e), _) | (_, Err(e)) => {
+                    eprintln!("buildscope: {e}");
+                    std::process::exit(1);
+                }
+            };
+            let d = diff(&ra, &rb);
+            if json {
+                println!("{}", serde_json::to_string_pretty(&d).expect("serialize drift"));
+            } else {
+                summary::print_drift(&d);
+            }
+        }
+        Cmd::Export {
+            input,
+            out,
+            viewer_dir,
+        } => {
+            let report = match load_report(&input) {
+                Ok(r) => r,
+                Err(e) => {
+                    eprintln!("buildscope: {e}");
+                    std::process::exit(1);
+                }
+            };
+            let Some(dist) = viewer_dir.or_else(default_viewer_dir) else {
+                eprintln!("buildscope: no built viewer found; build viewer/ or pass --viewer-dir");
+                std::process::exit(1);
+            };
+            let json = serde_json::to_string(&report).expect("serialize report");
+            let html = match export::build_single_file(&dist, &json) {
+                Ok(h) => h,
+                Err(e) => {
+                    eprintln!("buildscope: export: {e}");
+                    std::process::exit(1);
+                }
+            };
+            let dest = out.unwrap_or_else(|| PathBuf::from(format!("{}.html", report.build.name)));
+            match std::fs::write(&dest, html) {
+                Ok(()) => println!("wrote {}", dest.display()),
+                Err(e) => {
+                    eprintln!("buildscope: write {}: {e}", dest.display());
+                    std::process::exit(1);
+                }
+            }
         }
     }
 }

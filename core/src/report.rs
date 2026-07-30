@@ -1,7 +1,7 @@
 //! The schema-versioned output of an analysis. Serialized as report.json;
 //! the viewer and any downstream consumer treat this as the contract.
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 pub const SCHEMA: u32 = 1;
 
@@ -13,21 +13,21 @@ pub const REPORT_FILENAME: &str = "buildscope-report.json";
 /// packages-file-list.txt (overlay contents, post-build script output).
 pub const UNATTRIBUTED: &str = "_unattributed";
 
-#[derive(Serialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Generator {
-    pub name: &'static str,
-    pub version: &'static str,
+    pub name: String,
+    pub version: String,
 }
 
-#[derive(Serialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ScanInfo {
-    pub context_source: &'static str,
-    pub scan_mode: &'static str,
+    pub context_source: String,
+    pub scan_mode: String,
     pub root: String,
     pub warnings: Vec<String>,
 }
 
-#[derive(Serialize, Debug, Clone, Default)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct BuildInfo {
     pub name: String,
     pub defconfig: Option<String>,
@@ -41,7 +41,7 @@ pub struct BuildInfo {
     pub completed_at_unix: Option<i64>,
 }
 
-#[derive(Serialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PartitionReport {
     pub name: String,
     pub offset: u64,
@@ -64,7 +64,7 @@ pub struct PartitionReport {
     pub verified: Option<bool>,
 }
 
-#[derive(Serialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FlashInfo {
     /// Human-readable provenance, e.g. "mtdparts (uenv.txt)".
     pub source: String,
@@ -73,7 +73,7 @@ pub struct FlashInfo {
     pub partitions: Vec<PartitionReport>,
 }
 
-#[derive(Serialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ImageReport {
     pub name: String,
     pub bytes: u64,
@@ -86,7 +86,7 @@ pub struct ImageReport {
     pub detail: serde_json::Value,
 }
 
-#[derive(Serialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct RootfsReport {
     pub uncompressed_bytes: u64,
     pub file_count: u64,
@@ -95,13 +95,13 @@ pub struct RootfsReport {
     pub compression_ratio: Option<f64>,
 }
 
-#[derive(Serialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FileRef {
     pub path: String,
     pub bytes: u64,
 }
 
-#[derive(Serialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PackageReport {
     pub name: String,
     pub bytes: u64,
@@ -110,7 +110,7 @@ pub struct PackageReport {
     pub top_files: Vec<FileRef>,
 }
 
-#[derive(Serialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ModuleReport {
     pub name: String,
     pub path: String,
@@ -119,27 +119,36 @@ pub struct ModuleReport {
     pub autoloaded: bool,
 }
 
-#[derive(Serialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ModulesMeta {
     pub kernel_version: String,
     pub builtin: Vec<String>,
     pub autoload: Vec<String>,
 }
 
-#[derive(Serialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct RemovedReport {
+    /// Absolute path as it would have appeared in the rootfs.
+    pub path: String,
+    pub package: String,
+    /// Size in per-package/<pkg>/target when recoverable, else 0.
+    pub source_bytes: u64,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct StepReport {
     pub step: String,
     pub seconds: f64,
 }
 
-#[derive(Serialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct TimingReport {
     pub package: String,
     pub seconds: f64,
     pub steps: Vec<StepReport>,
 }
 
-#[derive(Serialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Report {
     pub schema: u32,
     pub generator: Generator,
@@ -152,4 +161,10 @@ pub struct Report {
     pub modules: Vec<ModuleReport>,
     pub modules_meta: Option<ModulesMeta>,
     pub timings: Vec<TimingReport>,
+    /// Files a package installed that are absent from the final rootfs,
+    /// excluding Buildroot's default target-finalize removals (headers,
+    /// static libs, docs, ...). Populated only when the scanner had
+    /// filesystem access to per-package/.
+    #[serde(default)]
+    pub removed_not_shipped: Vec<RemovedReport>,
 }

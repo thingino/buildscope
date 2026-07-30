@@ -46,6 +46,17 @@
   on the test suite, and refuses to publish a bundle whose scanner does not
   instantiate with the expected exports and report schema.
 
+## Considered and deferred
+
+- Browser scanning of a Buildroot output directory. The WASM core implements
+  it and `viewer/scan-check.html` tests it, but no browser file picker can
+  offer it usefully: both `webkitdirectory` and dropped-directory recursion
+  enumerate everything beneath the directory first, and an output tree is
+  mostly `build/` and `per-package/`. Bringing it back means traversing a
+  directory *handle* (File System Access API, Chromium only) so only
+  `target/`, `images/` and named files are visited. Worth doing only if people
+  actually ask for it: anyone with a build tree can run the CLI.
+
 ## Phase 3c
 
 - Render CI-published reports on the same site, so a project's build history

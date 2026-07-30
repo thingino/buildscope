@@ -131,10 +131,11 @@ const ja: Record<string, string> = {
   drift_modules: "カーネルモジュール",
 
   // drop zone
-  drop_title: "ビルドディレクトリ、ファームウェアイメージ、レポートをドロップ",
+  drop_title: "ファームウェアイメージ、イメージのフォルダー、レポートをドロップ",
   drop_sub_html:
-    "すべてこのブラウザー内で解析します。Buildroot の出力ディレクトリは完全な内訳を表示し、単体の <code>.bin</code> はイメージ自体からパーティション構成を抽出し、<code>buildscope-report.json</code> はそのまま表示します。何もアップロードされません。",
-  choose_directory: "ビルドディレクトリを選択",
+    "すべてこのブラウザー内で解析します。単体の <code>.bin</code> はイメージ自体からパーティション構成を抽出し、<code>buildscope-report.json</code> はそのまま表示します。何もアップロードされません。",
+  drop_cli_hint:
+    "Buildroot の出力ディレクトリの解析にはビルドツリーが必要なため、そちらはローカルで実行します: <code>buildscope serve output/</code>。",
   choose_files: "ファイルを選択",
   working: "処理中: {what}",
   stage_reading: "{name} を読み込み中",

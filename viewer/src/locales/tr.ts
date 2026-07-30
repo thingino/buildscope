@@ -131,10 +131,11 @@ const tr: Record<string, string> = {
   drift_modules: "Çekirdek modülleri",
 
   // drop zone
-  drop_title: "bir derleme dizini, firmware imajı veya rapor bırakın",
+  drop_title: "bir firmware imajı, imaj klasörü veya rapor bırakın",
   drop_sub_html:
-    "Her şey bu tarayıcıda analiz edilir: bir Buildroot çıktı dizini için tam döküm alınır, çıplak bir <code>.bin</code> için bölüm haritası imajın kendisinden çıkarılır, bir <code>buildscope-report.json</code> ise olduğu gibi gösterilir. Hiçbir şey yüklenmez.",
-  choose_directory: "derleme dizini seç",
+    "Her şey bu tarayıcıda analiz edilir: çıplak bir <code>.bin</code> için bölüm haritası imajın kendisinden çıkarılır, bir <code>buildscope-report.json</code> ise olduğu gibi gösterilir. Hiçbir şey yüklenmez.",
+  drop_cli_hint:
+    "Bir Buildroot çıktı dizinini analiz etmek için derleme ağacı gerekir, bu yüzden o iş yerelde yapılır: <code>buildscope serve output/</code>.",
   choose_files: "dosya seç",
   working: "çalışıyor: {what}",
   stage_reading: "{name} okunuyor",

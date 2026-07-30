@@ -131,10 +131,11 @@ const es: Record<string, string> = {
   drift_modules: "Módulos del kernel",
 
   // drop zone
-  drop_title: "arrastra un directorio de compilación, una imagen de firmware o un informe",
+  drop_title: "arrastra una imagen de firmware, una carpeta de imágenes o un informe",
   drop_sub_html:
-    "Todo se analiza en este navegador: un directorio de salida de Buildroot obtiene el desglose completo, de un <code>.bin</code> suelto se extrae el mapa de particiones de la propia imagen, y un <code>buildscope-report.json</code> se muestra tal cual. No se sube nada.",
-  choose_directory: "elegir directorio de compilación",
+    "Todo se analiza en este navegador: de un <code>.bin</code> suelto se extrae el mapa de particiones de la propia imagen, y un <code>buildscope-report.json</code> se muestra tal cual. No se sube nada.",
+  drop_cli_hint:
+    "Analizar un directorio de salida de Buildroot necesita su árbol de compilación, así que eso se hace en local: <code>buildscope serve output/</code>.",
   choose_files: "elegir archivos",
   working: "en curso: {what}",
   stage_reading: "leyendo {name}",

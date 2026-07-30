@@ -131,10 +131,11 @@ const fr: Record<string, string> = {
   drift_modules: "Modules du noyau",
 
   // drop zone
-  drop_title: "déposez un répertoire de génération, une image de firmware ou un rapport",
+  drop_title: "déposez une image de firmware, un dossier d'images ou un rapport",
   drop_sub_html:
-    "Tout est analysé dans ce navigateur : un répertoire de sortie Buildroot donne l'analyse complète, un simple <code>.bin</code> voit sa carte de partitions extraite de l'image elle-même, et un <code>buildscope-report.json</code> est affiché tel quel. Rien n'est envoyé.",
-  choose_directory: "choisir un répertoire de génération",
+    "Tout est analysé dans ce navigateur : un simple <code>.bin</code> voit sa carte de partitions extraite de l'image elle-même, et un <code>buildscope-report.json</code> est affiché tel quel. Rien n'est envoyé.",
+  drop_cli_hint:
+    "Analyser un répertoire de sortie Buildroot nécessite son arborescence de génération, cela se fait donc en local : <code>buildscope serve output/</code>.",
   choose_files: "choisir des fichiers",
   working: "en cours : {what}",
   stage_reading: "lecture de {name}",

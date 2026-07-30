@@ -136,10 +136,11 @@ const en: Record<string, string> = {
   drift_modules: "Kernel modules",
 
   // drop zone
-  drop_title: "drop a build directory, a firmware image, or a report",
+  drop_title: "drop a firmware image, a folder of images, or a report",
   drop_sub_html:
-    "Everything is analyzed in this browser: a Buildroot output directory gets the full breakdown, a bare <code>.bin</code> gets its partition map carved out of the image itself, and a <code>buildscope-report.json</code> is rendered as-is. No uploads.",
-  choose_directory: "choose build directory",
+    "Everything is analyzed in this browser: a bare <code>.bin</code> has its partition map carved out of the image itself, and a <code>buildscope-report.json</code> is rendered as-is. No uploads.",
+  drop_cli_hint:
+    "Analyzing a Buildroot output directory needs its build tree, so that runs locally: <code>buildscope serve output/</code>.",
   choose_files: "choose files",
   working: "working: {what}",
   stage_reading: "reading {name}",

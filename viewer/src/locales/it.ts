@@ -131,10 +131,11 @@ const it: Record<string, string> = {
   drift_modules: "Moduli kernel",
 
   // drop zone
-  drop_title: "trascina una directory di build, un'immagine firmware o un report",
+  drop_title: "trascina un'immagine firmware, una cartella di immagini o un report",
   drop_sub_html:
-    "Tutto viene analizzato in questo browser: una directory di output di Buildroot fornisce l'analisi completa, di un semplice <code>.bin</code> viene ricavata la mappa delle partizioni dall'immagine stessa, e un <code>buildscope-report.json</code> viene mostrato così com'è. Non viene caricato nulla.",
-  choose_directory: "scegli la directory di build",
+    "Tutto viene analizzato in questo browser: di un semplice <code>.bin</code> viene ricavata la mappa delle partizioni dall'immagine stessa, e un <code>buildscope-report.json</code> viene mostrato così com'è. Non viene caricato nulla.",
+  drop_cli_hint:
+    "Analizzare una directory di output di Buildroot richiede il suo albero di build, quindi questo avviene in locale: <code>buildscope serve output/</code>.",
   choose_files: "scegli i file",
   working: "in corso: {what}",
   stage_reading: "lettura di {name}",

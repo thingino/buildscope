@@ -130,10 +130,11 @@ const ru: Record<string, string> = {
   drift_modules: "Модули ядра",
 
   // drop zone
-  drop_title: "перетащите каталог сборки, образ прошивки или отчёт",
+  drop_title: "перетащите образ прошивки, папку с образами или отчёт",
   drop_sub_html:
-    "Всё анализируется в этом браузере: для каталога output Buildroot строится полный разбор, для отдельного <code>.bin</code> карта разделов извлекается из самого образа, а <code>buildscope-report.json</code> отображается как есть. Ничего не загружается на сервер.",
-  choose_directory: "выбрать каталог сборки",
+    "Всё анализируется в этом браузере: для отдельного <code>.bin</code> карта разделов извлекается из самого образа, а <code>buildscope-report.json</code> отображается как есть. Ничего не загружается на сервер.",
+  drop_cli_hint:
+    "Для анализа каталога output Buildroot нужно дерево сборки, поэтому он выполняется локально: <code>buildscope serve output/</code>.",
   choose_files: "выбрать файлы",
   working: "выполняется: {what}",
   stage_reading: "чтение {name}",

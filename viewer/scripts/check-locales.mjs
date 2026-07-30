@@ -15,10 +15,15 @@ const dir = join(here, "..", "src", "locales");
 
 // Values are plain string literals, so the dictionaries can be read without
 // a TypeScript toolchain: pull `key: "value"` pairs out of the source.
+//
+// The value may sit on the line after the key, which is how a formatter wraps
+// the long ones. Those are exactly the strings that carry {placeholders} and
+// <code> markup, so a line-anchored pattern would skip the entries most worth
+// checking; allow an optional newline and indent between the two.
 function parseLocale(file) {
   const src = readFileSync(join(dir, file), "utf8");
   const out = {};
-  const re = /^\s{2}("?)([A-Za-z0-9_]+)\1:\s*("(?:[^"\\]|\\.)*")\s*,\s*$/gm;
+  const re = /^ {2}("?)([A-Za-z0-9_]+)\1:[ \t]*(?:\r?\n[ \t]*)?("(?:[^"\\]|\\.)*")[ \t]*,/gm;
   let m;
   while ((m = re.exec(src)) !== null) {
     out[m[2]] = JSON.parse(m[3]);

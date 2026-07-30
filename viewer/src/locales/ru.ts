@@ -177,7 +177,7 @@ const ru: Record<string, string> = {
 
   // footer
   report_schema: "схема отчёта {n}",
-  scan_mode: "сканирование {mode}/{context}",
+  scan_mode: "сканирование {mode}",
   report_by: "отчёт создан {name} {version}",
 };
 

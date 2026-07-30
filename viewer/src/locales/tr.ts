@@ -178,7 +178,7 @@ const tr: Record<string, string> = {
 
   // footer
   report_schema: "rapor şeması {n}",
-  scan_mode: "tarama {mode}/{context}",
+  scan_mode: "tarama {mode}",
   report_by: "rapor: {name} {version}",
 };
 

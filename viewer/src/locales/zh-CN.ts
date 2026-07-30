@@ -178,7 +178,7 @@ const zhCN: Record<string, string> = {
 
   // footer
   report_schema: "报告 schema {n}",
-  scan_mode: "扫描 {mode}/{context}",
+  scan_mode: "扫描 {mode}",
   report_by: "报告由 {name} {version} 生成",
 };
 

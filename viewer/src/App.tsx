@@ -290,10 +290,10 @@ function Viewer() {
             {" · "}
             {t("report_schema", { n: report.schema })}
             {" · "}
-            {t("scan_mode", {
-              mode: report.scan.scan_mode,
-              context: report.scan.context_source,
-            })}
+            {/* Only the mode. Where the report's context came from is already
+                the chip up in the header, and saying it twice on one screen
+                just makes the reader check whether the two agree. */}
+            {t("scan_mode", { mode: report.scan.scan_mode })}
             {report.generator.version !== __APP_VERSION__ && (
               <>
                 {" · "}

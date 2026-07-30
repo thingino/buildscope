@@ -178,7 +178,7 @@ const ja: Record<string, string> = {
 
   // footer
   report_schema: "レポートスキーマ {n}",
-  scan_mode: "スキャン {mode}/{context}",
+  scan_mode: "スキャン {mode}",
   report_by: "レポート生成: {name} {version}",
 };
 

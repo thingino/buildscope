@@ -183,7 +183,7 @@ const en: Record<string, string> = {
 
   // footer
   report_schema: "report schema {n}",
-  scan_mode: "scan {mode}/{context}",
+  scan_mode: "scan {mode}",
   report_by: "report by {name} {version}",
 };
 

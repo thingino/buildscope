@@ -177,7 +177,7 @@ const ar: Record<string, string> = {
 
   // footer
   report_schema: "مخطط التقرير {n}",
-  scan_mode: "فحص {mode}/{context}",
+  scan_mode: "فحص {mode}",
   report_by: "تقرير من {name} {version}",
 };
 

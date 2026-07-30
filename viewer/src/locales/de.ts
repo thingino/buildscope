@@ -178,7 +178,7 @@ const de: Record<string, string> = {
 
   // footer
   report_schema: "Bericht-Schema {n}",
-  scan_mode: "Scan {mode}/{context}",
+  scan_mode: "Scan {mode}",
   report_by: "Bericht von {name} {version}",
 };
 

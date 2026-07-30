@@ -178,7 +178,7 @@ const ko: Record<string, string> = {
 
   // footer
   report_schema: "보고서 스키마 {n}",
-  scan_mode: "스캔 {mode}/{context}",
+  scan_mode: "스캔 {mode}",
   report_by: "보고서 생성: {name} {version}",
 };
 

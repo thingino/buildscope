@@ -1,7 +1,9 @@
 //! Snapshot in, Report out. Pure: no IO, no clocks, no environment.
 
 use crate::inputs::{buildtime, config::BrConfig, pfl};
-use crate::parsers::{genimage, jffs2, mbr, mtdparts, padding, squashfs, ubootenv, uimage};
+use crate::parsers::{
+    genimage, jffs2, mbr, mtdparts, padding, squashfs, ubi, ubifs, ubootenv, uimage,
+};
 use crate::report::*;
 use crate::snapshot::Snapshot;
 use serde_json::json;
@@ -18,6 +20,8 @@ pub(crate) struct Classified {
     pub(crate) uimage: Option<uimage::UimageInfo>,
     pub(crate) env: Option<ubootenv::UbootEnvInfo>,
     pub(crate) mbr: Option<Vec<mbr::MbrPartition>>,
+    pub(crate) ubi: Option<ubi::UbiInfo>,
+    pub(crate) ubifs: Option<ubifs::UbifsInfo>,
     pub(crate) content_end: u64,
     pub(crate) partition: Option<String>,
 }
@@ -53,6 +57,8 @@ pub(crate) fn classify(name: &str, size: u64, bytes: Option<&[u8]>) -> Classifie
         uimage: None,
         env: None,
         mbr: None,
+        ubi: None,
+        ubifs: None,
         content_end: size,
         partition: None,
     };
@@ -97,6 +103,37 @@ pub(crate) fn classify(name: &str, size: u64, bytes: Option<&[u8]>) -> Classifie
             })).collect::<Vec<_>>(),
         });
         c.jffs2 = Some(info);
+        return c;
+    }
+    // A UBI area is only claimed when it begins at the start of the input: a
+    // composite flash image has one further in, and finding it there is the
+    // layout detector's job, not this one's.
+    if let Some(info) = ubi::parse_at(data, 0) {
+        c.format = "ubi".into();
+        c.detail = ubi_detail(&info, 0);
+        c.content_end = info.used_bytes();
+        c.ubi = Some(info);
+        return c;
+    }
+    if let Some(info) = ubifs::parse(data) {
+        c.format = "ubifs".into();
+        c.detail = json!({
+            "leb_size": info.leb_size,
+            "leb_count": info.leb_count,
+            "max_leb_count": info.max_leb_count,
+            "min_io_size": info.min_io_size,
+            "format_version": info.format_version,
+            "compression": info.default_compression,
+            "uuid": info.uuid,
+            "total_bytes": info.total_bytes,
+            "max_bytes": info.max_bytes,
+            "autoresize_pending": info.max_leb_count > info.leb_count,
+            "crc_ok": info.crc_ok,
+        });
+        // How much of a UBIFS volume is live needs the wandering tree and a
+        // decompressor. The written extent is the honest upper bound.
+        c.content_end = padding::analyze(data).content_end;
+        c.ubifs = Some(info);
         return c;
     }
     if let Some(info) = uimage::parse(data) {
@@ -159,6 +196,50 @@ pub(crate) fn classify(name: &str, size: u64, bytes: Option<&[u8]>) -> Classifie
     c
 }
 
+/// Describe a UBI area. `base` is where the area sits in the file being
+/// reported, so volume offsets come out absolute even when the area was parsed
+/// from a slice.
+pub(crate) fn ubi_detail(info: &ubi::UbiInfo, base: u64) -> serde_json::Value {
+    let unmapped: Vec<&str> = info
+        .volumes
+        .iter()
+        .filter(|v| v.mapped_pebs == 0)
+        .map(|v| v.name.as_str())
+        .collect();
+    json!({
+        "ubi_offset": base + info.start_offset,
+        "peb_size": info.peb_size,
+        "leb_size": info.leb_size,
+        "vid_hdr_offset": info.vid_hdr_offset,
+        "data_offset": info.data_offset,
+        "image_seq": format!("0x{:08x}", info.image_seq),
+        "total_pebs": info.total_pebs,
+        "mapped_pebs": info.mapped_pebs,
+        "free_pebs": info.free_pebs,
+        "erased_pebs": info.erased_pebs,
+        "bad_pebs": info.bad_pebs,
+        "used_bytes": info.used_bytes(),
+        "overhead_bytes": info.mapped_pebs as u64 * info.data_offset as u64,
+        "volume_table_found": info.layout_found,
+        "unmapped_volumes": unmapped,
+        "volumes": info.volumes.iter().map(|v| json!({
+            "id": v.id,
+            "name": v.name,
+            "type": v.vol_type,
+            "reserved_pebs": v.reserved_pebs,
+            "mapped_pebs": v.mapped_pebs,
+            "capacity_bytes": v.reserved_pebs as u64 * info.leb_size as u64,
+            "bytes": v.bytes,
+            "flash_bytes": v.flash_bytes,
+            "offset": v.peb_offset.map(|o| base + o),
+            "autoresize": v.autoresize,
+            // Not applicable to a volume the image never wrote a block for.
+            "contiguous": (v.mapped_pebs > 0).then_some(v.contiguous),
+            "has_holes": (v.mapped_pebs > 0).then_some(v.has_holes),
+        })).collect::<Vec<_>>(),
+    })
+}
+
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub(crate) enum Role {
     Boot,
@@ -166,6 +247,8 @@ pub(crate) enum Role {
     Kernel,
     Rootfs,
     Data,
+    /// A UBI area: a container for volumes rather than a filesystem itself.
+    Ubi,
     Span,
     Other,
 }
@@ -187,6 +270,10 @@ pub(crate) fn partition_role(name: &str) -> Role {
     if n.contains("data") || n.contains("overlay") || n.contains("user") {
         return Role::Data;
     }
+    // NAND names its one big partition after the layer that manages it.
+    if n == "ubi" || n.starts_with("ubi") {
+        return Role::Ubi;
+    }
     if n.contains("boot") || n.contains("spl") || n.contains("loader") {
         return Role::Boot;
     }
@@ -201,7 +288,9 @@ fn image_fits_role(img: &Classified, role: Role) -> bool {
     match role {
         Role::Kernel => img.uimage.is_some(),
         Role::Rootfs => img.squash.is_some(),
-        Role::Data => img.jffs2.is_some(),
+        // NOR keeps its writable area in jffs2, NAND in a UBIFS volume.
+        Role::Data => img.jffs2.is_some() || img.ubifs.is_some(),
+        Role::Ubi => img.ubi.is_some(),
         Role::Env => img.env.is_some(),
         Role::Boot => {
             img.format == "raw" && {
@@ -225,6 +314,13 @@ pub(crate) fn used_bytes_of(img: &Classified) -> Option<u64> {
     }
     if let Some(e) = &img.env {
         return Some(e.used_bytes);
+    }
+    if let Some(u) = &img.ubi {
+        // What the mapped eraseblocks cost, not what the area spans.
+        return Some(u.used_bytes());
+    }
+    if img.ubifs.is_some() {
+        return Some(img.content_end);
     }
     if img.format == "raw" || img.format == "flash-image" {
         return Some(img.content_end);
@@ -856,6 +952,7 @@ fn verify_partition(
                 && (window[..2] == [0x85, 0x19] || window[..2] == [0x19, 0x85] || window[..2] == [0xFF, 0xFF]),
         ),
         Role::Env => ubootenv::parse(window).map(|e| e.crc_ok),
+        Role::Ubi => Some(crate::parsers::ubi::find_start(window) == Some(0)),
         Role::Boot => {
             let probe = &window[..window.len().min(256)];
             Some(!probe.iter().all(|&b| b == 0xFF || b == 0x00))

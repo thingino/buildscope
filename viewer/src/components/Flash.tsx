@@ -1,7 +1,7 @@
 import { Fragment } from "react";
 import { hex, humanBytes, pct } from "../format";
 import { TFn, useT } from "../i18n";
-import { ImageReport, PartitionReport, Report } from "../types";
+import { ImageReport, PartitionReport, Report, UbiDetail } from "../types";
 import { useTooltip } from "../tooltip";
 
 function fillStatus(frac: number): string {
@@ -35,6 +35,20 @@ function imageNote(i: ImageReport): string {
       return `${d.type} · ${d.compression} · payload ${humanBytes(d.declared_size as number)} · load ${d.load_addr}`;
     case "uboot-env":
       return `${humanBytes(d.used_bytes as number)} of ${humanBytes(i.bytes)} used · crc ${d.crc_ok ? "ok" : "BAD"} · ${d.var_count} vars`;
+    case "ubi": {
+      const spare = (d.free_pebs as number) + (d.erased_pebs as number);
+      const bad = d.bad_pebs as number;
+      return (
+        `${humanBytes(d.used_bytes as number)} used · ${humanBytes(d.peb_size as number)} PEB` +
+        (spare > 0 ? ` · ${spare} spare` : "") +
+        (bad > 0 ? ` · ${bad} bad` : "")
+      );
+    }
+    case "ubifs":
+      return (
+        `${humanBytes(d.total_bytes as number)} · ${d.leb_count} blocks · ${d.compression}` +
+        (d.autoresize_pending ? ` · grows to ${humanBytes(d.max_bytes as number)}` : "")
+      );
     case "flash-image":
       return `content to ${humanBytes(d.content_end as number)}`;
     case "raw":
@@ -127,6 +141,80 @@ function DieMap({ parts, total }: { parts: PartitionReport[]; total: number }) {
   );
 }
 
+/// A UBI area's volumes. This is the only place a volume the image reserved but
+/// never wrote to shows up: it has no location, so the flash map cannot hold it.
+function UbiVolumes({ img, t }: { img: ImageReport; t: TFn }) {
+  const d = img.detail as unknown as UbiDetail;
+  if (!Array.isArray(d.volumes) || d.volumes.length === 0) return null;
+  const spare = d.free_pebs + d.erased_pebs;
+  return (
+    <div className="panel">
+      <div className="panel-head">
+        <span className="panel-title">
+          {t("ubi_volumes")} <span className="muted">{img.name}</span>
+        </span>
+        <span className="muted">
+          {humanBytes(d.peb_size)} PEB · {humanBytes(d.leb_size)} LEB ·{" "}
+          {d.mapped_pebs}/{d.total_pebs} {t("th_blocks")}
+          {spare > 0 ? ` · ${spare} spare` : ""}
+          {d.bad_pebs > 0 ? ` · ${d.bad_pebs} bad` : ""} · @ {hex(d.ubi_offset)}
+        </span>
+      </div>
+      <div className="tbl-wrap">
+        <table className="tbl">
+          <thead>
+            <tr>
+              <th>{t("th_volume")}</th>
+              <th>{t("th_type")}</th>
+              <th>{t("th_range")}</th>
+              <th className="num">{t("th_blocks")}</th>
+              <th className="num">{t("th_reserved")}</th>
+              <th className="num">{t("th_payload")}</th>
+              <th className="num">{t("th_on_flash")}</th>
+              <th className="num">{t("th_fill")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {d.volumes.map((v) => {
+              const frac = v.capacity_bytes > 0 ? v.bytes / v.capacity_bytes : 0;
+              const placed = v.offset !== null;
+              return (
+                <tr key={v.id} className={placed ? "" : "dim"}>
+                  <td>
+                    {v.name || `vol${v.id}`}
+                    <span className="muted"> id {v.id}</span>
+                    {v.autoresize && <span className="chip"> autoresize</span>}
+                    {v.has_holes && <span className="crit"> {t("volume_holes")}</span>}
+                  </td>
+                  <td className="mono-dim">{v.type}</td>
+                  <td className="mono-dim">
+                    {placed ? (
+                      <>
+                        {hex(v.offset as number)}–{hex((v.offset as number) + v.flash_bytes)}
+                      </>
+                    ) : (
+                      <span className="muted">{t("volume_unwritten")}</span>
+                    )}
+                  </td>
+                  <td className="num">
+                    {v.mapped_pebs}
+                    <span className="muted">/{v.reserved_pebs}</span>
+                  </td>
+                  <td className="num">{humanBytes(v.capacity_bytes)}</td>
+                  <td className="num">{placed ? humanBytes(v.bytes) : "–"}</td>
+                  <td className="num">{placed ? humanBytes(v.flash_bytes) : "–"}</td>
+                  <td className="num">{placed ? pct(frac) : "–"}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <div className="muted trunc-note">{t("ubi_volumes_note")}</div>
+    </div>
+  );
+}
+
 export default function Flash({ report }: { report: Report }) {
   const t = useT();
   const flash = report.flash;
@@ -195,6 +283,12 @@ export default function Flash({ report }: { report: Report }) {
           <div className="empty">{t("no_layout")}</div>
         </div>
       )}
+
+      {report.images
+        .filter((i) => i.format === "ubi")
+        .map((i) => (
+          <UbiVolumes key={i.name} img={i} t={t} />
+        ))}
 
       <div className="panel">
         <div className="panel-head">

@@ -67,6 +67,43 @@ export interface ImageReport {
   detail: Record<string, unknown>;
 }
 
+/** Shape of the `detail` on an image whose format is "ubi". */
+export interface UbiDetail {
+  ubi_offset: number;
+  peb_size: number;
+  leb_size: number;
+  total_pebs: number;
+  mapped_pebs: number;
+  free_pebs: number;
+  erased_pebs: number;
+  bad_pebs: number;
+  used_bytes: number;
+  overhead_bytes: number;
+  volume_table_found: boolean;
+  unmapped_volumes: string[];
+  volumes: UbiVolume[];
+}
+
+export interface UbiVolume {
+  id: number;
+  name: string;
+  /** "static" | "dynamic" */
+  type: string;
+  reserved_pebs: number;
+  mapped_pebs: number;
+  /** What the volume table set aside: reserved blocks × block size. */
+  capacity_bytes: number;
+  /** Payload actually present in this image. */
+  bytes: number;
+  /** Flash the written blocks occupy, per-block headers included. */
+  flash_bytes: number;
+  /** Null when the table reserved the volume but nothing was written. */
+  offset: number | null;
+  autoresize: boolean;
+  contiguous: boolean | null;
+  has_holes: boolean | null;
+}
+
 export interface FileRef {
   path: string;
   bytes: number;

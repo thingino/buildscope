@@ -38,13 +38,20 @@ buildscope scan output/
     header CRC check
   - U-Boot environment images: CRC validity, bytes used vs environment size,
     variable count
+  - UBI: eraseblock geometry, every volume with the space its table reserved
+    against the payload actually written, per-volume flash cost including
+    per-block headers, spare and unwritten blocks, and each volume's contents
+    identified in turn (a kernel volume as a uImage, a rootfs volume as
+    squashfs, and so on)
+  - UBIFS: formatted size, block count and size, compression, and whether it
+    is still set to grow into its volume on first mount
   - composite flash images: trailing-padding detection, and verification that
     each partition really holds what its name implies
 - **Partition budgets** parsed from the build itself (a `mtdparts=` string in
   an environment source, a genimage configuration, a partition table inside a
-  disk image), never from a hardcoded table: content size vs partition size vs
-  true used bytes, for every partition. `--flash-map` and `--genimage` cover
-  layouts kept somewhere unusual.
+  disk image, or UBI's own volume table), never from a hardcoded table: content
+  size vs partition size vs true used bytes, for every partition. `--flash-map`
+  and `--genimage` cover layouts kept somewhere unusual.
 - **Per-package sizes**: every file in the final rootfs attributed to the
   Buildroot package that installed it via `packages-file-list.txt`, with a
   per-package approximate compressed cost from the measured rootfs compression
@@ -106,10 +113,23 @@ buildscope serve downloaded-release/     # browse them all
 ```
 
 The partition layout comes from the image. A CRC-valid U-Boot environment
-block is located by scanning, and its `mtdparts` variable is the partition
-table; failing that, a partition table is read directly. Each partition is
-then carved and identified with the same parsers used on build trees, so you
-get real per-partition usage, filesystem facts, and kernel image details.
+block is located by scanning, and its `mtdparts` spec is the partition table --
+taken from the variable of that name, or from wherever the environment builds
+its kernel command line, which is the only place a NAND board keeps it. Failing
+that, a partition table is read directly, or UBI's volume table is, since UBI
+describes itself and needs no help. Each partition is then carved and identified
+with the same parsers used on build trees, so you get real per-partition usage,
+filesystem facts, and kernel image details.
+
+A NAND image is a raw boot region followed by one UBI area, and the volumes
+inside it are what the flash really holds, so they take the place of the area in
+the layout: `uboot-env`, `kernel`, `rootfs` and `overlay` appear as partitions
+with their own usage, exactly as their NOR counterparts do. The area keeps an
+entry of its own for what a volume cannot express -- eraseblock geometry, spare
+blocks, and any volume the image reserved but never wrote to. A bare `.ubi`
+container describes itself even though it usually carries the environment of the
+chip it is destined for, whose layout describes a boot region the file does not
+have.
 Per-package attribution is impossible without a build tree, and the report
 says so rather than guessing.
 

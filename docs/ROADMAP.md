@@ -84,4 +84,13 @@
   lz4 (pure-Rust ones exist, at maybe 150-400 KB of WASM) plus a real squashfs
   reader. Worth it to browse a released rootfs with no build tree.
 - FIT image parsing (needs a minimal DTB reader)
-- ext4/ubifs deep stats beyond superblock level
+- ext4 superblock stats
+- Listing UBIFS contents. Harder than squashfs: the index is a wandering B-tree
+  that has to be walked, and its nodes are LZO or zlib compressed, so it needs
+  both a reader and decompressors. The superblock already gives the size,
+  geometry and compression, which is what a size report mostly asks for.
+- Reading a raw NAND dump that still carries its out-of-band bytes. The UBI
+  reader assumes an image whose eraseblocks are contiguous, which is what
+  `ubinize` writes and what gets flashed; a dump taken with spare areas
+  interleaved would need those stripped first, and the OOB layout is
+  controller-specific.

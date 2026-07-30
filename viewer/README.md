@@ -24,6 +24,15 @@ that path and `scan-check.html` still tests it; reaching it from a browser
 needs a directory *handle* (File System Access API) so only `target/`,
 `images/` and named files are ever visited.
 
+## The Flash tab
+
+The map and partition table are joined by a UBI volumes table whenever an image
+is a UBI area. Volumes take part in the flash map like any other partition, so
+the extra table exists for what a partition row cannot say: the space the volume
+table reserved as against what was written, the per-block header cost, and
+volumes that were reserved but never written and therefore have no place on the
+map at all.
+
 ## The Files tab
 
 Browses a listing as a collapsible directory tree with per-directory totals,

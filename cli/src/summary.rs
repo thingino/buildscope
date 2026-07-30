@@ -140,6 +140,55 @@ pub fn print_report(r: &Report) {
                         }
                     )
                 }),
+                "ubi" => {
+                    let num = |k: &str| i.detail.get(k).and_then(|v| v.as_u64()).unwrap_or(0);
+                    let volumes = i
+                        .detail
+                        .get("volumes")
+                        .and_then(|v| v.as_array())
+                        .map(|a| a.len())
+                        .unwrap_or(0);
+                    let spare = num("free_pebs") + num("erased_pebs");
+                    let mut s = format!(
+                        "{} volumes, {} used, {} PEB",
+                        volumes,
+                        human(num("used_bytes")),
+                        human(num("peb_size"))
+                    );
+                    if spare > 0 {
+                        s += &format!(", {spare} spare");
+                    }
+                    if num("bad_pebs") > 0 {
+                        s += &format!(", {} BAD", num("bad_pebs"));
+                    }
+                    Some(s)
+                }
+                "ubifs" => Some(format!(
+                    "{} of {} blocks, {}{}",
+                    human(
+                        i.detail
+                            .get("total_bytes")
+                            .and_then(|v| v.as_u64())
+                            .unwrap_or(0)
+                    ),
+                    i.detail
+                        .get("leb_count")
+                        .and_then(|v| v.as_u64())
+                        .unwrap_or(0),
+                    i.detail
+                        .get("compression")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("?"),
+                    if i.detail
+                        .get("autoresize_pending")
+                        .and_then(|v| v.as_bool())
+                        .unwrap_or(false)
+                    {
+                        ", grows on mount"
+                    } else {
+                        ""
+                    }
+                )),
                 "flash-image" => i
                     .detail
                     .get("content_end")

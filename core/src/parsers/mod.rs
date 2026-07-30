@@ -7,6 +7,8 @@ pub mod mbr;
 pub mod mtdparts;
 pub mod padding;
 pub mod squashfs;
+pub mod ubi;
+pub mod ubifs;
 pub mod ubootenv;
 pub mod uimage;
 

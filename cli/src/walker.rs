@@ -261,7 +261,7 @@ pub fn build_snapshot(
         .map(|n| n.to_string_lossy().into_owned())
         .unwrap_or_else(|| paths.root.to_string_lossy().into_owned());
     let mut snap = Snapshot::empty(&root_name);
-    snap.root_path = paths.root.to_string_lossy().into_owned();
+    snap.root_path = crate::provenance(&paths.root);
     snap.context_source = paths.context;
     snap.scan_mode = ScanMode::Native;
 

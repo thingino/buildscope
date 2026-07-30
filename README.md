@@ -102,7 +102,10 @@ buildscope scan output/
 - **Build timings** per package from `build-time.log`.
 
 Output is one schema-versioned `buildscope-report.json` per build, plus a
-terminal summary.
+terminal summary. A report records where it was scanned from as a path relative
+to where the command ran -- `output/master/my-build` -- rather than an absolute
+one, because a report gets committed, attached to releases and published, and
+the builder's home directory is nobody else's business.
 
 ## Commands
 

@@ -116,6 +116,28 @@ fn is_artifact_candidate(path: &Path) -> bool {
 }
 
 /// Analyze one bare artifact file with no build tree.
+/// How a report says where it came from.
+///
+/// A report is written into `images/`, committed, attached to a release and
+/// published by CI, so an absolute path in it carries the builder's home
+/// directory and username to every reader, and tells them nothing: which build
+/// this is already has its own field. What is worth keeping is the path as it
+/// would be typed from where the command ran, so it is recorded relative to
+/// the working directory, and reduced to a bare name when it lies outside.
+fn provenance(path: &Path) -> String {
+    let abs = path.canonicalize();
+    let path = abs.as_deref().unwrap_or(path);
+    if let Ok(cwd) = std::env::current_dir() {
+        if let Ok(rel) = path.strip_prefix(&cwd) {
+            let rel = rel.to_string_lossy();
+            return if rel.is_empty() { ".".to_string() } else { rel.into_owned() };
+        }
+    }
+    path.file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_else(|| path.to_string_lossy().into_owned())
+}
+
 fn carve_file(path: &Path) -> Result<Report, String> {
     let data = std::fs::read(path).map_err(|e| format!("{}: {e}", path.display()))?;
     if data.is_empty() {
@@ -125,10 +147,7 @@ fn carve_file(path: &Path) -> Result<Report, String> {
         .file_name()
         .map(|n| n.to_string_lossy().into_owned())
         .unwrap_or_else(|| path.to_string_lossy().into_owned());
-    let root = path
-        .parent()
-        .map(|p| p.to_string_lossy().into_owned())
-        .unwrap_or_default();
+    let root = path.parent().map(provenance).unwrap_or_default();
     Ok(carve_flash_image(&name, &data, &root, ScanMode::Native))
 }
 

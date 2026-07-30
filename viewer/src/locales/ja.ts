@@ -177,7 +177,6 @@ const ja: Record<string, string> = {
   not_a_build_dir: "{name}: Buildroot の出力ディレクトリではありません",
 
   // footer
-  report_schema: "レポートスキーマ {n}",
   scan_mode: "スキャン {mode}",
   report_by: "レポート生成: {name} {version}",
 };

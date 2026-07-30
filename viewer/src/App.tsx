@@ -288,11 +288,15 @@ function Viewer() {
         {report && (
           <>
             {" · "}
-            {t("report_schema", { n: report.schema })}
-            {" · "}
             {/* Only the mode. Where the report's context came from is already
                 the chip up in the header, and saying it twice on one screen
-                just makes the reader check whether the two agree. */}
+                just makes the reader check whether the two agree.
+
+                The report's schema number is deliberately not shown: it is a
+                compatibility contract between the writer and this viewer, which
+                still checks it before rendering (see parseReportJson) and
+                refuses a version it does not understand. Nobody reading a size
+                report acts on the number. */}
             {t("scan_mode", { mode: report.scan.scan_mode })}
             {report.generator.version !== __APP_VERSION__ && (
               <>

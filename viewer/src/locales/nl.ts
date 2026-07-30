@@ -177,7 +177,6 @@ const nl: Record<string, string> = {
   not_a_build_dir: "{name}: geen Buildroot-uitvoermap",
 
   // footer
-  report_schema: "rapportschema {n}",
   scan_mode: "scan {mode}",
   report_by: "rapport van {name} {version}",
 };

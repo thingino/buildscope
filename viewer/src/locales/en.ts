@@ -182,7 +182,6 @@ const en: Record<string, string> = {
   not_a_build_dir: "{name}: not a Buildroot output directory",
 
   // footer
-  report_schema: "report schema {n}",
   scan_mode: "scan {mode}",
   report_by: "report by {name} {version}",
 };

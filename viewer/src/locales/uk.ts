@@ -177,7 +177,6 @@ const uk: Record<string, string> = {
   not_a_build_dir: "{name}: це не каталог виводу Buildroot",
 
   // footer
-  report_schema: "схема звіту {n}",
   scan_mode: "сканування {mode}",
   report_by: "звіт: {name} {version}",
 };

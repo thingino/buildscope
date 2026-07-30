@@ -176,7 +176,6 @@ const ar: Record<string, string> = {
   not_a_build_dir: "{name}: ليس مجلد output لـ Buildroot",
 
   // footer
-  report_schema: "مخطط التقرير {n}",
   scan_mode: "فحص {mode}",
   report_by: "تقرير من {name} {version}",
 };

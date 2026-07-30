@@ -176,7 +176,6 @@ const ru: Record<string, string> = {
   not_a_build_dir: "{name}: не каталог output Buildroot",
 
   // footer
-  report_schema: "схема отчёта {n}",
   scan_mode: "сканирование {mode}",
   report_by: "отчёт создан {name} {version}",
 };

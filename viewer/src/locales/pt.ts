@@ -177,7 +177,6 @@ const pt: Record<string, string> = {
   not_a_build_dir: "{name}: não é um diretório de saída do Buildroot",
 
   // footer
-  report_schema: "esquema de relatório {n}",
   scan_mode: "análise {mode}",
   report_by: "relatório de {name} {version}",
 };

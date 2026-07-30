@@ -177,7 +177,6 @@ const tr: Record<string, string> = {
   not_a_build_dir: "{name}: Buildroot çıktı dizini değil",
 
   // footer
-  report_schema: "rapor şeması {n}",
   scan_mode: "tarama {mode}",
   report_by: "rapor: {name} {version}",
 };

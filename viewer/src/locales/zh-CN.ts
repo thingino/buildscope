@@ -177,7 +177,6 @@ const zhCN: Record<string, string> = {
   not_a_build_dir: "{name}：不是 Buildroot 输出目录",
 
   // footer
-  report_schema: "报告 schema {n}",
   scan_mode: "扫描 {mode}",
   report_by: "报告由 {name} {version} 生成",
 };

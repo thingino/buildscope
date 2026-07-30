@@ -177,7 +177,6 @@ const ko: Record<string, string> = {
   not_a_build_dir: "{name}: Buildroot 출력 디렉터리가 아닙니다",
 
   // footer
-  report_schema: "보고서 스키마 {n}",
   scan_mode: "스캔 {mode}",
   report_by: "보고서 생성: {name} {version}",
 };

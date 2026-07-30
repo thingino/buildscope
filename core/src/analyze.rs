@@ -55,6 +55,75 @@ fn is_texty(name: &str, bytes: Option<&[u8]>) -> bool {
     }
 }
 
+/// Skip a gzip member header, whose length depends on which optional fields
+/// the writer included.
+fn strip_gzip_header(d: &[u8]) -> Option<&[u8]> {
+    if d.get(..3)? != [0x1F, 0x8B, 0x08] {
+        return None;
+    }
+    let flags = *d.get(3)?;
+    let mut at = 10usize;
+    if flags & 0x04 != 0 {
+        // FEXTRA: a two-byte length, then that many bytes.
+        let n = u16::from_le_bytes([*d.get(at)?, *d.get(at + 1)?]) as usize;
+        at += 2 + n;
+    }
+    for bit in [0x08u8, 0x10] {
+        // FNAME and FCOMMENT are NUL-terminated.
+        if flags & bit != 0 {
+            at += d.get(at..)?.iter().position(|&b| b == 0)? + 1;
+        }
+    }
+    if flags & 0x02 != 0 {
+        at += 2; // FHCRC
+    }
+    d.get(at..)
+}
+
+/// Decompress a kernel payload far enough to look inside it. Ingenic parts
+/// also ship a hardware LZ77 variant that claims to be lzma and is not, so a
+/// failure here is expected and simply means nothing can be reported.
+fn decompress_kernel(payload: &[u8], compression: &str) -> Option<Vec<u8>> {
+    /// Kernels are a few megabytes; this only bounds a malformed stream.
+    const MAX: usize = 64 << 20;
+    match compression {
+        "lzma" => {
+            let lzma = |src: &[u8]| {
+                let mut out = Vec::new();
+                lzma_rs::lzma_decompress(&mut std::io::Cursor::new(src), &mut out)
+                    .ok()
+                    .filter(|_| out.len() <= MAX)
+                    .map(|_| out)
+            };
+            lzma(payload).or_else(|| {
+                // Ingenic's kernels put a four-byte little-endian uncompressed
+                // size after the stream, and a decoder that reaches the
+                // end-of-stream marker with bytes still to read calls that an
+                // error. Take the trailer off and try again, but only when it
+                // really does look like a size for what follows.
+                let (body, size) = payload.split_at(payload.len().checked_sub(4)?);
+                let declared = u32::from_le_bytes(size.try_into().ok()?) as usize;
+                if declared < body.len() || declared > MAX {
+                    return None;
+                }
+                lzma(body).filter(|out| out.len() == declared)
+            })
+        }
+        // A gzip member is a variable-length header then raw deflate, and
+        // miniz_oxide offers zlib and raw but not the gzip wrapper.
+        "gzip" => {
+            let body = strip_gzip_header(payload)?;
+            miniz_oxide::inflate::decompress_to_vec_with_limit(body, MAX).ok()
+        }
+        "xz" => {
+            let mut out = Vec::new();
+            lzma_rs::xz_decompress(&mut std::io::Cursor::new(payload), &mut out).ok()?;
+            Some(out)
+        }
+        _ => None,
+    }
+}
+
 pub(crate) fn classify(name: &str, size: u64, bytes: Option<&[u8]>) -> Classified {
     let mut c = Classified {
         name: name.to_string(),
@@ -221,6 +290,21 @@ pub(crate) fn classify(name: &str, size: u64, bytes: Option<&[u8]>) -> Classifie
             "header_crc_ok": info.header_crc_ok,
             "timestamp": info.timestamp,
         });
+        // A kernel built with CONFIG_BUILTIN_DTB carries its board's device
+        // tree inside itself, and the whole thing is then compressed, so the
+        // tree is invisible without decompressing first. Worth the work: it is
+        // the only way to see which board's tree actually got built in, and it
+        // is bytes that no file accounts for.
+        let payload = data.get(uimage::HEADER_LEN..);
+        if let Some(kernel) = payload.and_then(|p| decompress_kernel(p, &info.compression_name)) {
+            let found = dtb::find_embedded(&kernel, 4);
+            if let Some(obj) = c.detail.as_object_mut() {
+                obj.insert("payload_uncompressed_bytes".into(), json!(kernel.len()));
+                if !found.is_empty() {
+                    obj.insert("builtin_device_trees".into(), embedded_dtb_json(&found));
+                }
+            }
+        }
         c.uimage = Some(info);
         return c;
     }
@@ -415,6 +499,14 @@ pub(crate) fn classify(name: &str, size: u64, bytes: Option<&[u8]>) -> Classifie
         "content_end": pad.content_end,
         "trailing_padding": pad.trailing_bytes,
     });
+    // A bootloader built with CONFIG_OF_SEPARATE has its device tree appended
+    // to its binary, so a raw region can be carrying one.
+    let found = dtb::find_embedded(&data[..pad.content_end.min(size) as usize], 4);
+    if !found.is_empty() {
+        if let Some(obj) = c.detail.as_object_mut() {
+            obj.insert("device_trees".into(), embedded_dtb_json(&found));
+        }
+    }
     c
 }
 
@@ -434,6 +526,20 @@ pub(crate) fn env_vars_json(info: &ubootenv::UbootEnvInfo) -> (serde_json::Value
         .map(|(k, v)| json!({ "key": k, "value": v, "bytes": v.len() }))
         .collect();
     (json!(out), truncated)
+}
+
+/// Describe device trees found inside another artifact.
+fn embedded_dtb_json(found: &[(usize, dtb::DtbInfo)]) -> serde_json::Value {
+    json!(found
+        .iter()
+        .map(|(at, d)| json!({
+            "offset": at,
+            "bytes": d.total_bytes,
+            "model": d.model,
+            "compatible": d.compatible,
+            "node_count": d.node_count,
+        }))
+        .collect::<Vec<_>>())
 }
 
 /// Describe a UBI area. `base` is where the area sits in the file being
@@ -1341,6 +1447,34 @@ mod tests {
         let mut out = crc32_ieee(&payload).to_le_bytes().to_vec();
         out.extend_from_slice(&payload);
         out
+    }
+
+    /// Ingenic's kernels append a four-byte uncompressed size after the LZMA
+    /// stream, which a strict decoder treats as an error rather than padding.
+    #[test]
+    fn a_kernel_payload_with_a_size_trailer_still_decompresses() {
+        let kernel: Vec<u8> = (0..200_000u32).map(|i| (i % 7) as u8).collect();
+        let mut stream = Vec::new();
+        lzma_rs::lzma_compress(&mut std::io::Cursor::new(&kernel[..]), &mut stream).unwrap();
+
+        // Plain, as most builds write it.
+        assert_eq!(decompress_kernel(&stream, "lzma").as_deref(), Some(&kernel[..]));
+
+        // With the trailer, as Ingenic writes it.
+        let mut with_trailer = stream.clone();
+        with_trailer.extend_from_slice(&(kernel.len() as u32).to_le_bytes());
+        assert_eq!(
+            decompress_kernel(&with_trailer, "lzma").as_deref(),
+            Some(&kernel[..]),
+            "the size trailer must not defeat the decoder"
+        );
+
+        // Four bytes of something else are not a size, and must not be eaten.
+        let mut with_junk = stream.clone();
+        with_junk.extend_from_slice(&[0xAA; 4]);
+        assert_eq!(decompress_kernel(&with_junk, "lzma"), None);
+
+        assert_eq!(decompress_kernel(&stream, "none"), None);
     }
 
     #[test]

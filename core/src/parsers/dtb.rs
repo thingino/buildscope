@@ -86,6 +86,37 @@ pub fn parse(data: &[u8]) -> Option<DtbInfo> {
     Some(info)
 }
 
+/// Device trees carried *inside* another artifact.
+///
+/// A board that boots from raw flash usually ships no `.dtb` of its own: the
+/// bootloader's tree is appended to its binary (`CONFIG_OF_SEPARATE`) and the
+/// kernel's is linked into the kernel (`CONFIG_BUILTIN_DTB`). Both occupy real
+/// flash and neither appears as a file, so the only way to account for them is
+/// to look. The header is self-describing enough to find safely: a magic, then
+/// a total size that has to fit, then a structure that has to walk.
+pub fn find_embedded(data: &[u8], max_hits: usize) -> Vec<(usize, DtbInfo)> {
+    const MAGIC: [u8; 4] = [0xD0, 0x0D, 0xFE, 0xED];
+    let mut out = Vec::new();
+    let mut at = 0usize;
+    // A blob is 4-byte aligned wherever a linker or a build put it.
+    while at + 8 <= data.len() && out.len() < max_hits {
+        if data[at..at + 4] != MAGIC {
+            at += 4;
+            continue;
+        }
+        match parse(&data[at..]) {
+            // A tree with nothing in it is a coincidence, not a device tree.
+            Some(info) if info.node_count > 1 => {
+                let skip = (info.total_bytes as usize).max(4);
+                out.push((at, info));
+                at += skip;
+            }
+            _ => at += 4,
+        }
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -148,5 +179,32 @@ mod tests {
     fn rejects_non_fdt() {
         assert!(parse(&[0u8; 256]).is_none());
         assert!(parse(&vec![0xFFu8; 4096]).is_none());
+    }
+
+    /// A bootloader appends its tree to its own binary and a kernel links one
+    /// in, so neither is a file to be found -- only bytes inside one.
+    #[test]
+    fn finds_a_tree_buried_in_another_artifact() {
+        let tree = board();
+        let mut blob = vec![0x5Au8; 5000];
+        blob.extend_from_slice(&tree);
+        blob.extend(std::iter::repeat(0x00).take(3000));
+
+        let hits = find_embedded(&blob, 8);
+        assert_eq!(hits.len(), 1);
+        let (at, info) = &hits[0];
+        assert_eq!(*at, 5000);
+        assert_eq!(info.model, "Acme Widget Board");
+        assert_eq!(info.total_bytes, tree.len() as u64);
+    }
+
+    #[test]
+    fn does_not_invent_trees_in_noise() {
+        assert!(find_embedded(&vec![0u8; 1 << 16], 8).is_empty());
+        assert!(find_embedded(&vec![0xFFu8; 1 << 16], 8).is_empty());
+        // The magic alone, with nothing behind it, is not a tree.
+        let mut fake = vec![0u8; 4096];
+        fake[100..104].copy_from_slice(&[0xD0, 0x0D, 0xFE, 0xED]);
+        assert!(find_embedded(&fake, 8).is_empty());
     }
 }

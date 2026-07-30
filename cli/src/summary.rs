@@ -28,6 +28,22 @@ fn bar(frac: f64, width: usize) -> String {
     )
 }
 
+/// Name a device tree by its model, or failing that by what it is compatible
+/// with, which is all an overlay has.
+fn dtb_who(t: &serde_json::Value) -> String {
+    t.get("model")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .or_else(|| {
+            t.get("compatible")
+                .and_then(|v| v.as_array())
+                .and_then(|a| a.first())
+                .and_then(|v| v.as_str())
+        })
+        .unwrap_or("device tree")
+        .to_string()
+}
+
 pub fn print_report(r: &Report) {
     println!("== {} ==", r.build.name);
     let mut facts: Vec<String> = Vec::new();
@@ -122,15 +138,23 @@ pub fn print_report(r: &Report) {
                     )
                 }),
                 "uimage" => i.detail.get("compression").and_then(|v| v.as_str()).map(|c| {
+                    let dt = i
+                        .detail
+                        .get("builtin_device_trees")
+                        .and_then(|v| v.as_array())
+                        .and_then(|a| a.first())
+                        .map(|t| format!(", dtb {}", dtb_who(t)))
+                        .unwrap_or_default();
                     format!(
-                        "{} payload, {}",
+                        "{} payload, {}{}",
                         human(
                             i.detail
                                 .get("declared_size")
                                 .and_then(|d| d.as_u64())
                                 .unwrap_or(0)
                         ),
-                        c
+                        c,
+                        dt
                     )
                 }),
                 "uboot-env" => i.detail.get("used_bytes").and_then(|v| v.as_u64()).map(|u| {
@@ -313,6 +337,12 @@ pub fn print_report(r: &Report) {
                     let table = i.detail.get("table").and_then(|v| v.as_str()).unwrap_or("?");
                     Some(format!("{table}, {n} partitions"))
                 }
+                "raw" => i
+                    .detail
+                    .get("device_trees")
+                    .and_then(|v| v.as_array())
+                    .and_then(|a| a.first())
+                    .map(|t| format!("carries a dtb: {}", dtb_who(t))),
                 "flash-image" => i
                     .detail
                     .get("content_end")

@@ -31,8 +31,19 @@ function imageNote(i: ImageReport): string {
       return `${humanBytes(d.bytes_used as number)} used · ${d.compression} · ${d.inode_count} inodes`;
     case "jffs2":
       return `${humanBytes(d.used_bytes as number)} used · ${humanBytes(d.free_bytes as number)} free · ${d.live_files} files`;
-    case "uimage":
-      return `${d.type} · ${d.compression} · payload ${humanBytes(d.declared_size as number)} · load ${d.load_addr}`;
+    case "uimage": {
+      const trees = (d.builtin_device_trees ?? []) as unknown as { model: string; compatible: string[] }[];
+      const dt = Array.isArray(trees) && trees.length
+        ? ` · dtb ${trees[0].model || trees[0].compatible?.[0] || "?"}`
+        : "";
+      return (
+        `${d.type} · ${d.compression} · payload ${humanBytes(d.declared_size as number)} · load ${d.load_addr}` +
+        (d.payload_uncompressed_bytes
+          ? ` · ${humanBytes(d.payload_uncompressed_bytes as number)} uncompressed`
+          : "") +
+        dt
+      );
+    }
     case "uboot-env":
       return `${humanBytes(d.used_bytes as number)} of ${humanBytes(i.bytes)} used · crc ${d.crc_ok ? "ok" : "BAD"} · ${d.var_count} vars`;
     case "ubi": {
@@ -92,10 +103,16 @@ function imageNote(i: ImageReport): string {
     }
     case "flash-image":
       return `content to ${humanBytes(d.content_end as number)}`;
-    case "raw":
+    case "raw": {
+      const trees = (d.device_trees ?? []) as unknown as { model: string; compatible: string[] }[];
+      if (Array.isArray(trees) && trees.length) {
+        const who = trees[0].model || trees[0].compatible?.[0] || "device tree";
+        return `carries a dtb: ${who}`;
+      }
       return d.trailing_padding && (d.trailing_padding as number) > 0
         ? `content ${humanBytes(d.content_end as number)} + ${humanBytes(d.trailing_padding as number)} padding`
         : "";
+    }
     default:
       return "";
   }

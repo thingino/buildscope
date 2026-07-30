@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { CATEGORY_COLOR, CATEGORY_LABEL, CATEGORY_ORDER, Category, categorize } from "../categorize";
 import { humanBytes, pct } from "../format";
 import { squarify } from "../treemap";
@@ -17,10 +17,30 @@ const NARROW_PX = 760;
 
 function Treemap({ packages, total }: { packages: PackageReport[]; total: number }) {
   const { node, show, hide } = useTooltip();
-  // On a phone the box is a third of the width, so a cell that is roomy on a
-  // desktop renders as a sliver: give the map more height and only label
-  // cells that are actually big enough to read.
+  // A phone renders the map a third as wide, so whether a label fits has to be
+  // decided in real pixels, not layout units. Measure the box and derive the
+  // scale from it; cells too small for a label stay tappable for the tooltip.
+  const boxRef = useRef<HTMLDivElement | null>(null);
+  const [box, setBox] = useState({ w: 0, h: 0 });
   const narrow = typeof window !== "undefined" && window.innerWidth < NARROW_PX;
+
+  useEffect(() => {
+    const el = boxRef.current;
+    if (!el) return;
+    const measure = () => {
+      const r = el.getBoundingClientRect();
+      setBox({ w: r.width, h: r.height });
+    };
+    measure();
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", measure);
+      return () => window.removeEventListener("resize", measure);
+    }
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   const rects = useMemo(
     () =>
       squarify(
@@ -32,14 +52,27 @@ function Treemap({ packages, total }: { packages: PackageReport[]; total: number
       ),
     [packages]
   );
+
+  const scaleX = box.w > 0 ? box.w / MAP_W : 0;
+  const scaleY = box.h > 0 ? box.h / MAP_H : 0;
+
   return (
     <div className="treemap-box">
-      <div className="treemap" style={{ aspectRatio: narrow ? "4 / 5" : `${MAP_W} / ${MAP_H}` }}>
+      <div
+        ref={boxRef}
+        className="treemap"
+        style={{ aspectRatio: narrow ? "4 / 5" : `${MAP_W} / ${MAP_H}` }}
+      >
         {rects.map((r) => {
           const cat = categorize(r.data.name);
           const wp = (r.w / MAP_W) * 100;
           const hp = (r.h / MAP_H) * 100;
-          const showLabel = narrow ? r.w > 170 && r.h > 60 : r.w > 70 && r.h > 30;
+          // Room for a truncated name (and its size, when there are two lines
+          // of vertical space) measured against the rendered geometry.
+          const pxW = r.w * scaleX;
+          const pxH = r.h * scaleY;
+          const showLabel = pxW >= 62 && pxH >= 26;
+          const showBytes = pxH >= 42;
           return (
             <div
               key={r.data.name}
@@ -85,7 +118,7 @@ function Treemap({ packages, total }: { packages: PackageReport[]; total: number
                 {showLabel && (
                   <div className="tm-label">
                     <div className="tm-name">{displayName(r.data.name)}</div>
-                    <div className="tm-bytes">{humanBytes(r.data.bytes)}</div>
+                    {showBytes && <div className="tm-bytes">{humanBytes(r.data.bytes)}</div>}
                   </div>
                 )}
               </div>
@@ -195,9 +228,9 @@ export default function Packages({ report }: { report: Report }) {
               <table className="tbl">
             <thead>
               <tr>
-                <th>package</th>
+                <th className="pkg-name">package</th>
                 <th className="num">bytes</th>
-                <th className="num">~flash</th>
+                <th className="num col-approx">~flash</th>
                 <th className="num">files</th>
                 <th className="bar-col">share</th>
               </tr>
@@ -212,12 +245,12 @@ export default function Packages({ report }: { report: Report }) {
                       className="rowlink"
                       onClick={() => setOpen(isOpen ? null : p.name)}
                     >
-                      <td>
+                      <td className="pkg-name">
                         <span className="dot" style={{ background: CATEGORY_COLOR[cat] }} />
                         {displayName(p.name)}
                       </td>
                       <td className="num">{humanBytes(p.bytes)}</td>
-                      <td className="num">
+                      <td className="num col-approx">
                         {p.compressed_bytes_approx !== null ? "~" + humanBytes(p.compressed_bytes_approx) : "–"}
                       </td>
                       <td className="num">{p.file_count}</td>
@@ -280,7 +313,7 @@ function NotShipped({ report }: { report: Report }) {
         <thead>
           <tr>
             <th>path</th>
-            <th>package</th>
+            <th className="pkg-name">package</th>
             <th className="num">install size</th>
           </tr>
         </thead>

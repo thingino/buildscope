@@ -655,7 +655,7 @@ body {
 
 .tm-label {
   position: absolute;
-  inset: 4px 6px;
+  inset: 3px 5px;
   color: #fff;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
   overflow: hidden;
@@ -1014,6 +1014,21 @@ body {
   /* Keep rows one line tall and let the table scroll sideways: wrapping
      detail columns instead produces very tall, ragged rows. */
   .tbl td.mono-dim {
+    white-space: nowrap;
+  }
+
+  /* The package table fits without scrolling once the derived columns go:
+     approximate compressed size follows from bytes, and the share bar is
+     redundant beside the treemap directly below it. */
+  .col-approx,
+  .bar-col {
+    display: none;
+  }
+
+  .pkg-name {
+    max-width: 46vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
   }
   .trunc {

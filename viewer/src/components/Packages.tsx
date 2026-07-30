@@ -235,6 +235,49 @@ export default function Packages({ report }: { report: Report }) {
           <Treemap packages={filtered} total={total || 1} />
         </div>
       </div>
+
+      <NotShipped report={report} />
+    </div>
+  );
+}
+
+function NotShipped({ report }: { report: Report }) {
+  const [showAll, setShowAll] = useState(false);
+  const removed = report.removed_not_shipped ?? [];
+  if (removed.length === 0) return null;
+  const totalBytes = removed.reduce((a, r) => a + r.source_bytes, 0);
+  const rows = showAll ? removed : removed.slice(0, 20);
+  return (
+    <div className="panel">
+      <div className="panel-head">
+        <span className="panel-title">Installed but not shipped</span>
+        <span className="muted">
+          {removed.length} files removed before imaging · {humanBytes(totalBytes)} at install time
+        </span>
+      </div>
+      <table className="tbl">
+        <thead>
+          <tr>
+            <th>path</th>
+            <th>package</th>
+            <th className="num">install size</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.path}>
+              <td className="mono-dim">{r.path}</td>
+              <td>{r.package}</td>
+              <td className="num">{r.source_bytes > 0 ? humanBytes(r.source_bytes) : "–"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {removed.length > 20 && (
+        <button className="linkbtn" onClick={() => setShowAll(!showAll)}>
+          {showAll ? "show top" : `show all ${removed.length}`}
+        </button>
+      )}
     </div>
   );
 }

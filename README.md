@@ -25,9 +25,10 @@ buildscope scan output/
   - composite flash images: trailing-padding detection and partition content
     verification by magic at each offset
 - **Partition budgets** parsed from the build itself (a `mtdparts=` string in
-  an environment source, a partition table inside a disk image), never from a
-  hardcoded table: content size vs partition size vs true used bytes, for every
-  partition.
+  an environment source, a genimage configuration, a partition table inside a
+  disk image), never from a hardcoded table: content size vs partition size vs
+  true used bytes, for every partition. `--flash-map` and `--genimage` exist
+  for layouts stored somewhere unusual.
 - **Per-package sizes**: every file in the final rootfs attributed to the
   Buildroot package that installed it via `packages-file-list.txt`, with
   per-package approximate compressed cost derived from the measured rootfs
@@ -36,12 +37,31 @@ buildscope scan output/
   them.
 - **Build timings** per package from `build-time.log`.
 
+- **Installed but not shipped**: files a package installed that are absent
+  from the final rootfs (project-level trims and replacements), with install
+  sizes recovered from `per-package/`. Buildroot's own always-removed
+  development files are filtered out.
+
 Output is a single schema-versioned `report.json` per build, plus a terminal
 summary. A local web viewer renders reports with partition bars, package
-treemaps, and sortable tables:
+treemaps, drift comparison, and sortable tables:
 
 ```
 buildscope serve output/
+```
+
+Compare two builds (reports or output dirs) from the terminal:
+
+```
+buildscope diff output/old-build output/new-build
+buildscope diff a/images/buildscope-report.json b/images/buildscope-report.json --json
+```
+
+Or produce a single self-contained HTML file (viewer and data in one, for
+attaching to an issue or a release):
+
+```
+buildscope export output/my-build -o my-build.html
 ```
 
 ## Two ways to run it

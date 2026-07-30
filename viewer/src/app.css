@@ -863,3 +863,23 @@ body {
     grid-template-columns: 150px 1fr 70px;
   }
 }
+
+/* ---------- drift ---------- */
+
+.grow {
+  color: var(--serious);
+}
+
+.shrink {
+  color: var(--good);
+}
+
+.chip-new {
+  color: var(--good);
+  border-color: rgba(63, 185, 80, 0.45);
+}
+
+.chip-gone {
+  color: var(--crit);
+  border-color: rgba(248, 81, 73, 0.45);
+}

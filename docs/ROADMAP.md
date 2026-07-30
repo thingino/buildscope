@@ -1,6 +1,6 @@
 # Roadmap
 
-## Phase 1 (current)
+## Phase 1 (done)
 
 - Core parsers: squashfs superblock, jffs2 node scan, uImage header, U-Boot
   env, mtdparts, MBR, padding detection
@@ -10,13 +10,17 @@
 - Web viewer: overview (partition bars, images), packages (table + treemap),
   modules, build timings; `serve` command
 
-## Phase 2
+## Phase 2 (done)
 
-- Drift view: compare any two reports (package-level and partition-level)
-- Single-file HTML export (report inlined, no server)
-- Installed-vs-shipped panel: diff packages-file-list.txt against the final
-  target tree, recovering pre-removal sizes from per-package/ where present
-- genimage.cfg as an additional partition-layout detector
+- Drift: `buildscope diff` and the viewer Drift tab (partition, package,
+  image, module deltas; added/removed tracking)
+- Single-file HTML export: `buildscope export` (viewer + data in one file)
+- Installed-vs-shipped: per-package/ source-size recovery, generic
+  target-finalize removals filtered
+- genimage.cfg partition-layout detector with per-partition image hints
+
+## Phase 2 leftovers
+
 - Artifact-only mode: carve a bare composite flash image using an embedded
   environment block and magics (no package attribution possible in this mode)
 

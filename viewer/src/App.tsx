@@ -1,19 +1,21 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Drift from "./components/Drift";
 import Drop from "./components/Drop";
 import Flash from "./components/Flash";
 import Modules from "./components/Modules";
 import Packages from "./components/Packages";
 import Timings from "./components/Timings";
-import { Loaded, parseReportJson, tryApi } from "./data";
+import { inlineReports, Loaded, parseReportJson, tryApi } from "./data";
 import { dateOf, humanBytes, seconds } from "./format";
 import { IndexEntry, Report } from "./types";
 
-type Tab = "flash" | "packages" | "modules" | "time";
+type Tab = "flash" | "packages" | "modules" | "time" | "drift";
 const TABS: { id: Tab; label: string }[] = [
   { id: "flash", label: "Flash" },
   { id: "packages", label: "Packages" },
   { id: "modules", label: "Modules" },
   { id: "time", label: "Build time" },
+  { id: "drift", label: "Drift" },
 ];
 
 function readHash(): { b: number; t: Tab } {
@@ -34,6 +36,12 @@ export default function App() {
   const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
+    const inline = inlineReports();
+    if (inline && inline.length > 0) {
+      setStaticReports(inline);
+      setApi(null);
+      return;
+    }
     void tryApi().then(setApi);
   }, []);
 
@@ -63,6 +71,26 @@ export default function App() {
       setReport(staticReports[current] ?? staticReports[0] ?? null);
     }
   }, [api, current, entries, staticReports]);
+
+  // Fetch-with-cache for secondary reports (drift baselines).
+  const cacheRef = useRef<Map<number, Report>>(new Map());
+  const getReport = useCallback(
+    async (i: number): Promise<Report> => {
+      if (api !== "loading" && api !== null) {
+        const cached = cacheRef.current.get(i);
+        if (cached) return cached;
+        const id = entries[i]?.id;
+        if (id === undefined) throw new Error("no such report");
+        const r = await api.fetchReport(id);
+        cacheRef.current.set(i, r);
+        return r;
+      }
+      const r = staticReports[i];
+      if (!r) throw new Error("no such report");
+      return r;
+    },
+    [api, entries, staticReports]
+  );
 
   const addReports = useCallback((rs: Report[]) => {
     setStaticReports((prev) => {
@@ -165,7 +193,7 @@ export default function App() {
             )}
           </div>
           <nav className="tabs">
-            {TABS.map((t) => (
+            {TABS.filter((t) => t.id !== "drift" || entries.length > 1).map((t) => (
               <button
                 key={t.id}
                 className={`tab ${tab === t.id ? "active" : ""}`}
@@ -180,6 +208,9 @@ export default function App() {
             {tab === "packages" && <Packages report={report} />}
             {tab === "modules" && <Modules report={report} />}
             {tab === "time" && <Timings report={report} />}
+            {tab === "drift" && entries.length > 1 && (
+              <Drift entries={entries} currentIdx={current} current={report} getReport={getReport} />
+            )}
           </main>
         </>
       ) : (

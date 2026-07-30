@@ -37,6 +37,7 @@ export interface Report {
     autoload: string[];
   } | null;
   timings: TimingReport[];
+  removed_not_shipped?: RemovedReport[];
 }
 
 export interface FlashInfo {
@@ -86,6 +87,12 @@ export interface TimingReport {
   package: string;
   seconds: number;
   steps: { step: string; seconds: number }[];
+}
+
+export interface RemovedReport {
+  path: string;
+  package: string;
+  source_bytes: number;
 }
 
 export interface IndexEntry {

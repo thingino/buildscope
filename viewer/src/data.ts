@@ -25,6 +25,15 @@ export async function tryApi(): Promise<Loaded | null> {
   }
 }
 
+/** Reports embedded by `buildscope export` (single self-contained HTML). */
+export function inlineReports(): Report[] | null {
+  const g = (window as unknown as { __BUILDSCOPE_REPORT__?: Report | Report[] })
+    .__BUILDSCOPE_REPORT__;
+  if (!g) return null;
+  const arr = Array.isArray(g) ? g : [g];
+  return arr.filter((r) => r && typeof r.schema === "number");
+}
+
 export function parseReportJson(text: string): Report {
   const r = JSON.parse(text) as Report;
   if (typeof r !== "object" || r === null || typeof r.schema !== "number") {

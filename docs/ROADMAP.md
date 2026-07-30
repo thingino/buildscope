@@ -38,10 +38,18 @@
   artifact path (`wasm/test/*.mjs`), plus an in-browser harness for the
   classification layer (`viewer/scan-check.html`)
 
-## Phase 3b
+## Phase 3b (deployed)
 
-- Static deployment (GitHub Pages) usable in two modes: the browser scanner
-  above, and rendering CI-published report.json files
+- Live at [buildscope.thingino.com](https://buildscope.thingino.com): the
+  browser scanner, published by `.github/workflows/deploy.yml` on every push
+  to `main`. The workflow builds the WASM core and viewer from source, gates
+  on the test suite, and refuses to publish a bundle whose scanner does not
+  instantiate with the expected exports and report schema.
+
+## Phase 3c
+
+- Render CI-published reports on the same site, so a project's build history
+  is browsable without scanning anything locally
 - CI aggregation recipe: publish one report per build, retain history,
   trends over time
 - Fleet-scale viewer work: search in the build picker, and an overview table

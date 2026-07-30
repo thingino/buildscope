@@ -36,7 +36,6 @@ buildscope scan output/
 - **Kernel modules**: size, owning package, and whether anything auto-loads
   them.
 - **Build timings** per package from `build-time.log`.
-
 - **Installed but not shipped**: files a package installed that are absent
   from the final rootfs (project-level trims and replacements), with install
   sizes recovered from `per-package/`. Buildroot's own always-removed

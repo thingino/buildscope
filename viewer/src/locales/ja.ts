@@ -19,6 +19,7 @@ const ja: Record<string, string> = {
 
   // tabs
   tab_flash: "フラッシュ",
+  tab_env: "環境変数",
   tab_packages: "パッケージ",
   tab_files: "ファイル",
   tab_modules: "モジュール",

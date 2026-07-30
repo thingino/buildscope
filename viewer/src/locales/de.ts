@@ -19,6 +19,7 @@ const de: Record<string, string> = {
 
   // tabs
   tab_flash: "Flash",
+  tab_env: "Umgebung",
   tab_packages: "Pakete",
   tab_files: "Dateien",
   tab_modules: "Module",

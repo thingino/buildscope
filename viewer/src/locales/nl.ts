@@ -19,6 +19,7 @@ const nl: Record<string, string> = {
 
   // tabs
   tab_flash: "Flash",
+  tab_env: "Omgeving",
   tab_packages: "Pakketten",
   tab_files: "Bestanden",
   tab_modules: "Modules",

@@ -19,6 +19,7 @@ const uk: Record<string, string> = {
 
   // tabs
   tab_flash: "Флеш",
+  tab_env: "Середовище",
   tab_packages: "Пакети",
   tab_files: "Файли",
   tab_modules: "Модулі",

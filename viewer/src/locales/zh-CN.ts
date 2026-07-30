@@ -19,6 +19,7 @@ const zhCN: Record<string, string> = {
 
   // tabs
   tab_flash: "闪存",
+  tab_env: "环境变量",
   tab_packages: "软件包",
   tab_files: "文件",
   tab_modules: "模块",

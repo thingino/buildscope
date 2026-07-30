@@ -19,6 +19,7 @@ const es: Record<string, string> = {
 
   // tabs
   tab_flash: "Flash",
+  tab_env: "Entorno",
   tab_packages: "Paquetes",
   tab_files: "Archivos",
   tab_modules: "Módulos",

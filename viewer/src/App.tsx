@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Drift from "./components/Drift";
 import Drop from "./components/Drop";
 import Files from "./components/Files";
+import Env from "./components/Env";
 import Flash from "./components/Flash";
 import Modules from "./components/Modules";
 import Packages from "./components/Packages";
@@ -12,9 +13,10 @@ import { dateOf, humanBytes, seconds } from "./format";
 import { I18nContext, useI18nState, useT } from "./i18n";
 import { IndexEntry, Report } from "./types";
 
-type Tab = "flash" | "packages" | "files" | "modules" | "time" | "drift";
+type Tab = "flash" | "env" | "packages" | "files" | "modules" | "time" | "drift";
 const TABS: { id: Tab; key: string }[] = [
   { id: "flash", key: "tab_flash" },
+  { id: "env", key: "tab_env" },
   { id: "packages", key: "tab_packages" },
   { id: "files", key: "tab_files" },
   { id: "modules", key: "tab_modules" },
@@ -28,6 +30,14 @@ function tabHasData(tab: Tab, r: Report, reportCount: number): boolean {
   switch (tab) {
     case "flash":
       return true;
+    case "env":
+      // Only where an environment was actually found and read.
+      return r.images.some(
+        (i) =>
+          i.format === "uboot-env" &&
+          Array.isArray((i.detail as { vars?: unknown[] }).vars) &&
+          (i.detail as { vars: unknown[] }).vars.length > 0
+      );
     case "packages":
       return r.packages.length > 0 || r.rootfs !== null;
     case "files":
@@ -260,6 +270,7 @@ function Viewer() {
           </nav>
           <main key={`${current}:${effectiveTab}`} className="content">
             {effectiveTab === "flash" && <Flash report={report} />}
+            {effectiveTab === "env" && <Env report={report} />}
             {effectiveTab === "packages" && <Packages report={report} />}
             {effectiveTab === "files" && <Files report={report} />}
             {effectiveTab === "modules" && <Modules report={report} />}

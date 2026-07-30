@@ -24,6 +24,7 @@ const en: Record<string, string> = {
 
   // tabs
   tab_flash: "Flash",
+  tab_env: "Environment",
   tab_packages: "Packages",
   tab_files: "Files",
   tab_modules: "Modules",

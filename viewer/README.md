@@ -26,13 +26,6 @@ needs a directory *handle* (File System Access API) so only `target/`,
 
 ## The Flash tab
 
-A U-Boot environment partition gets its variables listed, with a filter over
-both names and values. It is the board's own configuration, so it explains much
-of what the rest of the tab shows: `mtdparts` is where the partition table came
-from, and `bootcmd` says which partition is actually booted and how. Values are
-shown in full and wrap rather than truncate, because the interesting part of a
-`bootcmd` is usually its tail.
-
 The map and partition table are joined by a UBI volumes table whenever an image
 is a UBI area. Volumes take part in the flash map like any other partition, so
 the extra table exists for what a partition row cannot say: the space the volume
@@ -40,13 +33,25 @@ table reserved as against what was written, the per-block header cost, and
 volumes that were reserved but never written and therefore have no place on the
 map at all.
 
+## The Environment tab
+
+A U-Boot environment partition's variables, with a filter over both names and
+values. It is the board's own configuration -- `mtdparts` is where the partition
+table came from, `bootcmd` says which partition boots and how -- but it is
+reference material, thirty rows with some values eight lines long, so it has a
+tab rather than sitting under the flash map. What the map needs from it, the
+source its layout came from, the map already states in its own header. Values
+are shown in full and wrap rather than truncate, because the interesting part of
+a `bootcmd` is usually its tail. The tab appears only for a report that has one.
+
 ## The Files tab
 
 Browses a listing as a collapsible directory tree with per-directory totals,
 the owning package per file, and a path filter. Two kinds of source feed it:
 the rootfs walk attributed to packages (present whenever a build tree was
-scanned), and any image that reconstructed its own contents, which today means
-jffs2. Directories are ordered before files and both by size, so the heavy
+scanned), and any image that reconstructed its own contents -- jffs2, cpio,
+UBIFS and squashfs all do. Where the cost of a file on flash is known, as it is
+for squashfs, the tree totals it per directory alongside the uncompressed size. Directories are ordered before files and both by size, so the heavy
 paths surface first.
 
 ## Languages
@@ -103,8 +108,8 @@ binary, or via `--viewer-dir`.
   built in the page.
 * `npm run check:locales` runs in `npm run build`, so a locale that drifts
   from `en.ts` fails the build and therefore CI.
-* `npm run check:render -- <report.json>...` renders the Flash tab to static
-  HTML with react-dom and asserts that what the report contains actually reaches
+* `npm run check:render -- <report.json>...` renders the Flash and Environment
+  panes to static HTML with react-dom and asserts that what the report contains actually reaches
   the markup: every environment variable with its value intact, every UBI volume
   including ones with nothing written, every partition row. Assertions come from
   the report, so any report works and absent sections are skipped. This is the

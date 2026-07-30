@@ -18,6 +18,7 @@ const ru: Record<string, string> = {
 
   // tabs
   tab_flash: "Флеш",
+  tab_env: "Окружение",
   tab_packages: "Пакеты",
   tab_files: "Файлы",
   tab_modules: "Модули",

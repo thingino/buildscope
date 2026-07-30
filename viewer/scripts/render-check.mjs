@@ -1,6 +1,5 @@
-// Render the Flash tab to static HTML against real reports, so the panels that
-// display parsed image structure are exercised on real data without needing a
-// browser. Bundles the components with the esbuild that ships inside vite and
+// Render the panes that display parsed image structure to static HTML against
+// real reports, so they are exercised on real data without needing a browser. Bundles the components with the esbuild that ships inside vite and
 // renders them with react-dom.
 //
 //   node scripts/render-check.mjs <report.json>...
@@ -27,8 +26,11 @@ writeFileSync(
   entry,
   `import { renderToStaticMarkup } from "react-dom/server.browser";
    import Flash from "${join(VIEWER, "src/components/Flash")}";
+   import Env from "${join(VIEWER, "src/components/Env")}";
    export function render(report: any): string {
-     return renderToStaticMarkup(<Flash report={report} />);
+     // Both panes, since a report's facts are split across tabs.
+     return renderToStaticMarkup(<Flash report={report} />) +
+            renderToStaticMarkup(<Env report={report} />);
    }`
 );
 

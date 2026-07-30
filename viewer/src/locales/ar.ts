@@ -18,6 +18,7 @@ const ar: Record<string, string> = {
 
   // tabs
   tab_flash: "الفلاش",
+  tab_env: "البيئة",
   tab_packages: "الحزم",
   tab_files: "الملفات",
   tab_modules: "الوحدات",

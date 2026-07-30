@@ -1,7 +1,7 @@
-import { Fragment, useMemo, useState } from "react";
+import { Fragment } from "react";
 import { hex, humanBytes, pct } from "../format";
 import { TFn, useT } from "../i18n";
-import { EnvVar, ImageReport, PartitionReport, Report, UbiDetail } from "../types";
+import { ImageReport, PartitionReport, Report, UbiDetail } from "../types";
 import { useTooltip } from "../tooltip";
 
 function fillStatus(frac: number): string {
@@ -248,78 +248,6 @@ function UbiVolumes({ img, t }: { img: ImageReport; t: TFn }) {
   );
 }
 
-/// The variables of a U-Boot environment partition. The values are the board's
-/// own configuration -- boot command, memory split, partition list -- so they
-/// explain a good deal of what the rest of this tab shows.
-function EnvVars({ img, t }: { img: ImageReport; t: TFn }) {
-  const d = img.detail as Record<string, unknown>;
-  const vars = (Array.isArray(d.vars) ? d.vars : []) as EnvVar[];
-  const [query, setQuery] = useState("");
-
-  const shown = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return vars;
-    return vars.filter(
-      (v) => v.key.toLowerCase().includes(q) || v.value.toLowerCase().includes(q)
-    );
-  }, [vars, query]);
-
-  if (vars.length === 0) return null;
-  const crcOk = d.crc_ok === true;
-
-  return (
-    <div className="panel">
-      <div className="panel-head">
-        <span className="panel-title">
-          {t("env_title")} <span className="muted">{img.name}</span>
-        </span>
-        <span className="muted">
-          {t("n_vars", { n: d.var_count as number })} · {humanBytes(d.used_bytes as number)}{" "}
-          {t("th_used")}
-          {typeof d.free_bytes === "number" ? ` · ${humanBytes(d.free_bytes)} ${t("th_free")}` : ""}
-          {d.redundant === true ? " · redundant" : ""} ·{" "}
-          <span className={crcOk ? "ok" : "crit"}>crc {crcOk ? "ok" : "BAD"}</span>
-        </span>
-      </div>
-      <div className="controls">
-        <input
-          className="search"
-          placeholder={t("filter_vars")}
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-        {query.trim() !== "" && (
-          <span className="muted">{t("vars_matching", { n: shown.length })}</span>
-        )}
-      </div>
-      <div className="tbl-wrap">
-        <table className="tbl env-table">
-          <thead>
-            <tr>
-              <th>{t("th_variable")}</th>
-              <th>{t("th_value")}</th>
-              <th className="num">{t("th_bytes")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {shown.map((v) => (
-              <tr key={v.key}>
-                <td className="env-key">{v.key}</td>
-                <td>
-                  <span className="env-val">{v.value}</span>
-                </td>
-                <td className="num">{v.bytes}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      {shown.length === 0 && <div className="empty">{t("no_matches")}</div>}
-      {d.vars_truncated === true && <div className="muted trunc-note">{t("vars_capped")}</div>}
-    </div>
-  );
-}
-
 export default function Flash({ report }: { report: Report }) {
   const t = useT();
   const flash = report.flash;
@@ -393,12 +321,6 @@ export default function Flash({ report }: { report: Report }) {
         .filter((i) => i.format === "ubi")
         .map((i) => (
           <UbiVolumes key={i.name} img={i} t={t} />
-        ))}
-
-      {report.images
-        .filter((i) => i.format === "uboot-env")
-        .map((i) => (
-          <EnvVars key={i.name} img={i} t={t} />
         ))}
 
       <div className="panel">

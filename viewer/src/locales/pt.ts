@@ -19,6 +19,7 @@ const pt: Record<string, string> = {
 
   // tabs
   tab_flash: "Flash",
+  tab_env: "Ambiente",
   tab_packages: "Pacotes",
   tab_files: "Ficheiros",
   tab_modules: "Módulos",

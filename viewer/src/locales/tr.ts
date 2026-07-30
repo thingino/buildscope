@@ -19,6 +19,7 @@ const tr: Record<string, string> = {
 
   // tabs
   tab_flash: "Flash",
+  tab_env: "Ortam",
   tab_packages: "Paketler",
   tab_files: "Dosyalar",
   tab_modules: "Modüller",

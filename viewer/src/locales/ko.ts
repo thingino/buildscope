@@ -19,6 +19,7 @@ const ko: Record<string, string> = {
 
   // tabs
   tab_flash: "플래시",
+  tab_env: "환경 변수",
   tab_packages: "패키지",
   tab_files: "파일",
   tab_modules: "모듈",

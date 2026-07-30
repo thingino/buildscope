@@ -426,6 +426,74 @@ pub fn parse(data: &[u8]) -> Option<UbiInfo> {
 }
 
 #[cfg(test)]
+pub(crate) mod tests_support {
+    //! A minimal valid UBI image, for tests elsewhere that need one to aim at.
+    use super::*;
+
+    const PEB: usize = 64 * 1024;
+
+    fn hdr(magic: u32, fill: impl Fn(&mut [u8])) -> Vec<u8> {
+        let mut h = vec![0u8; 64];
+        h[0..4].copy_from_slice(&magic.to_be_bytes());
+        h[4] = 1;
+        fill(&mut h);
+        let crc = ubi_crc(&h[..HDR_SIZE_CRC]);
+        h[60..64].copy_from_slice(&crc.to_be_bytes());
+        h
+    }
+
+    pub fn build_simple_ubi() -> Vec<u8> {
+        build_ubi_with_page(2048)
+    }
+
+    /// Two layout copies naming one volume, then four blocks of that volume.
+    ///
+    /// `page` is the chip's minimum write unit, which is where UBI puts the
+    /// volume header, with the payload a page after that.
+    pub fn build_ubi_with_page(page: usize) -> Vec<u8> {
+        let (vid_off, data_off) = (page, page * 2);
+        let ec = || {
+            hdr(EC_MAGIC, |h| {
+                h[16..20].copy_from_slice(&(vid_off as u32).to_be_bytes());
+                h[20..24].copy_from_slice(&(data_off as u32).to_be_bytes());
+                h[24..28].copy_from_slice(&0x5EED_1234u32.to_be_bytes());
+            })
+        };
+        let vid = |vol: u32, lnum: u32| {
+            hdr(VID_MAGIC, |h| {
+                h[5] = VOL_TYPE_DYNAMIC;
+                h[8..12].copy_from_slice(&vol.to_be_bytes());
+                h[12..16].copy_from_slice(&lnum.to_be_bytes());
+            })
+        };
+        let mut rec = vec![0u8; VTBL_RECORD_SIZE];
+        rec[0..4].copy_from_slice(&4u32.to_be_bytes()); // reserved_pebs
+        rec[12] = VOL_TYPE_DYNAMIC;
+        rec[14..16].copy_from_slice(&6u16.to_be_bytes());
+        rec[16..22].copy_from_slice(b"rootfs");
+        let crc = ubi_crc(&rec[..VTBL_RECORD_SIZE_CRC]);
+        rec[VTBL_RECORD_SIZE_CRC..].copy_from_slice(&crc.to_be_bytes());
+
+        let mut img = Vec::new();
+        for (vol, lnum, payload) in [
+            (LAYOUT_VOLUME_ID, 0u32, rec.clone()),
+            (LAYOUT_VOLUME_ID, 1, rec.clone()),
+            (0, 0, vec![0x42u8; 4096]),
+            (0, 1, vec![0x43u8; 4096]),
+            (0, 2, vec![0x44u8; 4096]),
+            (0, 3, vec![0x45u8; 4096]),
+        ] {
+            let base = img.len();
+            img.resize(base + PEB, 0xFF);
+            img[base..base + 64].copy_from_slice(&ec());
+            img[base + vid_off..base + vid_off + 64].copy_from_slice(&vid(vol, lnum));
+            img[base + data_off..base + data_off + payload.len()].copy_from_slice(&payload);
+        }
+        img
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
 

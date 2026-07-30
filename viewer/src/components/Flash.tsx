@@ -44,11 +44,6 @@ function imageNote(i: ImageReport): string {
         (bad > 0 ? ` · ${bad} bad` : "")
       );
     }
-    case "ubifs":
-      return (
-        `${humanBytes(d.total_bytes as number)} · ${d.leb_count} blocks · ${d.compression}` +
-        (d.autoresize_pending ? ` · grows to ${humanBytes(d.max_bytes as number)}` : "")
-      );
     case "ext2":
     case "ext3":
     case "ext4":
@@ -68,6 +63,21 @@ function imageNote(i: ImageReport): string {
       );
     case "cpio":
       return `${d.entry_count} entries · ${humanBytes(d.content_bytes as number)} of content · ${d.cpio_format}`;
+    case "fit": {
+      const imgs = (d.images ?? []) as unknown as { type: string }[];
+      const types = Array.isArray(imgs) ? imgs.map((x) => x.type).join(", ") : "";
+      return `${Array.isArray(imgs) ? imgs.length : 0} images (${types}) · ${humanBytes(
+        d.payload_bytes as number
+      )} of payload`;
+    }
+    case "dtb":
+      return "device tree";
+    case "ubifs":
+      return (
+        `${humanBytes(d.total_bytes as number)} · ${d.leb_count} blocks · ${d.compression}` +
+        (d.live_files ? ` · ${d.live_files} files` : "") +
+        (d.autoresize_pending ? ` · grows to ${humanBytes(d.max_bytes as number)}` : "")
+      );
     case "disk-image": {
       const n = Array.isArray(d.partitions) ? (d.partitions as unknown[]).length : 0;
       return `${d.table ?? "?"} · ${n} partitions`;

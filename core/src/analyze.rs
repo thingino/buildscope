@@ -2,8 +2,8 @@
 
 use crate::inputs::{buildtime, config::BrConfig, pfl};
 use crate::parsers::{
-    cpio, ext, fat, genimage, gpt, jffs2, mbr, mtdparts, padding, squashfs, ubi, ubifs, ubootenv,
-    uimage,
+    cpio, ext, fat, fit, genimage, gpt, jffs2, mbr, mtdparts, padding, squashfs, ubi, ubifs,
+    ubootenv, uimage,
 };
 use crate::report::*;
 use crate::snapshot::Snapshot;
@@ -27,6 +27,7 @@ pub(crate) struct Classified {
     pub(crate) ext: Option<ext::ExtInfo>,
     pub(crate) fat: Option<fat::FatInfo>,
     pub(crate) cpio: Option<cpio::CpioInfo>,
+    pub(crate) fit: Option<fit::FitInfo>,
     pub(crate) content_end: u64,
     pub(crate) partition: Option<String>,
 }
@@ -68,6 +69,7 @@ pub(crate) fn classify(name: &str, size: u64, bytes: Option<&[u8]>) -> Classifie
         ext: None,
         fat: None,
         cpio: None,
+        fit: None,
         content_end: size,
         partition: None,
     };
@@ -126,6 +128,9 @@ pub(crate) fn classify(name: &str, size: u64, bytes: Option<&[u8]>) -> Classifie
     }
     if let Some(info) = ubifs::parse(data) {
         c.format = "ubifs".into();
+        // Directory entries and inodes are uncompressed, so the contents can
+        // be listed by scanning even though the file data cannot be read.
+        let l = ubifs::listing(data);
         c.detail = json!({
             "leb_size": info.leb_size,
             "leb_count": info.leb_count,
@@ -138,9 +143,20 @@ pub(crate) fn classify(name: &str, size: u64, bytes: Option<&[u8]>) -> Classifie
             "max_bytes": info.max_bytes,
             "autoresize_pending": info.max_leb_count > info.leb_count,
             "crc_ok": info.crc_ok,
+            "node_count": l.node_count,
+            "live_files": l.file_count,
+            "live_dirs": l.dir_count,
+            "live_links": l.link_count,
+            "logical_content_bytes": l.logical_bytes,
+            "entries_truncated": l.entries_truncated,
+            "entries": l.entries.iter().map(|e| json!({
+                "path": e.path,
+                "bytes": e.bytes,
+                "kind": e.kind,
+            })).collect::<Vec<_>>(),
         });
-        // How much of a UBIFS volume is live needs the wandering tree and a
-        // decompressor. The written extent is the honest upper bound.
+        // How much of the volume is live needs the compressed data nodes; the
+        // written extent is the honest upper bound.
         c.content_end = padding::analyze(data).content_end;
         c.ubifs = Some(info);
         return c;
@@ -160,6 +176,51 @@ pub(crate) fn classify(name: &str, size: u64, bytes: Option<&[u8]>) -> Classifie
             "timestamp": info.timestamp,
         });
         c.uimage = Some(info);
+        return c;
+    }
+    // A FIT is a device tree carrying payloads; a device tree that carries
+    // none is still worth naming rather than calling raw bytes.
+    if let Some(info) = fit::parse(data) {
+        c.format = "fit".into();
+        c.detail = json!({
+            "description": info.description,
+            "tree_bytes": info.tree_bytes,
+            "total_bytes": info.total_bytes,
+            "payload_bytes": info.payload_bytes,
+            "overhead_bytes": info.tree_bytes.saturating_sub(info.payload_bytes),
+            "padding_bytes": size.saturating_sub(info.total_bytes),
+            "default_config": info.default_config,
+            "images": info.images.iter().map(|i| json!({
+                "name": i.name,
+                "description": i.description,
+                "type": i.image_type,
+                "arch": i.arch,
+                "os": i.os,
+                "compression": i.compression,
+                "bytes": i.bytes,
+                "external": i.external,
+                "load": i.load.map(|v| format!("0x{v:08x}")),
+                "entry": i.entry.map(|v| format!("0x{v:08x}")),
+                "hashes": i.hashes,
+            })).collect::<Vec<_>>(),
+            "configs": info.configs.iter().map(|cfg| json!({
+                "name": cfg.name,
+                "description": cfg.description,
+                "uses": cfg.uses.iter().map(|(r, i)| json!({"role": r, "image": i}))
+                    .collect::<Vec<_>>(),
+            })).collect::<Vec<_>>(),
+        });
+        c.content_end = info.total_bytes.min(size);
+        c.fit = Some(info);
+        return c;
+    }
+    if let Some(bytes) = fit::parse_dtb(data) {
+        c.format = "dtb".into();
+        c.detail = json!({
+            "total_bytes": bytes,
+            "padding_bytes": size.saturating_sub(bytes),
+        });
+        c.content_end = bytes.min(size);
         return c;
     }
     // A cpio archive names itself in its first six bytes.

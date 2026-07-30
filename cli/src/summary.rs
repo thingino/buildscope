@@ -224,6 +224,35 @@ pub fn print_report(r: &Report) {
                         }
                     ))
                 }
+                "fit" => {
+                    let n = i
+                        .detail
+                        .get("images")
+                        .and_then(|v| v.as_array())
+                        .map(|a| a.len())
+                        .unwrap_or(0);
+                    let types: Vec<&str> = i
+                        .detail
+                        .get("images")
+                        .and_then(|v| v.as_array())
+                        .map(|a| {
+                            a.iter()
+                                .filter_map(|im| im.get("type").and_then(|t| t.as_str()))
+                                .collect()
+                        })
+                        .unwrap_or_default();
+                    Some(format!(
+                        "{n} images ({}), {} of payload",
+                        types.join(", "),
+                        human(
+                            i.detail
+                                .get("payload_bytes")
+                                .and_then(|v| v.as_u64())
+                                .unwrap_or(0)
+                        )
+                    ))
+                }
+                "dtb" => Some("device tree".to_string()),
                 "cpio" => {
                     let num = |k: &str| i.detail.get(k).and_then(|v| v.as_u64()).unwrap_or(0);
                     Some(format!(

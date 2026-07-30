@@ -4,11 +4,14 @@
 pub mod cpio;
 pub mod ext;
 pub mod fat;
+pub mod fdt;
+pub mod fit;
 pub mod genimage;
 pub mod gpt;
 pub mod jffs2;
 pub mod mbr;
 pub mod mtdparts;
+pub mod nandoob;
 pub mod padding;
 pub mod squashfs;
 pub mod ubi;

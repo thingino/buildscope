@@ -3,13 +3,13 @@
 //! The layout is recovered from the image itself: a CRC-valid U-Boot
 //! environment block found by scanning (its `mtdparts` spec is the partition
 //! table), a GUID or MBR partition table for card and disk images, or UBI's
-//! own volume table on NAND. Each
-//! partition is then carved and classified with the same format parsers used
-//! everywhere else. Package attribution is impossible in this mode and is
-//! reported as such.
+//! own volume table on NAND. Each partition is then carved and classified with
+//! the same format parsers used everywhere else. A raw NAND dump is
+//! de-interleaved first, since nothing can be read past its spare areas.
+//! Package attribution is impossible in this mode and is reported as such.
 
 use crate::analyze::{classify, env_vars_json, partition_role, ubi_detail, used_bytes_of, Role};
-use crate::parsers::{gpt, mbr, mtdparts, padding, ubi, ubootenv};
+use crate::parsers::{gpt, mbr, mtdparts, nandoob, padding, ubi, ubootenv};
 use crate::report::*;
 use crate::snapshot::{ContextSource, ScanMode};
 use serde_json::{json, Map, Value};
@@ -203,6 +203,26 @@ fn ubi_regions(info: &ubi::UbiInfo, base: u64, container: &str) -> Vec<Region> {
 }
 
 pub fn carve_flash_image(file_name: &str, data: &[u8], root: &str, scan_mode: ScanMode) -> Report {
+    // A dump taken off a NAND chip still carries the spare area after every
+    // page, which nothing downstream can read past. De-interleave first and
+    // analyze the result; the recursion terminates because a stripped image
+    // parses as UBI, which is the condition for not stripping again.
+    if let Some(oob) = nandoob::detect(data) {
+        let mut report = carve_flash_image(file_name, &oob.stripped, root, scan_mode);
+        report.scan.warnings.insert(
+            0,
+            format!(
+                "image carries out-of-band bytes: {}-byte pages with {}-byte spare areas, \
+                 removed before analysis ({} of {} bytes are payload)",
+                oob.page_bytes,
+                oob.spare_bytes,
+                oob.stripped.len(),
+                data.len()
+            ),
+        );
+        return report;
+    }
+
     let mut warnings: Vec<String> =
         vec!["artifact-only scan: no build tree, package attribution unavailable".to_string()];
     let total = data.len() as u64;
@@ -1031,6 +1051,36 @@ mod tests {
             "{:?}",
             r.scan.warnings
         );
+    }
+
+    /// A dump taken off the chip rather than the image written to it: every
+    /// page followed by its spare area. It has to be de-interleaved before any
+    /// of the layout is reachable.
+    #[test]
+    fn a_nand_dump_with_spare_areas_is_stripped_first() {
+        let clean = synth_nand(64 * K);
+        let (page, spare) = (2048usize, 64usize);
+        let mut dumped = Vec::new();
+        for chunk in clean.chunks(page) {
+            dumped.extend_from_slice(chunk);
+            dumped.extend(std::iter::repeat(0xA5).take(spare));
+        }
+
+        let r = carve_flash_image("dump.bin", &dumped, "/tmp", ScanMode::Native);
+        assert!(
+            r.scan.warnings[0].contains("out-of-band")
+                && r.scan.warnings[0].contains("2048-byte pages"),
+            "{:?}",
+            r.scan.warnings
+        );
+        // Once stripped it reads exactly as the flashed image does.
+        let flash = r.flash.as_ref().unwrap();
+        let names: Vec<&str> = flash.partitions.iter().map(|p| p.name.as_str()).collect();
+        assert_eq!(names, vec!["boot", "uboot-env", "kernel", "rootfs"]);
+        let part = |n: &str| flash.partitions.iter().find(|p| p.name == n).unwrap();
+        assert_eq!(part("kernel").used_bytes, Some(1_500_064));
+        assert_eq!(part("rootfs").used_bytes, Some(396_000));
+        assert_eq!(r.build.kernel_version.as_deref(), Some("4.4.94"));
     }
 
     /// With no environment at all, UBI still describes the whole layout.

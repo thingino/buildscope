@@ -137,14 +137,26 @@ export default function Drift({
                 </div>
               </div>
             )}
-            <div className="stat">
-              <div className="stat-label">packages changed</div>
-              <div className="stat-value">{drift.packages.length}</div>
-            </div>
-            <div className="stat">
-              <div className="stat-label">modules changed</div>
-              <div className="stat-value">{drift.modules.length}</div>
-            </div>
+            {/* Artifact-only reports carry no package or module data at
+                all, so a zero count there would be noise, not a finding. */}
+            {(current.packages.length > 0 || (baseline?.packages.length ?? 0) > 0) && (
+              <div className="stat">
+                <div className="stat-label">packages changed</div>
+                <div className="stat-value">{drift.packages.length}</div>
+              </div>
+            )}
+            {(current.modules.length > 0 || (baseline?.modules.length ?? 0) > 0) && (
+              <div className="stat">
+                <div className="stat-label">modules changed</div>
+                <div className="stat-value">{drift.modules.length}</div>
+              </div>
+            )}
+            {drift.partitions.length > 0 && !drift.rootfsCompressed && (
+              <div className="stat">
+                <div className="stat-label">partitions changed</div>
+                <div className="stat-value">{drift.partitions.length}</div>
+              </div>
+            )}
           </div>
 
           {drift.partitions.length > 0 && (

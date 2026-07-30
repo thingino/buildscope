@@ -114,6 +114,8 @@ export interface UbiVolume {
 export interface FileRef {
   path: string;
   bytes: number;
+  /** Measured from the filesystem image, so absent when there was none. */
+  compressed_bytes?: number;
 }
 
 export interface PackageReport {

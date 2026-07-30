@@ -14,6 +14,7 @@ pub mod mtdparts;
 pub mod nandoob;
 pub mod padding;
 pub mod squashfs;
+pub mod squashfs_reader;
 pub mod ubi;
 pub mod ubifs;
 pub mod ubootenv;

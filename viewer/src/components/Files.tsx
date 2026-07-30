@@ -8,6 +8,8 @@ import { Report, UNATTRIBUTED } from "../types";
 interface Entry {
   path: string;
   bytes: number;
+  /** What the file costs once compressed, when the image could be read. */
+  compressed?: number;
   /** Owning package, when the source knows one. */
   pkg?: string;
   /** Directory entries carry no size of their own. */
@@ -26,13 +28,15 @@ interface Node {
   name: string;
   path: string;
   bytes: number;
+  /** Subtree total of the compressed cost, where it is known. */
+  compressed: number;
   files: number;
   children: Map<string, Node>;
   leaf?: Entry;
 }
 
 function emptyNode(name: string, path: string): Node {
-  return { name, path, bytes: 0, files: 0, children: new Map() };
+  return { name, path, bytes: 0, compressed: 0, files: 0, children: new Map() };
 }
 
 /** Fold a flat path list into a tree, summing sizes up every level. */
@@ -43,6 +47,7 @@ function buildTree(entries: Entry[]): Node {
     let node = root;
     if (!e.isDir) {
       root.bytes += e.bytes;
+      root.compressed += e.compressed ?? 0;
       root.files += 1;
     }
     for (let i = 0; i < parts.length; i++) {
@@ -56,9 +61,11 @@ function buildTree(entries: Entry[]): Node {
       if (last && !e.isDir) {
         child.leaf = e;
         child.bytes += e.bytes;
+        child.compressed += e.compressed ?? 0;
         child.files += 1;
       } else if (!last) {
         child.bytes += e.bytes;
+        child.compressed += e.compressed ?? 0;
         child.files += e.isDir ? 0 : 1;
       }
       node = child;
@@ -88,7 +95,12 @@ export default function Files({ report }: { report: Report }) {
     for (const p of report.packages) {
       if (p.files_truncated) rootfsTruncated = true;
       for (const f of p.files ?? p.top_files ?? []) {
-        rootfsEntries.push({ path: f.path, bytes: f.bytes, pkg: p.name });
+        rootfsEntries.push({
+          path: f.path,
+          bytes: f.bytes,
+          compressed: f.compressed_bytes,
+          pkg: p.name,
+        });
       }
     }
     if (rootfsEntries.length > 0) {
@@ -100,7 +112,10 @@ export default function Files({ report }: { report: Report }) {
       });
     }
     for (const img of report.images) {
-      const d = img.detail as { entries?: { path: string; bytes: number; kind: string }[]; entries_truncated?: boolean };
+      const d = img.detail as {
+        entries?: { path: string; bytes: number; kind: string; compressed_bytes?: number }[];
+        entries_truncated?: boolean;
+      };
       if (!Array.isArray(d.entries) || d.entries.length === 0) continue;
       out.push({
         id: img.name,
@@ -108,6 +123,7 @@ export default function Files({ report }: { report: Report }) {
         entries: d.entries.map((e) => ({
           path: e.path,
           bytes: e.bytes,
+          compressed: e.compressed_bytes,
           isDir: e.kind === "dir",
         })),
         truncated: d.entries_truncated === true,
@@ -152,6 +168,9 @@ export default function Files({ report }: { report: Report }) {
     );
   }
 
+  // Only offer the column when something in this listing carries the cost.
+  const hasCost = source.entries.some((e) => e.compressed !== undefined);
+
   const rows: JSX.Element[] = [];
   const walk = (node: Node, depth: number) => {
     for (const child of sortedChildren(node)) {
@@ -168,6 +187,9 @@ export default function Files({ report }: { report: Report }) {
             </span>
           </td>
           <td className="num">{humanBytes(child.bytes)}</td>
+          {hasCost && (
+            <td className="num">{child.compressed > 0 ? humanBytes(child.compressed) : "–"}</td>
+          )}
           <td className="num">{dir ? child.files : ""}</td>
           <td>
             {pkg && (
@@ -209,6 +231,12 @@ export default function Files({ report }: { report: Report }) {
           <div className="stat-label">{t("files_bytes")}</div>
           <div className="stat-value">{humanBytes(tree.bytes)}</div>
         </div>
+        {hasCost && (
+          <div className="stat">
+            <div className="stat-label">{t("th_on_flash")}</div>
+            <div className="stat-value">{humanBytes(tree.compressed)}</div>
+          </div>
+        )}
         {source.id === "rootfs" && report.rootfs && (
           <div className="stat">
             <div className="stat-label">{t("stat_compressed", { algo: report.rootfs.compression ?? "?" })}</div>
@@ -249,6 +277,7 @@ export default function Files({ report }: { report: Report }) {
               <tr>
                 <th>{t("th_path")}</th>
                 <th className="num">{t("th_size")}</th>
+                {hasCost && <th className="num">{t("th_on_flash")}</th>}
                 <th className="num">{t("th_files")}</th>
                 <th>{t("th_package")}</th>
                 <th className="bar-col">{t("th_share")}</th>

@@ -62,6 +62,17 @@
   image (GPT + vfat boot + ext4 root) now resolves end to end, validated
   against parted, dumpe2fs, fsck.fat and cpio.
 
+## Phase 6 (done)
+
+- squashfs contents in artifact-only mode, with pure-Rust decoders for gzip,
+  xz, zstd and lz4, so a released rootfs browses in the terminal and in the
+  browser with no build tree. Validated entry-by-entry against unsquashfs.
+- Per-file true compressed cost from the block and fragment tables, replacing
+  the ratio estimate for per-package flash cost wherever the image is readable
+- FIT parsing, on a minimal flattened-device-tree reader
+- UBIFS contents, by scanning nodes rather than walking the index
+- Raw NAND dumps that still carry their out-of-band bytes
+
 ## Considered and deferred
 
 - Browser scanning of a Buildroot output directory. The WASM core implements
@@ -84,20 +95,10 @@
 
 ## Distant / recorded, not planned
 
-- Per-file true compressed cost via squashfs block/fragment mapping instead of
-  ratio approximation
-- Listing squashfs contents in artifact-only mode. jffs2 already works because
-  its names and sizes sit in plain node headers; squashfs keeps its inode and
-  directory tables compressed, so this needs decoders for xz, gzip, zstd and
-  lz4 (pure-Rust ones exist, at maybe 150-400 KB of WASM) plus a real squashfs
-  reader. Worth it to browse a released rootfs with no build tree.
-- FIT image parsing (needs a minimal DTB reader)
-- Listing UBIFS contents. Harder than squashfs: the index is a wandering B-tree
-  that has to be walked, and its nodes are LZO or zlib compressed, so it needs
-  both a reader and decompressors. The superblock already gives the size,
-  geometry and compression, which is what a size report mostly asks for.
-- Reading a raw NAND dump that still carries its out-of-band bytes. The UBI
-  reader assumes an image whose eraseblocks are contiguous, which is what
-  `ubinize` writes and what gets flashed; a dump taken with spare areas
-  interleaved would need those stripped first, and the OOB layout is
-  controller-specific.
+- squashfs or UBIFS compressed with lzo. The pure-Rust lzo crates do not build
+  for wasm32, and splitting behaviour between the CLI and the browser would be
+  worse than saying plainly that the image cannot be read.
+- Reading file *data* out of a UBIFS volume. The listing comes from scanning
+  nodes, but the data nodes are compressed and reaching them properly means the
+  wandering B-tree. Sizes come from the inodes either way, which is what a size
+  report asks for.

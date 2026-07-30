@@ -103,6 +103,11 @@ pub struct RootfsReport {
 pub struct FileRef {
     pub path: String,
     pub bytes: u64,
+    /// What the file costs on the medium once compressed, read from the
+    /// filesystem image rather than estimated. Absent when the image could not
+    /// be read, or when there is no image to read.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub compressed_bytes: Option<u64>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

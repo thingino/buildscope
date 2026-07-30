@@ -8,3 +8,10 @@ license.workspace = true
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+
+# Decompressors, for reading squashfs metadata and measuring per-file cost.
+# All pure Rust, because the core has to build for wasm32 with no C sysroot.
+miniz_oxide = "0.8"
+lzma-rs = "0.3"
+ruzstd = "0.7"
+lz4_flex = { version = "0.11", default-features = false, features = ["safe-decode", "frame"] }

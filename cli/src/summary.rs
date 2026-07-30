@@ -95,13 +95,18 @@ pub fn print_report(r: &Report) {
                     .get("bytes_used")
                     .and_then(|v| v.as_u64())
                     .map(|u| {
+                        let files = i.detail.get("live_files").and_then(|v| v.as_u64());
                         format!(
-                            "{} used, {}",
+                            "{} used, {}{}",
                             human(u),
                             i.detail
                                 .get("compression")
                                 .and_then(|c| c.as_str())
-                                .unwrap_or("?")
+                                .unwrap_or("?"),
+                            match files {
+                                Some(n) => format!(", {n} files"),
+                                None => String::new(),
+                            }
                         )
                     }),
                 "jffs2" => i.detail.get("used_bytes").and_then(|v| v.as_u64()).map(|u| {

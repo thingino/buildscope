@@ -2,8 +2,8 @@
 
 use crate::inputs::{buildtime, config::BrConfig, pfl};
 use crate::parsers::{
-    cpio, ext, fat, fit, genimage, gpt, jffs2, mbr, mtdparts, padding, squashfs, ubi, ubifs,
-    ubootenv, uimage,
+    cpio, ext, fat, fit, genimage, gpt, jffs2, mbr, mtdparts, padding, squashfs,
+    squashfs_reader, ubi, ubifs, ubootenv, uimage,
 };
 use crate::report::*;
 use crate::snapshot::Snapshot;
@@ -17,6 +17,8 @@ pub(crate) struct Classified {
     pub(crate) format: String,
     pub(crate) detail: serde_json::Value,
     pub(crate) squash: Option<squashfs::SquashfsInfo>,
+    /// The image's contents, when it could be read.
+    pub(crate) squash_listing: Option<squashfs_reader::SquashListing>,
     pub(crate) jffs2: Option<jffs2::Jffs2Info>,
     pub(crate) uimage: Option<uimage::UimageInfo>,
     pub(crate) env: Option<ubootenv::UbootEnvInfo>,
@@ -59,6 +61,7 @@ pub(crate) fn classify(name: &str, size: u64, bytes: Option<&[u8]>) -> Classifie
         format: "raw".to_string(),
         detail: json!({}),
         squash: None,
+        squash_listing: None,
         jffs2: None,
         uimage: None,
         env: None,
@@ -80,7 +83,7 @@ pub(crate) fn classify(name: &str, size: u64, bytes: Option<&[u8]>) -> Classifie
 
     if let Some(info) = squashfs::parse(data) {
         c.format = "squashfs".into();
-        c.detail = json!({
+        let mut detail = json!({
             "bytes_used": info.bytes_used,
             "padding_bytes": size.saturating_sub(info.bytes_used),
             "compression": info.compression,
@@ -89,6 +92,47 @@ pub(crate) fn classify(name: &str, size: u64, bytes: Option<&[u8]>) -> Classifie
             "fragment_count": info.fragment_count,
             "version": format!("{}.{}", info.version_major, info.version_minor),
         });
+        // The contents, which need the image's own compressor to read.
+        match squashfs_reader::read(data, &info) {
+            Ok(l) => {
+                if let Some(o) = detail.as_object_mut() {
+                    o.insert("live_files".into(), json!(l.file_count));
+                    o.insert("live_dirs".into(), json!(l.dir_count));
+                    o.insert("live_links".into(), json!(l.link_count));
+                    o.insert("logical_content_bytes".into(), json!(l.logical_bytes));
+                    o.insert("file_compressed_bytes".into(), json!(l.compressed_bytes));
+                    o.insert("entries_truncated".into(), json!(l.entries_truncated));
+                    o.insert(
+                        "entries".into(),
+                        json!(l
+                            .entries
+                            .iter()
+                            .map(|e| json!({
+                                "path": e.path,
+                                "bytes": e.bytes,
+                                "compressed_bytes": e.compressed_bytes,
+                                "kind": e.kind,
+                            }))
+                            .collect::<Vec<_>>()),
+                    );
+                }
+                c.squash_listing = Some(l);
+            }
+            Err(e) => {
+                if let Some(o) = detail.as_object_mut() {
+                    o.insert(
+                        "listing_unavailable".into(),
+                        json!(match e {
+                            squashfs_reader::ReadError::Unsupported(a) =>
+                                format!("compressed with {a}, which this build cannot decode"),
+                            squashfs_reader::ReadError::Malformed =>
+                                "the image's tables could not be read".to_string(),
+                        }),
+                    );
+                }
+            }
+        }
+        c.detail = detail;
         c.squash = Some(info);
         return c;
     }
@@ -955,26 +999,61 @@ pub fn analyze(snap: &Snapshot) -> Report {
     };
     let ratio = rootfs.as_ref().and_then(|r| r.compression_ratio);
 
+    // The rootfs image's own listing, when there was one to read.
+    let squash_listing = images.iter().find_map(|i| i.squash_listing.as_ref());
+
+    // What each path costs once compressed, read out of the rootfs image. This
+    // is the real number: a file's inode records the size of every block it
+    // occupies. Where it is available it replaces the ratio estimate, which
+    // assumes every file compresses like the average and so understates
+    // anything already compressed and overstates plain text.
+    // Symlinks and directories have no data blocks of their own -- they live
+    // in the inode table, which is the image's overhead rather than any one
+    // file's -- so they are known to cost nothing rather than being unknown.
+    // Only a path the image never mentions makes a package unmeasurable.
+    let true_cost: HashMap<&str, u64> = squash_listing
+        .as_ref()
+        .map(|l| {
+            l.entries
+                .iter()
+                .map(|e| (e.path.as_str(), e.compressed_bytes.unwrap_or(0)))
+                .collect()
+        })
+        .unwrap_or_default();
+
     // Packages
     let mut packages: Vec<PackageReport> = per_pkg
         .into_iter()
         .map(|(name, mut acc)| {
             acc.files.sort_by(|a, b| b.0.cmp(&a.0).then(a.1.cmp(&b.1)));
             let truncated = acc.files.len() > MAX_FILES_PER_PACKAGE;
+            let files: Vec<FileRef> = acc
+                .files
+                .iter()
+                .take(MAX_FILES_PER_PACKAGE)
+                .map(|(b, p)| {
+                    let path = format!("/{p}");
+                    FileRef {
+                        compressed_bytes: true_cost.get(path.as_str()).copied(),
+                        path,
+                        bytes: *b,
+                    }
+                })
+                .collect();
+            // Summing the measured costs is only right when every one of the
+            // package's files was found in the image; otherwise fall back so
+            // the column stays comparable between packages.
+            let measured: Option<u64> = (!true_cost.is_empty()
+                && !truncated
+                && files.iter().all(|f| f.compressed_bytes.is_some()))
+            .then(|| files.iter().filter_map(|f| f.compressed_bytes).sum());
             PackageReport {
                 name,
                 bytes: acc.bytes,
                 file_count: acc.count,
-                compressed_bytes_approx: ratio.map(|r| (acc.bytes as f64 * r) as u64),
-                files: acc
-                    .files
-                    .iter()
-                    .take(MAX_FILES_PER_PACKAGE)
-                    .map(|(b, p)| FileRef {
-                        path: format!("/{p}"),
-                        bytes: *b,
-                    })
-                    .collect(),
+                compressed_bytes_approx: measured
+                    .or_else(|| ratio.map(|r| (acc.bytes as f64 * r) as u64)),
+                files,
                 files_truncated: truncated,
             }
         })

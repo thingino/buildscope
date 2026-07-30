@@ -30,8 +30,11 @@ buildscope scan output/
 
 - **Every file in `images/`**, with format-aware introspection instead of bare
   file sizes:
-  - squashfs: real bytes used, compression algorithm, block size (padding
-    excluded, straight from the superblock)
+  - squashfs: real bytes used, compression algorithm, block size, and the
+    whole directory tree with a *measured* per-file cost -- a file's inode
+    records the size of every block it occupies, and a tail sharing a fragment
+    with other files is charged its share, so the numbers add up to the image
+    (gzip, xz, zstd and lz4; an lzo image says so rather than guessing)
   - ext2/ext3/ext4: used vs free from the block counts in the superblock, plus
     inode usage, block size, label and UUID
   - jffs2: actual used bytes vs free space from a node-level scan, because a
@@ -40,6 +43,8 @@ buildscope scan output/
     than assumed from the partition size, plus cluster size and volume label
   - cpio (`newc`/`crc`): the whole archive listing with names, sizes and kinds,
     so an initramfs rootfs is as browsable as a build tree
+  - FIT (`.itb`): each payload itemised -- kernel, ramdisk, device tree -- with
+    type, load address, compression and hashes, plus the configurations
   - uImage: declared payload size, compression type, load and entry address,
     header CRC check
   - U-Boot environment images: CRC validity, bytes used vs environment size,
@@ -50,8 +55,10 @@ buildscope scan output/
     per-block headers, spare and unwritten blocks, and each volume's contents
     identified in turn (a kernel volume as a uImage, a rootfs volume as
     squashfs, and so on)
-  - UBIFS: formatted size, block count and size, compression, and whether it
-    is still set to grow into its volume on first mount
+  - UBIFS: formatted size, block count and size, compression, and whether it is
+    still set to grow into its volume on first mount, plus the contents by
+    scanning its nodes -- which works with no decompressor because UBIFS
+    compresses file data but not directory entries or inodes
   - composite flash images: trailing-padding detection, and verification that
     each partition really holds what its name implies
 - **Partition budgets** parsed from the build itself (a `mtdparts=` string in
@@ -62,9 +69,11 @@ buildscope scan output/
   are both covered: NOR, NAND, and a GPT card with a FAT boot partition and an
   ext4 root all resolve to the same report.
 - **Per-package sizes**: every file in the final rootfs attributed to the
-  Buildroot package that installed it via `packages-file-list.txt`, with a
-  per-package approximate compressed cost from the measured rootfs compression
-  ratio.
+  Buildroot package that installed it via `packages-file-list.txt`, and what
+  each costs on flash. Where the rootfs image can be read that cost is measured
+  per file rather than estimated from an average ratio, which matters because
+  the average is wrong in both directions: in one real build a web interface
+  compressed to 20% while busybox managed only 41%, against a 29% average.
 - **A browsable file listing**: every path in the rootfs with its size and
   owning package, so "why is this partition full" is a tree you can walk rather
   than a number. A jffs2 partition additionally reconstructs its own listing

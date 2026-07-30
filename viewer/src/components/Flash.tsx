@@ -260,7 +260,7 @@ function EnvVars({ img, t }: { img: ImageReport; t: TFn }) {
         )}
       </div>
       <div className="tbl-wrap">
-        <table className="tbl">
+        <table className="tbl env-table">
           <thead>
             <tr>
               <th>{t("th_variable")}</th>

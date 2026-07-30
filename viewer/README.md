@@ -109,3 +109,14 @@ binary, or via `--viewer-dir`.
   including ones with nothing written, every partition row. Assertions come from
   the report, so any report works and absent sections are skipped. This is the
   component-level check that needs no browser.
+* `npm run check:layout -- --out shots <exported.html>...` opens files written
+  by `buildscope export` in headless Chromium at 1280px and 412px, walks every
+  tab, and fails on what only a layout engine knows: a page that scrolls
+  sideways, content wider than the table cell holding it, a row label sunk to
+  the bottom of its own tall row, or a runtime error. Screenshots of every tab
+  at both widths are written to `--out`. Playwright is not a dependency here, so
+  the check skips cleanly when it is missing; set `BUILDSCOPE_PLAYWRIGHT` to an
+  install elsewhere. Both real bugs it has caught so far were invisible to the
+  static checks: a value's inline-block baseline dragging its own name eight
+  lines down the row, and a long unbreakable kernel version widening the entire
+  page past the viewport.

@@ -485,6 +485,12 @@ body {
   border-radius: 8px;
   padding: 10px 16px 11px;
   min-width: 150px;
+  /* A flex item will not shrink below its content, and some of these values
+     are one long unbreakable token: a kernel version can read
+     "3.10.14__isvp_swan_1.0__". Without this the tile pushes the whole page
+     wider than the screen instead of wrapping inside itself. */
+  min-width: min(150px, 100%);
+  max-width: 100%;
 }
 
 .stat-label {
@@ -502,6 +508,8 @@ body {
   font-weight: 700;
   color: var(--ink-bright);
   font-variant-numeric: tabular-nums;
+  /* Break inside a token only when it cannot otherwise fit. */
+  overflow-wrap: anywhere;
 }
 
 .stat-sub {
@@ -1396,4 +1404,12 @@ body {
   font-size: 11.5px;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+/* A wrapped value makes its row tall, and the value's inline-block baseline is
+   that of its LAST line. Without this the name and byte count sink to the
+   bottom of the row, so a long bootcmd pushes its own name eight lines away
+   from the text it labels. */
+.env-table td {
+  vertical-align: top;
 }

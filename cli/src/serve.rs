@@ -28,8 +28,8 @@ fn header(k: &str, v: &str) -> Header {
     Header::from_bytes(k.as_bytes(), v.as_bytes()).expect("static header")
 }
 
-pub fn serve(port: u16, reports: Vec<ReportEntry>, viewer_dir: Option<PathBuf>) -> ! {
-    let addr = format!("127.0.0.1:{port}");
+pub fn serve(bind: &str, port: u16, reports: Vec<ReportEntry>, viewer_dir: Option<PathBuf>) -> ! {
+    let addr = format!("{bind}:{port}");
     let server = Server::http(&addr).unwrap_or_else(|e| {
         eprintln!("buildscope: cannot bind {addr}: {e}");
         std::process::exit(1);

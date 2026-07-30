@@ -48,6 +48,9 @@ enum Cmd {
         dirs: Vec<PathBuf>,
         #[arg(long, default_value_t = 8380)]
         port: u16,
+        /// Address to bind (use 0.0.0.0 to expose on the network)
+        #[arg(long, default_value = "127.0.0.1")]
+        bind: String,
         /// Directory with the built viewer (index.html + assets)
         #[arg(long)]
         viewer_dir: Option<PathBuf>,
@@ -140,6 +143,7 @@ fn main() {
         Cmd::Serve {
             dirs,
             port,
+            bind,
             viewer_dir,
             flash_map,
         } => {
@@ -155,7 +159,7 @@ fn main() {
                 })
                 .collect();
             let viewer = viewer_dir.or_else(default_viewer_dir);
-            serve::serve(port, reports, viewer);
+            serve::serve(&bind, port, reports, viewer);
         }
     }
 }

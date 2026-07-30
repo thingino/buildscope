@@ -7,7 +7,7 @@
 //! everywhere else. Package attribution is impossible in this mode and is
 //! reported as such.
 
-use crate::analyze::{classify, partition_role, ubi_detail, used_bytes_of, Role};
+use crate::analyze::{classify, env_vars_json, partition_role, ubi_detail, used_bytes_of, Role};
 use crate::parsers::{mbr, mtdparts, padding, ubi, ubootenv};
 use crate::report::*;
 use crate::snapshot::{ContextSource, ScanMode};
@@ -455,12 +455,15 @@ pub fn carve_flash_image(file_name: &str, data: &[u8], root: &str, scan_mode: Sc
                 .as_ref()
                 .filter(|(eoff, esize, _)| *eoff >= off && eoff + esize <= end)
             {
+                let (vars, vars_truncated) = env_vars_json(env);
                 let mut detail = json!({
                     "crc_ok": env.crc_ok,
                     "redundant": env.redundant,
                     "used_bytes": env.used_bytes,
                     "free_bytes": (*esize as u64).saturating_sub(env.used_bytes),
                     "var_count": env.vars.len(),
+                    "vars": vars,
+                    "vars_truncated": vars_truncated,
                     "env_block_bytes": esize,
                     "env_block_offset": eoff,
                     "region_bytes": slice.len(),

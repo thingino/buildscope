@@ -8,7 +8,8 @@
     "build": "node scripts/copy-wasm.mjs && node scripts/check-locales.mjs && tsc --noEmit && vite build",
     "preview": "vite preview",
     "wasm": "node scripts/copy-wasm.mjs",
-    "check:locales": "node scripts/check-locales.mjs"
+    "check:locales": "node scripts/check-locales.mjs",
+    "check:render": "node scripts/render-check.mjs"
   },
   "dependencies": {
     "@fontsource/montserrat": "^5.3.0",

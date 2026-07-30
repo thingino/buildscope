@@ -26,6 +26,13 @@ needs a directory *handle* (File System Access API) so only `target/`,
 
 ## The Flash tab
 
+A U-Boot environment partition gets its variables listed, with a filter over
+both names and values. It is the board's own configuration, so it explains much
+of what the rest of the tab shows: `mtdparts` is where the partition table came
+from, and `bootcmd` says which partition is actually booted and how. Values are
+shown in full and wrap rather than truncate, because the interesting part of a
+`bootcmd` is usually its tail.
+
 The map and partition table are joined by a UBI volumes table whenever an image
 is a UBI area. Volumes take part in the flash map like any other partition, so
 the extra table exists for what a partition row cannot say: the space the volume
@@ -96,3 +103,9 @@ binary, or via `--viewer-dir`.
   built in the page.
 * `npm run check:locales` runs in `npm run build`, so a locale that drifts
   from `en.ts` fails the build and therefore CI.
+* `npm run check:render -- <report.json>...` renders the Flash tab to static
+  HTML with react-dom and asserts that what the report contains actually reaches
+  the markup: every environment variable with its value intact, every UBI volume
+  including ones with nothing written, every partition row. Assertions come from
+  the report, so any report works and absent sections are skipped. This is the
+  component-level check that needs no browser.

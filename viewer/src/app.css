@@ -1300,6 +1300,8 @@ body {
 [dir="rtl"] .trunc,
 [dir="rtl"] .topfile,
 [dir="rtl"] .timing-name,
+[dir="rtl"] .env-key,
+[dir="rtl"] .env-val,
 [dir="rtl"] .drop-sub code {
   direction: ltr;
   text-align: start;
@@ -1373,4 +1375,25 @@ body {
 .trunc-note {
   margin-bottom: 8px;
   font-size: 11.5px;
+}
+
+/* An environment variable is a name and a machine-readable value. Values run
+   long -- a boot command carries the whole kernel command line -- so they wrap
+   inside a bounded column rather than being cut off, since the tail of a
+   bootcmd is usually the part worth reading. */
+.env-key {
+  color: var(--ink-bright);
+  font-family: var(--mono);
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+
+.env-val {
+  display: inline-block;
+  max-width: 70ch;
+  color: var(--ink-2);
+  font-family: var(--mono);
+  font-size: 11.5px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }

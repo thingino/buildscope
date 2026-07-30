@@ -173,12 +173,15 @@ pub(crate) fn classify(name: &str, size: u64, bytes: Option<&[u8]>) -> Classifie
     }
     if let Some(info) = ubootenv::parse(data) {
         c.format = "uboot-env".into();
+        let (vars, vars_truncated) = env_vars_json(&info);
         c.detail = json!({
             "crc_ok": info.crc_ok,
             "redundant": info.redundant,
             "used_bytes": info.used_bytes,
             "free_bytes": info.total_bytes.saturating_sub(info.used_bytes),
             "var_count": info.vars.len(),
+            "vars": vars,
+            "vars_truncated": vars_truncated,
         });
         c.env = Some(info);
         return c;
@@ -194,6 +197,24 @@ pub(crate) fn classify(name: &str, size: u64, bytes: Option<&[u8]>) -> Classifie
         "trailing_padding": pad.trailing_bytes,
     });
     c
+}
+
+/// A U-Boot environment is small, so the whole of it is reported; the cap only
+/// exists so a corrupt image cannot produce an unbounded report.
+pub(crate) const MAX_ENV_VARS: usize = 1024;
+
+/// The environment's variables, sorted by key so a report diffs cleanly and
+/// reads the way `fw_printenv` prints it.
+pub(crate) fn env_vars_json(info: &ubootenv::UbootEnvInfo) -> (serde_json::Value, bool) {
+    let mut vars: Vec<&(String, String)> = info.vars.iter().collect();
+    vars.sort_by(|a, b| a.0.cmp(&b.0));
+    let truncated = vars.len() > MAX_ENV_VARS;
+    let out: Vec<serde_json::Value> = vars
+        .iter()
+        .take(MAX_ENV_VARS)
+        .map(|(k, v)| json!({ "key": k, "value": v, "bytes": v.len() }))
+        .collect();
+    (json!(out), truncated)
 }
 
 /// Describe a UBI area. `base` is where the area sits in the file being
@@ -1021,6 +1042,39 @@ mod tests {
         let mut out = crc32_ieee(&payload).to_le_bytes().to_vec();
         out.extend_from_slice(&payload);
         out
+    }
+
+    #[test]
+    fn env_vars_are_reported_in_full_sorted_by_key() {
+        let img = synth_env(
+            &[
+                ("bootcmd", "bootm 0x80600000"),
+                ("baudrate", "115200"),
+                ("mtdparts", "nor0:64k(boot),-(rootfs)"),
+                // An empty value is a real thing to set, and must survive as
+                // an empty string rather than becoming a missing key.
+                ("debug", ""),
+            ],
+            4096,
+        );
+        let c = classify("u-boot-env.bin", img.len() as u64, Some(&img));
+        assert_eq!(c.format, "uboot-env");
+        assert_eq!(c.detail["var_count"], json!(4));
+        assert_eq!(c.detail["vars_truncated"], json!(false));
+        let vars = c.detail["vars"].as_array().unwrap();
+
+        // Sorted by key, the way fw_printenv prints them.
+        let keys: Vec<&str> = vars.iter().map(|v| v["key"].as_str().unwrap()).collect();
+        assert_eq!(keys, vec!["baudrate", "bootcmd", "debug", "mtdparts"]);
+
+        let get = |k: &str| vars.iter().find(|v| v["key"] == k).unwrap();
+        assert_eq!(get("bootcmd")["value"], json!("bootm 0x80600000"));
+        assert_eq!(get("bootcmd")["bytes"], json!(16));
+        assert_eq!(get("mtdparts")["value"], json!("nor0:64k(boot),-(rootfs)"));
+        assert_eq!(get("debug")["value"], json!(""));
+        assert_eq!(get("debug")["bytes"], json!(0));
+        // Every variable carries its value; nothing is dropped or rewritten.
+        assert!(vars.iter().all(|v| v["value"].is_string()));
     }
 
     const K: u64 = 1024;

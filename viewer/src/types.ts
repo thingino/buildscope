@@ -67,6 +67,13 @@ export interface ImageReport {
   detail: Record<string, unknown>;
 }
 
+/** One variable from the `detail` of an image whose format is "uboot-env". */
+export interface EnvVar {
+  key: string;
+  value: string;
+  bytes: number;
+}
+
 /** Shape of the `detail` on an image whose format is "ubi". */
 export interface UbiDetail {
   ubi_offset: number;

@@ -37,7 +37,8 @@ buildscope scan output/
   - uImage: declared payload size, compression type, load and entry address,
     header CRC check
   - U-Boot environment images: CRC validity, bytes used vs environment size,
-    variable count
+    and every variable, so the board's own configuration is readable next to
+    the layout it describes
   - UBI: eraseblock geometry, every volume with the space its table reserved
     against the payload actually written, per-volume flash cost including
     per-block headers, spare and unwritten blocks, and each volume's contents

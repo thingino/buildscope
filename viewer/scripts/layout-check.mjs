@@ -73,8 +73,14 @@ for (const file of files) {
     });
     const page = await ctx.newPage();
     const errors = [];
+    // Looking for a local API and not finding one is how the page decides it is
+    // running standalone, so that 404 is a result, not a fault.
+    const expected = (s) => s.includes("/api/index");
     page.on("pageerror", (e) => errors.push(e.message));
-    page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+    page.on(
+      "console",
+      (m) => m.type() === "error" && !expected(m.text()) && errors.push(m.text())
+    );
 
     await page.goto(`file://${resolve(file)}`);
     await page.waitForSelector(".tabs .tab", { timeout: 20000 });

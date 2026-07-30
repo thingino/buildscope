@@ -1039,6 +1039,10 @@ body {
   .readout {
     font-size: 11px;
     gap: 4px 0;
+    /* Give the build's details their own row under the brand, so the controls
+       can stay up on the brand's line instead of being pushed below them. */
+    flex: 1 1 100%;
+    order: 1;
   }
 
   .readout-item:first-child {
@@ -1046,15 +1050,21 @@ body {
   }
 
   .top-right {
-    width: 100%;
-    margin-inline-start: 0;
+    flex-wrap: wrap;
+    /* End of the brand's row: a gear on a line of its own, left-aligned under
+       the wordmark, reads like an orphan. */
+    margin-inline-start: auto;
   }
 
-  .top-right {
-    flex-wrap: wrap;
+  /* A build picker does still earn a row to itself, because the name in it is
+     worth reading in full; a lone gear does not. Where :has is unsupported the
+     picker simply shares the brand's row. */
+  .top-right:has(.select) {
+    width: 100%;
+    margin-inline-start: 0;
+    order: 0;
   }
-  /* The build name matters on every glance, so the picker takes the row and
-     the gear keeps its intrinsic width beside it. */
+
   .top-right .select {
     flex: 1 1 8rem;
     min-width: 0;

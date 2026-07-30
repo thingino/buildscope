@@ -7,6 +7,7 @@
 //! testable with synthetic snapshots.
 
 pub mod analyze;
+pub mod carve;
 pub mod crc;
 pub mod diff;
 pub mod inputs;

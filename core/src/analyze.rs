@@ -9,18 +9,18 @@ use std::collections::{HashMap, HashSet};
 
 const TOP_FILES: usize = 8;
 
-struct Classified {
-    name: String,
-    bytes: u64,
-    format: String,
-    detail: serde_json::Value,
-    squash: Option<squashfs::SquashfsInfo>,
-    jffs2: Option<jffs2::Jffs2Info>,
-    uimage: Option<uimage::UimageInfo>,
-    env: Option<ubootenv::UbootEnvInfo>,
-    mbr: Option<Vec<mbr::MbrPartition>>,
-    content_end: u64,
-    partition: Option<String>,
+pub(crate) struct Classified {
+    pub(crate) name: String,
+    pub(crate) bytes: u64,
+    pub(crate) format: String,
+    pub(crate) detail: serde_json::Value,
+    pub(crate) squash: Option<squashfs::SquashfsInfo>,
+    pub(crate) jffs2: Option<jffs2::Jffs2Info>,
+    pub(crate) uimage: Option<uimage::UimageInfo>,
+    pub(crate) env: Option<ubootenv::UbootEnvInfo>,
+    pub(crate) mbr: Option<Vec<mbr::MbrPartition>>,
+    pub(crate) content_end: u64,
+    pub(crate) partition: Option<String>,
 }
 
 fn is_texty(name: &str, bytes: Option<&[u8]>) -> bool {
@@ -43,7 +43,7 @@ fn is_texty(name: &str, bytes: Option<&[u8]>) -> bool {
     }
 }
 
-fn classify(name: &str, size: u64, bytes: Option<&[u8]>) -> Classified {
+pub(crate) fn classify(name: &str, size: u64, bytes: Option<&[u8]>) -> Classified {
     let mut c = Classified {
         name: name.to_string(),
         bytes: size,
@@ -155,7 +155,7 @@ fn classify(name: &str, size: u64, bytes: Option<&[u8]>) -> Classified {
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
-enum Role {
+pub(crate) enum Role {
     Boot,
     Env,
     Kernel,
@@ -165,7 +165,7 @@ enum Role {
     Other,
 }
 
-fn partition_role(name: &str) -> Role {
+pub(crate) fn partition_role(name: &str) -> Role {
     let n = name.to_ascii_lowercase();
     if n == "all" || n == "whole" || n == "flash" {
         return Role::Span;
@@ -208,7 +208,7 @@ fn image_fits_role(img: &Classified, role: Role) -> bool {
     }
 }
 
-fn used_bytes_of(img: &Classified) -> Option<u64> {
+pub(crate) fn used_bytes_of(img: &Classified) -> Option<u64> {
     if let Some(s) = &img.squash {
         return Some(s.bytes_used);
     }

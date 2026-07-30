@@ -64,6 +64,35 @@ attaching to an issue or a release):
 buildscope export output/my-build -o my-build.html
 ```
 
+## Analyzing firmware you did not build
+
+With no build tree at all, buildscope recovers what the image itself knows.
+Point `carve` at a released image, a flash dump, or a directory of them:
+
+```
+buildscope carve firmware.bin
+buildscope carve downloaded-release/          # every image in the directory
+buildscope serve downloaded-release/          # browse them all in the viewer
+```
+
+The partition layout comes from the image: a CRC-valid U-Boot environment
+block is located by scanning, and its `mtdparts` variable is the partition
+table. Each partition is then carved and identified with the same parsers used
+on build trees, so you get real per-partition usage, filesystem facts, and
+kernel image details. Per-package attribution is impossible without a build
+tree, and the report says so rather than guessing.
+
+Because every partition is checked against what its name implies, this doubles
+as an integrity check: a short or partly-transferred image is reported as
+truncated against the layout it declares.
+
+`diff` and `export` accept bare images too, so two releases of the same camera
+can be compared without either build tree:
+
+```
+buildscope diff old-release/cam.bin new-release/cam.bin
+```
+
 ## Two ways to run it
 
 **Post-hoc (default).** `buildscope scan <dir>` works on any existing output

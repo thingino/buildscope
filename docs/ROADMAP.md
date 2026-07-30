@@ -19,10 +19,12 @@
   target-finalize removals filtered
 - genimage.cfg partition-layout detector with per-partition image hints
 
-## Phase 2 leftovers
+## Phase 2b (done)
 
-- Artifact-only mode: carve a bare composite flash image using an embedded
-  environment block and magics (no package attribution possible in this mode)
+- Artifact-only mode: `buildscope carve` recovers the layout from an embedded
+  CRC-valid U-Boot environment block (or an MBR), carves and identifies every
+  partition, and flags truncated images. `diff`, `export`, `scan` and `serve`
+  all accept bare artifacts and directories of them.
 
 ## Phase 3
 

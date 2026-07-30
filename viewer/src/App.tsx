@@ -18,6 +18,23 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "drift", label: "Drift" },
 ];
 
+/// An artifact-only report (a carved .bin) has no packages, modules or
+/// timings; hide those tabs rather than showing empty panes.
+function tabHasData(tab: Tab, r: Report, reportCount: number): boolean {
+  switch (tab) {
+    case "flash":
+      return true;
+    case "packages":
+      return r.packages.length > 0 || r.rootfs !== null;
+    case "modules":
+      return r.modules.length > 0;
+    case "time":
+      return r.timings.length > 0;
+    case "drift":
+      return reportCount > 1;
+  }
+}
+
 function readHash(): { b: number; t: Tab } {
   const h = new URLSearchParams(window.location.hash.replace(/^#/, ""));
   const t = h.get("t") as Tab | null;
@@ -102,6 +119,10 @@ export default function App() {
 
   const staticMode = api === null;
   const showDrop = staticMode && staticReports.length === 0;
+  // Selected tab may not apply to the current report (switching builds, or
+  // a carved artifact with no package data): fall back to Flash.
+  const effectiveTab: Tab =
+    report && !tabHasData(tab, report, entries.length) ? "flash" : tab;
 
   return (
     <div className="app">
@@ -193,22 +214,22 @@ export default function App() {
             )}
           </div>
           <nav className="tabs">
-            {TABS.filter((t) => t.id !== "drift" || entries.length > 1).map((t) => (
+            {TABS.filter((t) => tabHasData(t.id, report, entries.length)).map((t) => (
               <button
                 key={t.id}
-                className={`tab ${tab === t.id ? "active" : ""}`}
+                className={`tab ${effectiveTab === t.id ? "active" : ""}`}
                 onClick={() => setTab(t.id)}
               >
                 {t.label}
               </button>
             ))}
           </nav>
-          <main key={`${current}:${tab}`} className="content">
-            {tab === "flash" && <Flash report={report} />}
-            {tab === "packages" && <Packages report={report} />}
-            {tab === "modules" && <Modules report={report} />}
-            {tab === "time" && <Timings report={report} />}
-            {tab === "drift" && entries.length > 1 && (
+          <main key={`${current}:${effectiveTab}`} className="content">
+            {effectiveTab === "flash" && <Flash report={report} />}
+            {effectiveTab === "packages" && <Packages report={report} />}
+            {effectiveTab === "modules" && <Modules report={report} />}
+            {effectiveTab === "time" && <Timings report={report} />}
+            {effectiveTab === "drift" && entries.length > 1 && (
               <Drift entries={entries} currentIdx={current} current={report} getReport={getReport} />
             )}
           </main>

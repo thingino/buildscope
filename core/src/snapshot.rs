@@ -8,6 +8,8 @@ pub enum ContextSource {
     Hook,
     /// Paths discovered from the tree layout.
     Inferred,
+    /// No build tree at all: a bare firmware artifact was analyzed.
+    Artifact,
 }
 
 impl ContextSource {
@@ -15,6 +17,7 @@ impl ContextSource {
         match self {
             ContextSource::Hook => "hook",
             ContextSource::Inferred => "inferred",
+            ContextSource::Artifact => "artifact",
         }
     }
 }

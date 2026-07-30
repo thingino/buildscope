@@ -4,8 +4,10 @@ mod summary;
 mod walker;
 
 use buildscope_core::analyze::analyze;
+use buildscope_core::carve::carve_flash_image;
 use buildscope_core::diff::diff;
 use buildscope_core::report::{Report, REPORT_FILENAME};
+use buildscope_core::snapshot::ScanMode;
 use clap::{Parser, Subcommand};
 use std::path::{Path, PathBuf};
 
@@ -64,6 +66,22 @@ enum Cmd {
         #[arg(long)]
         genimage: Option<PathBuf>,
     },
+    /// Analyze bare firmware artifacts with no build tree (a released .bin,
+    /// a flash dump, a lone rootfs image)
+    Carve {
+        /// Image files, or directories of images
+        #[arg(required = true)]
+        files: Vec<PathBuf>,
+        /// Also write the report to this path ("-" for stdout)
+        #[arg(long)]
+        out: Option<String>,
+        /// Write a report file next to each analyzed image
+        #[arg(long)]
+        write_report: bool,
+        /// Suppress the terminal summary
+        #[arg(long, short)]
+        quiet: bool,
+    },
     /// Compare two builds (report.json files or output dirs)
     Diff {
         /// Baseline: report.json or a build dir
@@ -87,10 +105,56 @@ enum Cmd {
     },
 }
 
-/// Load a report from a JSON file, or scan a directory that resolves to
-/// exactly one build.
+/// Extensions that are never firmware artifacts, skipped when carving a
+/// directory of release assets.
+const NON_ARTIFACT_EXT: &[&str] = &[
+    "json", "md", "txt", "sha256sum", "sha256", "sha1", "md5", "asc", "sig", "log", "cfg", "html",
+];
+
+fn is_artifact_candidate(path: &Path) -> bool {
+    let Some(name) = path.file_name().and_then(|n| n.to_str()) else {
+        return false;
+    };
+    if name.starts_with('.') {
+        return false;
+    }
+    let ext = path
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("")
+        .to_ascii_lowercase();
+    !NON_ARTIFACT_EXT.contains(&ext.as_str())
+}
+
+/// Analyze one bare artifact file with no build tree.
+fn carve_file(path: &Path) -> Result<Report, String> {
+    let data = std::fs::read(path).map_err(|e| format!("{}: {e}", path.display()))?;
+    if data.is_empty() {
+        return Err(format!("{}: empty file", path.display()));
+    }
+    let name = path
+        .file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_else(|| path.to_string_lossy().into_owned());
+    let root = path
+        .parent()
+        .map(|p| p.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    Ok(carve_flash_image(&name, &data, &root, ScanMode::Native))
+}
+
+/// Load a report from a JSON file, carve a bare artifact file, or scan a
+/// directory that resolves to exactly one build.
 fn load_report(path: &Path) -> Result<Report, String> {
     if path.is_file() {
+        let is_json = path
+            .extension()
+            .and_then(|e| e.to_str())
+            .map(|e| e.eq_ignore_ascii_case("json"))
+            .unwrap_or(false);
+        if !is_json {
+            return carve_file(path);
+        }
         let text = std::fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;
         let r: Report = serde_json::from_str(&text)
             .map_err(|e| format!("{}: not a buildscope report: {e}", path.display()))?;
@@ -119,12 +183,15 @@ fn load_report(path: &Path) -> Result<Report, String> {
     }
 }
 
+/// Scan build trees, falling back to carving bare artifacts for directories
+/// that hold released images rather than a Buildroot output tree. `None`
+/// paths mark carved artifacts (no build tree to write a report into).
 fn scan_dirs(
     dirs: &[PathBuf],
     hook: bool,
     flash_map: Option<&str>,
     genimage: Option<&std::path::Path>,
-) -> Vec<(walker::BuildPaths, Report)> {
+) -> Vec<(Option<walker::BuildPaths>, Report)> {
     let mut out = Vec::new();
     if hook {
         if dirs.len() != 1 {
@@ -133,23 +200,50 @@ fn scan_dirs(
         }
         let paths = walker::from_hook(&dirs[0]);
         match walker::build_snapshot(&paths, flash_map, genimage) {
-            Ok(snap) => out.push((paths, analyze(&snap))),
+            Ok(snap) => out.push((Some(paths), analyze(&snap))),
             Err(e) => eprintln!("buildscope: {}: {e}", dirs[0].display()),
         }
         return out;
     }
     for dir in dirs {
+        // A single artifact file: carve it.
+        if dir.is_file() {
+            match carve_file(dir) {
+                Ok(r) => out.push((None, r)),
+                Err(e) => eprintln!("buildscope: {e}"),
+            }
+            continue;
+        }
         let builds = walker::find_builds(dir);
         if builds.is_empty() {
-            eprintln!(
-                "buildscope: {}: no Buildroot output tree found (need .config plus images/, target/ or build/)",
-                dir.display()
-            );
+            // Not a build tree: treat it as a directory of firmware
+            // artifacts (a downloaded release, a dump collection).
+            let mut candidates: Vec<PathBuf> = std::fs::read_dir(dir)
+                .into_iter()
+                .flatten()
+                .flatten()
+                .map(|e| e.path())
+                .filter(|c| c.is_file() && is_artifact_candidate(c))
+                .collect();
+            candidates.sort();
+            if candidates.is_empty() {
+                eprintln!(
+                    "buildscope: {}: no Buildroot output tree and no firmware artifacts found",
+                    dir.display()
+                );
+                continue;
+            }
+            for c in candidates {
+                match carve_file(&c) {
+                    Ok(r) => out.push((None, r)),
+                    Err(e) => eprintln!("buildscope: {e}"),
+                }
+            }
             continue;
         }
         for paths in builds {
             match walker::build_snapshot(&paths, flash_map, genimage) {
-                Ok(snap) => out.push((paths.clone(), analyze(&snap))),
+                Ok(snap) => out.push((Some(paths.clone()), analyze(&snap))),
                 Err(e) => eprintln!("buildscope: {}: {e}", paths.root.display()),
             }
         }
@@ -176,7 +270,7 @@ fn main() {
             for (paths, report) in &results {
                 let json = serde_json::to_string_pretty(report).expect("serialize report");
                 if !no_write {
-                    if let Some(img_dir) = &paths.images_dir {
+                    if let Some(img_dir) = paths.as_ref().and_then(|p| p.images_dir.as_ref()) {
                         let dest = img_dir.join(REPORT_FILENAME);
                         match std::fs::write(&dest, format!("{json}\n")) {
                             Ok(()) => {
@@ -227,6 +321,83 @@ fn main() {
                 .collect();
             let viewer = viewer_dir.or_else(default_viewer_dir);
             serve::serve(&bind, port, reports, viewer);
+        }
+        Cmd::Carve {
+            files,
+            out,
+            write_report,
+            quiet,
+        } => {
+            // Expand directories into their artifact candidates.
+            let mut targets: Vec<PathBuf> = Vec::new();
+            for p in &files {
+                if p.is_dir() {
+                    let mut entries: Vec<PathBuf> = std::fs::read_dir(p)
+                        .into_iter()
+                        .flatten()
+                        .flatten()
+                        .map(|e| e.path())
+                        .filter(|c| c.is_file() && is_artifact_candidate(c))
+                        .collect();
+                    entries.sort();
+                    if entries.is_empty() {
+                        eprintln!("buildscope: {}: no firmware artifacts found", p.display());
+                    }
+                    targets.extend(entries);
+                } else {
+                    targets.push(p.clone());
+                }
+            }
+
+            let mut reports: Vec<(PathBuf, Report)> = Vec::new();
+            for t in &targets {
+                match carve_file(t) {
+                    Ok(r) => reports.push((t.clone(), r)),
+                    Err(e) => eprintln!("buildscope: {e}"),
+                }
+            }
+            if reports.is_empty() {
+                std::process::exit(1);
+            }
+            for (path, report) in &reports {
+                if write_report {
+                    let dest = path.with_extension("buildscope.json");
+                    let json = serde_json::to_string_pretty(report).expect("serialize report");
+                    match std::fs::write(&dest, format!("{json}\n")) {
+                        Ok(()) => {
+                            if !quiet {
+                                println!("wrote {}", dest.display());
+                            }
+                        }
+                        Err(e) => eprintln!("buildscope: write {}: {e}", dest.display()),
+                    }
+                }
+                if !quiet {
+                    summary::print_report(report);
+                }
+            }
+            if let Some(out) = out {
+                if reports.len() == 1 {
+                    let json =
+                        serde_json::to_string_pretty(&reports[0].1).expect("serialize report");
+                    if out == "-" {
+                        println!("{json}");
+                    } else if let Err(e) = std::fs::write(&out, format!("{json}\n")) {
+                        eprintln!("buildscope: write {out}: {e}");
+                        std::process::exit(1);
+                    }
+                } else {
+                    // Many artifacts: emit an array so one file holds the set.
+                    let all: Vec<&Report> = reports.iter().map(|(_, r)| r).collect();
+                    let json = serde_json::to_string_pretty(&all).expect("serialize reports");
+                    if out == "-" {
+                        println!("{json}");
+                    } else if let Err(e) = std::fs::write(&out, format!("{json}\n")) {
+                        eprintln!("buildscope: write {out}: {e}");
+                        std::process::exit(1);
+                    }
+                }
+            }
         }
         Cmd::Diff { a, b, json } => {
             let (ra, rb) = match (load_report(&a), load_report(&b)) {

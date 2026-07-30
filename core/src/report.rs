@@ -36,7 +36,8 @@ pub struct BuildInfo {
     pub libc: Option<String>,
     pub kernel_version: Option<String>,
     pub rootfs_types: Vec<String>,
-    pub build_wall_seconds: Option<f64>,
+    /// Union of instrumented build-step intervals from build-time.log.
+    pub build_active_seconds: Option<f64>,
     pub completed_at_unix: Option<i64>,
 }
 

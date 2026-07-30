@@ -39,8 +39,12 @@ pub fn print_report(r: &Report) {
     {
         facts.push(v.to_string());
     }
-    if let Some(w) = r.build.build_wall_seconds {
-        facts.push(format!("built in {}m{:02}s", (w as u64) / 60, (w as u64) % 60));
+    if let Some(w) = r.build.build_active_seconds {
+        facts.push(format!(
+            "build time {}m{:02}s",
+            (w as u64) / 60,
+            (w as u64) % 60
+        ));
     }
     if !facts.is_empty() {
         println!("   {}", facts.join(" | "));

@@ -607,7 +607,12 @@ pub fn analyze(snap: &Snapshot) -> Report {
     let mut modules: Vec<ModuleReport> = Vec::new();
     let mut kver: Option<String> = None;
     for e in &snap.target {
-        let Some(rest) = e.path.strip_prefix("lib/modules/") else {
+        // Merged-usr trees symlink /lib to usr/lib; accept both spellings.
+        let Some(rest) = e
+            .path
+            .strip_prefix("lib/modules/")
+            .or_else(|| e.path.strip_prefix("usr/lib/modules/"))
+        else {
             continue;
         };
         if !e.path.ends_with(".ko") {
@@ -670,9 +675,11 @@ pub fn analyze(snap: &Snapshot) -> Report {
         arch: summary.arch,
         target_cpu: summary.target_cpu,
         libc: summary.libc,
-        kernel_version: summary.kernel_version.or_else(|| kver.clone()),
+        // The modules directory carries the real runtime version; configs
+        // often hold a git rev or a custom-repo reference instead.
+        kernel_version: kver.clone().or(summary.kernel_version),
         rootfs_types: summary.rootfs_types,
-        build_wall_seconds: times.wall_seconds,
+        build_active_seconds: times.active_seconds,
         completed_at_unix: snap
             .images_mtime
             .or(times.finished_at.map(|f| f as i64)),

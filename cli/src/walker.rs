@@ -270,13 +270,19 @@ pub fn build_snapshot(paths: &BuildPaths, extra_env_text: Option<&str>) -> io::R
     if let Some(t) = &paths.target_dir {
         snap.target = walk_target(t)?;
         snap.etc_modules = fs::read_to_string(t.join("etc/modules")).ok();
-        // modules.builtin from the first kernel version dir found.
-        let mods = t.join("lib/modules");
-        if let Ok(rd) = fs::read_dir(&mods) {
-            let mut vers: Vec<PathBuf> = rd.flatten().map(|e| e.path()).filter(|p| p.is_dir()).collect();
+        // modules.builtin from the first kernel version dir found; check the
+        // merged-usr location too (read_dir follows the /lib symlink anyway,
+        // but a tree may lack the symlink entirely).
+        for mods in [t.join("lib/modules"), t.join("usr/lib/modules")] {
+            let Ok(rd) = fs::read_dir(&mods) else {
+                continue;
+            };
+            let mut vers: Vec<PathBuf> =
+                rd.flatten().map(|e| e.path()).filter(|p| p.is_dir()).collect();
             vers.sort();
             if let Some(v) = vers.first() {
                 snap.modules_builtin = fs::read_to_string(v.join("modules.builtin")).ok();
+                break;
             }
         }
     }

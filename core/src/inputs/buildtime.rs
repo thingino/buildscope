@@ -23,8 +23,10 @@ pub struct PkgTiming {
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct BuildTimes {
     pub packages: Vec<PkgTiming>,
-    /// Last end minus first start: wall time of the instrumented build.
-    pub wall_seconds: Option<f64>,
+    /// Union of all instrumented step intervals: time the build was actually
+    /// doing something. Robust against logs that span resumed builds, where
+    /// last-end minus first-start would count days of idle time.
+    pub active_seconds: Option<f64>,
     /// Unix timestamp of the last recorded step end.
     pub finished_at: Option<f64>,
 }
@@ -32,7 +34,7 @@ pub struct BuildTimes {
 pub fn parse(text: &str) -> BuildTimes {
     let mut open: HashMap<(String, String), f64> = HashMap::new();
     let mut acc: HashMap<String, HashMap<String, f64>> = HashMap::new();
-    let mut first_start: Option<f64> = None;
+    let mut intervals: Vec<(f64, f64)> = Vec::new();
     let mut last_end: Option<f64> = None;
 
     for line in text.lines() {
@@ -53,7 +55,6 @@ pub fn parse(text: &str) -> BuildTimes {
         }
         match phase {
             "start" => {
-                first_start = Some(first_start.map_or(ts, |f: f64| f.min(ts)));
                 open.insert((pkg, step), ts);
             }
             "end" => {
@@ -61,10 +62,30 @@ pub fn parse(text: &str) -> BuildTimes {
                 if let Some(start) = open.remove(&(pkg.clone(), step.clone())) {
                     let d = (ts - start).max(0.0);
                     *acc.entry(pkg).or_default().entry(step).or_default() += d;
+                    intervals.push((start, ts));
                 }
             }
             _ => {}
         }
+    }
+
+    // Merge overlapping intervals; the union is the honest active time.
+    intervals.sort_by(|a, b| a.0.total_cmp(&b.0));
+    let mut active = 0.0f64;
+    let mut cur: Option<(f64, f64)> = None;
+    for (s, e) in intervals {
+        match cur {
+            Some((cs, ce)) if s <= ce => cur = Some((cs, ce.max(e))),
+            Some((cs, ce)) => {
+                active += ce - cs;
+                cur = Some((s, e));
+                let _ = cs;
+            }
+            None => cur = Some((s, e)),
+        }
+    }
+    if let Some((cs, ce)) = cur {
+        active += ce - cs;
     }
 
     let mut packages: Vec<PkgTiming> = acc
@@ -86,10 +107,7 @@ pub fn parse(text: &str) -> BuildTimes {
     packages.sort_by(|a, b| b.seconds.total_cmp(&a.seconds));
 
     BuildTimes {
-        wall_seconds: match (first_start, last_end) {
-            (Some(f), Some(l)) if l >= f => Some(l - f),
-            _ => None,
-        },
+        active_seconds: if active > 0.0 { Some(active) } else { None },
         finished_at: last_end,
         packages,
     }
@@ -115,7 +133,8 @@ mod tests {
         assert_eq!(bt.packages[0].package, "pkg-a");
         assert!((bt.packages[0].seconds - 10.0).abs() < 1e-9);
         assert!((bt.packages[1].seconds - 2.0).abs() < 1e-9);
-        assert_eq!(bt.wall_seconds, Some(10.0));
+        // download 100-101.5, build 101.5-110 (pkg-b's 102-104 overlaps): 10s
+        assert_eq!(bt.active_seconds, Some(10.0));
         assert_eq!(bt.finished_at, Some(110.0));
         assert_eq!(bt.packages[0].steps[0].step, "build");
     }

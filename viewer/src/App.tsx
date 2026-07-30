@@ -247,7 +247,7 @@ export default function App() {
         >
           buildscope
         </a>{" "}
-        {__APP_VERSION__}
+        v{__APP_VERSION__}-{__GIT_SHA__}
         {report && (
           <>
             {" · "}report schema {report.schema}

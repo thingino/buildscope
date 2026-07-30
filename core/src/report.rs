@@ -1,0 +1,154 @@
+//! The schema-versioned output of an analysis. Serialized as report.json;
+//! the viewer and any downstream consumer treat this as the contract.
+
+use serde::Serialize;
+
+pub const SCHEMA: u32 = 1;
+
+/// Filename used for buildscope writes into images/. Scanners must skip
+/// this file when reading images/ so reports never describe themselves.
+pub const REPORT_FILENAME: &str = "buildscope-report.json";
+
+/// Synthetic package name for rootfs files not present in
+/// packages-file-list.txt (overlay contents, post-build script output).
+pub const UNATTRIBUTED: &str = "_unattributed";
+
+#[derive(Serialize, Debug, Clone)]
+pub struct Generator {
+    pub name: &'static str,
+    pub version: &'static str,
+}
+
+#[derive(Serialize, Debug, Clone)]
+pub struct ScanInfo {
+    pub context_source: &'static str,
+    pub scan_mode: &'static str,
+    pub root: String,
+    pub warnings: Vec<String>,
+}
+
+#[derive(Serialize, Debug, Clone, Default)]
+pub struct BuildInfo {
+    pub name: String,
+    pub defconfig: Option<String>,
+    pub arch: Option<String>,
+    pub target_cpu: Option<String>,
+    pub libc: Option<String>,
+    pub kernel_version: Option<String>,
+    pub rootfs_types: Vec<String>,
+    pub build_wall_seconds: Option<f64>,
+    pub completed_at_unix: Option<i64>,
+}
+
+#[derive(Serialize, Debug, Clone)]
+pub struct PartitionReport {
+    pub name: String,
+    pub offset: u64,
+    /// None when the layout declared a remainder that could not be resolved.
+    pub size: Option<u64>,
+    pub read_only: bool,
+    /// Matched file from images/, if any.
+    pub image: Option<String>,
+    /// Size of the matched image file.
+    pub content_bytes: Option<u64>,
+    /// Format-aware real usage inside the partition (squashfs bytes_used,
+    /// jffs2 valid nodes, env used bytes, ...). None when unknowable.
+    pub used_bytes: Option<u64>,
+    /// True when this partition's range contains or intersects another's
+    /// (e.g. a whole-device spanning entry).
+    pub overlaps: bool,
+    /// Content check against the composite flash image: Some(true) when the
+    /// bytes at this partition's offset match expectations, None when there
+    /// was nothing to check against.
+    pub verified: Option<bool>,
+}
+
+#[derive(Serialize, Debug, Clone)]
+pub struct FlashInfo {
+    /// Human-readable provenance, e.g. "mtdparts (uenv.txt)".
+    pub source: String,
+    pub mtd_id: Option<String>,
+    pub total_bytes: Option<u64>,
+    pub partitions: Vec<PartitionReport>,
+}
+
+#[derive(Serialize, Debug, Clone)]
+pub struct ImageReport {
+    pub name: String,
+    pub bytes: u64,
+    /// "squashfs" | "jffs2" | "uimage" | "uboot-env" | "disk-image" |
+    /// "flash-image" | "text" | "raw"
+    pub format: String,
+    /// Partition this image was matched to, if any.
+    pub partition: Option<String>,
+    /// Format-specific facts.
+    pub detail: serde_json::Value,
+}
+
+#[derive(Serialize, Debug, Clone)]
+pub struct RootfsReport {
+    pub uncompressed_bytes: u64,
+    pub file_count: u64,
+    pub compressed_bytes: Option<u64>,
+    pub compression: Option<String>,
+    pub compression_ratio: Option<f64>,
+}
+
+#[derive(Serialize, Debug, Clone)]
+pub struct FileRef {
+    pub path: String,
+    pub bytes: u64,
+}
+
+#[derive(Serialize, Debug, Clone)]
+pub struct PackageReport {
+    pub name: String,
+    pub bytes: u64,
+    pub file_count: u64,
+    pub compressed_bytes_approx: Option<u64>,
+    pub top_files: Vec<FileRef>,
+}
+
+#[derive(Serialize, Debug, Clone)]
+pub struct ModuleReport {
+    pub name: String,
+    pub path: String,
+    pub bytes: u64,
+    pub package: Option<String>,
+    pub autoloaded: bool,
+}
+
+#[derive(Serialize, Debug, Clone)]
+pub struct ModulesMeta {
+    pub kernel_version: String,
+    pub builtin: Vec<String>,
+    pub autoload: Vec<String>,
+}
+
+#[derive(Serialize, Debug, Clone)]
+pub struct StepReport {
+    pub step: String,
+    pub seconds: f64,
+}
+
+#[derive(Serialize, Debug, Clone)]
+pub struct TimingReport {
+    pub package: String,
+    pub seconds: f64,
+    pub steps: Vec<StepReport>,
+}
+
+#[derive(Serialize, Debug, Clone)]
+pub struct Report {
+    pub schema: u32,
+    pub generator: Generator,
+    pub scan: ScanInfo,
+    pub build: BuildInfo,
+    pub flash: Option<FlashInfo>,
+    pub images: Vec<ImageReport>,
+    pub rootfs: Option<RootfsReport>,
+    pub packages: Vec<PackageReport>,
+    pub modules: Vec<ModuleReport>,
+    pub modules_meta: Option<ModulesMeta>,
+    pub timings: Vec<TimingReport>,
+}

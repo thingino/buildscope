@@ -1,0 +1,16 @@
+[package]
+name = "buildscope"
+description = "Size and composition analyzer for Buildroot output trees"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "buildscope"
+path = "src/main.rs"
+
+[dependencies]
+buildscope-core = { path = "../core" }
+serde_json = "1"
+clap = { version = "4", features = ["derive"] }
+tiny_http = "0.12"

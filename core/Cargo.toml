@@ -4,6 +4,11 @@ description = "Pure analysis core for buildscope: parsers and report generation 
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+readme = "../README.md"
+keywords = ["buildroot", "firmware", "squashfs", "embedded", "size"]
+categories = ["development-tools::profiling", "embedded", "parser-implementations"]
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }

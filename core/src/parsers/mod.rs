@@ -31,9 +31,8 @@ pub(crate) fn le_u32(d: &[u8], o: usize) -> Option<u32> {
 }
 
 pub(crate) fn le_u64(d: &[u8], o: usize) -> Option<u64> {
-    d.get(o..o + 8).map(|b| {
-        u64::from_le_bytes([b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7]])
-    })
+    d.get(o..o + 8)
+        .map(|b| u64::from_le_bytes([b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7]]))
 }
 
 pub(crate) fn be_u32(d: &[u8], o: usize) -> Option<u32> {

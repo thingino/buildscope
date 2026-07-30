@@ -94,7 +94,7 @@ function Source({ nodes, query }: { nodes: Node[]; query: string }) {
     const shown = q ? nodes.filter(match) : nodes;
 
     const out: { text: string; kind: string; depth: number }[] = [];
-    let open: number[] = [];
+    const open: number[] = [];
     for (const n of shown) {
       // Close every node we have left behind.
       while (open.length && open[open.length - 1] >= n.depth) {

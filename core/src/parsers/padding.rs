@@ -40,7 +40,7 @@ mod tests {
     #[test]
     fn detects_ff_padding() {
         let mut d = vec![1u8, 2, 3];
-        d.extend(std::iter::repeat(0xFF).take(100));
+        d.extend(std::iter::repeat_n(0xFF, 100));
         let p = analyze(&d);
         assert_eq!(p.pad_byte, Some(0xFF));
         assert_eq!(p.trailing_bytes, 100);

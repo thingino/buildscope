@@ -4,6 +4,11 @@ description = "Size and composition analyzer for Buildroot output trees"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+readme = "../README.md"
+keywords = ["buildroot", "firmware", "embedded", "size", "cli"]
+categories = ["command-line-utilities", "development-tools::profiling", "embedded"]
 
 [[bin]]
 name = "buildscope"

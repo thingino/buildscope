@@ -33,7 +33,10 @@ pub struct FatInfo {
 }
 
 fn trimmed(b: &[u8]) -> String {
-    String::from_utf8_lossy(b).trim_end().trim_end_matches('\0').to_string()
+    String::from_utf8_lossy(b)
+        .trim_end()
+        .trim_end_matches('\0')
+        .to_string()
 }
 
 /// One entry from the first allocation table.
@@ -44,7 +47,11 @@ fn fat_entry(fat: &[u8], kind: &str, n: u32) -> Option<u32> {
             // Twelve bits per entry, so every other one straddles a byte.
             let off = i + i / 2;
             let pair = u16::from_le_bytes([*fat.get(off)?, *fat.get(off + 1)?]);
-            Some(if i % 2 == 0 { pair & 0x0FFF } else { pair >> 4 } as u32)
+            Some(if i.is_multiple_of(2) {
+                pair & 0x0FFF
+            } else {
+                pair >> 4
+            } as u32)
         }
         "FAT16" => le_u16(fat, i * 2).map(|v| v as u32),
         _ => le_u32(fat, i * 4).map(|v| v & 0x0FFF_FFFF),

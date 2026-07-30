@@ -184,7 +184,11 @@ fn parse_inode(m: &[u8], at: usize, block_size: u32) -> Option<Inode> {
         }),
         INODE_FILE | INODE_LFILE => {
             let (fragment, size, tail_at) = if t == INODE_FILE {
-                (le_u32(m, body + 4)?, le_u32(m, body + 12)? as u64, body + 16)
+                (
+                    le_u32(m, body + 4)?,
+                    le_u32(m, body + 12)? as u64,
+                    body + 16,
+                )
             } else {
                 (le_u32(m, body + 28)?, le_u64(m, body + 8)?, body + 40)
             };

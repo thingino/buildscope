@@ -203,7 +203,7 @@ mod tests {
         assert!(parse(&[0u8; 4096]).is_none());
         assert!(parse(&vec![0xFFu8; 8192]).is_none());
         assert!(parse(&[0u8; 512]).is_none()); // too short to hold one
-        // magic right, geometry impossible
+                                               // magic right, geometry impossible
         assert!(parse(&sb(|s| s[24..28].copy_from_slice(&9u32.to_le_bytes()))).is_none());
         assert!(parse(&sb(|s| s[12..16].copy_from_slice(&99999u32.to_le_bytes()))).is_none());
     }

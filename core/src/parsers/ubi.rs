@@ -333,7 +333,11 @@ pub fn parse_at(data: &[u8], start: usize) -> Option<UbiInfo> {
     // space, so report the union of both sides rather than only what is
     // mapped: `ubinize` leaves an autoresize volume empty on purpose.
     let empty: BTreeMap<u32, (usize, VidHeader)> = BTreeMap::new();
-    let mut ids: Vec<u32> = blocks.keys().copied().chain(names.keys().copied()).collect();
+    let mut ids: Vec<u32> = blocks
+        .keys()
+        .copied()
+        .chain(names.keys().copied())
+        .collect();
     ids.sort_unstable();
     ids.dedup();
 
@@ -440,10 +444,6 @@ pub(crate) mod tests_support {
         let crc = ubi_crc(&h[..HDR_SIZE_CRC]);
         h[60..64].copy_from_slice(&crc.to_be_bytes());
         h
-    }
-
-    pub fn build_simple_ubi() -> Vec<u8> {
-        build_ubi_with_page(2048)
     }
 
     /// Two layout copies naming one volume, then four blocks of that volume.
@@ -571,9 +571,21 @@ mod tests {
         push_peb(&mut img, lay(0), &table);
         push_peb(&mut img, lay(1), &table);
 
-        push_peb(&mut img, Some(vid_header(0, 0, VOL_TYPE_STATIC, LEB as u32)), &vec![0x11; LEB]);
-        push_peb(&mut img, Some(vid_header(0, 1, VOL_TYPE_STATIC, 100)), &vec![0x22; 100]);
-        push_peb(&mut img, Some(vid_header(1, 0, VOL_TYPE_DYNAMIC, 0)), &vec![0x33; 512]);
+        push_peb(
+            &mut img,
+            Some(vid_header(0, 0, VOL_TYPE_STATIC, LEB as u32)),
+            &vec![0x11; LEB],
+        );
+        push_peb(
+            &mut img,
+            Some(vid_header(0, 1, VOL_TYPE_STATIC, 100)),
+            &[0x22; 100],
+        );
+        push_peb(
+            &mut img,
+            Some(vid_header(1, 0, VOL_TYPE_DYNAMIC, 0)),
+            &vec![0x33; 512],
+        );
         push_peb(&mut img, None, &[]); // spare: header, no mapping
         img
     }
@@ -636,7 +648,11 @@ mod tests {
         let mut img = synthetic(0);
         // Two erased blocks, then one more mapped block of volume 1.
         img.resize(img.len() + 2 * PEB, 0xFF);
-        push_peb(&mut img, Some(vid_header(1, 1, VOL_TYPE_DYNAMIC, 0)), &vec![0x44; 32]);
+        push_peb(
+            &mut img,
+            Some(vid_header(1, 1, VOL_TYPE_DYNAMIC, 0)),
+            &[0x44; 32],
+        );
         let info = parse(&img).expect("ubi area");
         assert_eq!(info.peb_size, PEB as u32);
         assert_eq!(info.erased_pebs, 2);
@@ -679,7 +695,11 @@ mod tests {
         let lay = |l| Some(vid_header(LAYOUT_VOLUME_ID, l, VOL_TYPE_DYNAMIC, 0));
         push_peb(&mut img, lay(0), &table);
         push_peb(&mut img, lay(1), &table);
-        push_peb(&mut img, Some(vid_header(0, 0, VOL_TYPE_STATIC, 64)), &vec![0x77; 64]);
+        push_peb(
+            &mut img,
+            Some(vid_header(0, 0, VOL_TYPE_STATIC, 64)),
+            &[0x77; 64],
+        );
 
         let info = parse(&img).expect("ubi area");
         assert_eq!(info.volumes.len(), 2);
@@ -704,8 +724,16 @@ mod tests {
     #[test]
     fn no_layout_volume_still_reports_blocks() {
         let mut img = Vec::new();
-        push_peb(&mut img, Some(vid_header(0, 0, VOL_TYPE_STATIC, 64)), &vec![0x55; 64]);
-        push_peb(&mut img, Some(vid_header(0, 1, VOL_TYPE_STATIC, 64)), &vec![0x55; 64]);
+        push_peb(
+            &mut img,
+            Some(vid_header(0, 0, VOL_TYPE_STATIC, 64)),
+            &[0x55; 64],
+        );
+        push_peb(
+            &mut img,
+            Some(vid_header(0, 1, VOL_TYPE_STATIC, 64)),
+            &[0x55; 64],
+        );
         let info = parse(&img).expect("ubi area");
         assert!(!info.layout_found);
         assert_eq!(info.volumes.len(), 1);

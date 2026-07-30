@@ -95,7 +95,8 @@ fn join_path(stack: &[String]) -> String {
 /// the visitor returns false.
 pub fn walk(data: &[u8], mut visit: impl FnMut(Event) -> bool) -> Option<()> {
     let h = parse_header(data)?;
-    let strings = data.get(h.strings_offset as usize..(h.strings_offset + h.strings_size) as usize)?;
+    let strings =
+        data.get(h.strings_offset as usize..(h.strings_offset + h.strings_size) as usize)?;
     let start = h.struct_offset as usize;
     let end = start + h.struct_size as usize;
 
@@ -184,7 +185,7 @@ pub(crate) mod build {
             self.structs.extend_from_slice(&1u32.to_be_bytes());
             self.structs.extend_from_slice(name.as_bytes());
             self.structs.push(0);
-            while self.structs.len() % 4 != 0 {
+            while !self.structs.len().is_multiple_of(4) {
                 self.structs.push(0);
             }
             self
@@ -198,10 +199,11 @@ pub(crate) mod build {
         pub fn prop(&mut self, name: &str, value: &[u8]) -> &mut Self {
             let at = self.string_ref(name);
             self.structs.extend_from_slice(&3u32.to_be_bytes());
-            self.structs.extend_from_slice(&(value.len() as u32).to_be_bytes());
+            self.structs
+                .extend_from_slice(&(value.len() as u32).to_be_bytes());
             self.structs.extend_from_slice(&at.to_be_bytes());
             self.structs.extend_from_slice(value);
-            while self.structs.len() % 4 != 0 {
+            while !self.structs.len().is_multiple_of(4) {
                 self.structs.push(0);
             }
             self

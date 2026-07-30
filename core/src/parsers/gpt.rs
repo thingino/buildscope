@@ -53,7 +53,10 @@ fn format_guid(b: &[u8]) -> Option<String> {
         u16::from_le_bytes([g[6], g[7]]),
         g[8],
         g[9],
-        g[10..16].iter().map(|x| format!("{x:02X}")).collect::<String>()
+        g[10..16]
+            .iter()
+            .map(|x| format!("{x:02X}"))
+            .collect::<String>()
     ))
 }
 
@@ -104,7 +107,7 @@ fn parse_at(data: &[u8], sector: usize) -> Option<GptInfo> {
     let entry_lba = le_u64(head, 72)?;
     let count = le_u32(head, 80)?.min(MAX_ENTRIES);
     let entry_size = le_u32(head, 84)? as usize;
-    if entry_size < 128 || entry_size > 4096 || count == 0 {
+    if !(128..=4096).contains(&entry_size) || count == 0 {
         return None;
     }
 
@@ -258,7 +261,10 @@ mod tests {
     /// is exactly the case worth reporting rather than refusing.
     #[test]
     fn a_bad_header_crc_is_reported_not_fatal() {
-        let img = disk(vec![entry("0FC63DAF-8483-4772-8E79-3D69D8477DE4", 4, 9, "x")], true);
+        let img = disk(
+            vec![entry("0FC63DAF-8483-4772-8E79-3D69D8477DE4", 4, 9, "x")],
+            true,
+        );
         let g = parse(&img).expect("gpt");
         assert!(!g.header_crc_ok);
         assert!(g.entries_crc_ok);

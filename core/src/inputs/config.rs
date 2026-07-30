@@ -95,9 +95,9 @@ impl BrConfig {
         .map(|(_, n)| n.to_string());
 
         ConfigSummary {
-            defconfig: self.nonempty("BR2_DEFCONFIG").map(|d| {
-                d.rsplit('/').next().unwrap_or(&d).to_string()
-            }),
+            defconfig: self
+                .nonempty("BR2_DEFCONFIG")
+                .map(|d| d.rsplit('/').next().unwrap_or(&d).to_string()),
             arch: self.nonempty("BR2_ARCH"),
             target_cpu: self.nonempty("BR2_GCC_TARGET_ARCH"),
             libc,

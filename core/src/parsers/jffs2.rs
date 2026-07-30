@@ -193,16 +193,12 @@ fn scan(data: &[u8], big_endian: bool) -> Jffs2Info {
                             r.u32(data, pos + 16),
                             r.u32(data, pos + 20),
                         ) {
-                            let nsize =
-                                data.get(pos + 28).copied().unwrap_or(0) as u64;
+                            let nsize = data.get(pos + 28).copied().unwrap_or(0) as u64;
                             let dtype = data.get(pos + 29).copied().unwrap_or(0);
                             if totlen >= 40 + nsize {
-                                if let Some(name) =
-                                    data.get(pos + 40..pos + 40 + nsize as usize)
-                                {
-                                    let e = dirents
-                                        .entry((pino, name.to_vec()))
-                                        .or_insert((0, 0, 0));
+                                if let Some(name) = data.get(pos + 40..pos + 40 + nsize as usize) {
+                                    let e =
+                                        dirents.entry((pino, name.to_vec())).or_insert((0, 0, 0));
                                     if version >= e.0 {
                                         *e = (version, ino, dtype);
                                     }
@@ -225,7 +221,7 @@ fn scan(data: &[u8], big_endian: bool) -> Jffs2Info {
         }
     }
 
-    for (_, (_, ino, dtype)) in &dirents {
+    for (_, ino, dtype) in dirents.values() {
         if *ino == 0 {
             continue; // deletion dirent
         }
@@ -235,7 +231,7 @@ fn scan(data: &[u8], big_endian: bool) -> Jffs2Info {
             _ => info.live_other += 1,
         }
     }
-    for (_, (_, isize)) in &isizes {
+    for (_, isize) in isizes.values() {
         info.logical_content_bytes += *isize as u64;
     }
 
@@ -356,7 +352,7 @@ mod tests {
         buf.extend_from_slice(&0u32.to_le_bytes()); // node_crc
         buf.extend_from_slice(&0u32.to_le_bytes()); // name_crc
         buf.extend_from_slice(name);
-        while buf.len() % 4 != 0 {
+        while !buf.len().is_multiple_of(4) {
             buf.push(0xFF);
         }
     }
@@ -378,7 +374,7 @@ mod tests {
         buf.extend_from_slice(&0u32.to_le_bytes()); // node_crc (unchecked)
         buf.extend_from_slice(&0u32.to_le_bytes()); // name_crc (unchecked)
         buf.extend_from_slice(b"hello");
-        while buf.len() % 4 != 0 {
+        while !buf.len().is_multiple_of(4) {
             buf.push(0xFF);
         }
 
@@ -408,10 +404,7 @@ mod tests {
         assert_eq!(info.logical_content_bytes, 123);
         assert_eq!(info.used_bytes, 12 + 48 + 68);
         assert_eq!(info.crc_errors, 0);
-        assert_eq!(
-            info.used_bytes + info.free_bytes + info.dirty_bytes,
-            65536
-        );
+        assert_eq!(info.used_bytes + info.free_bytes + info.dirty_bytes, 65536);
         assert_eq!(info.endianness, "little");
     }
 

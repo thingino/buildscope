@@ -5,12 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/copy-wasm.mjs && node scripts/check-locales.mjs && tsc --noEmit && vite build",
+    "build": "node scripts/copy-wasm.mjs && node scripts/check-locales.mjs && eslint . && tsc --noEmit && vite build",
     "preview": "vite preview",
     "wasm": "node scripts/copy-wasm.mjs",
     "check:locales": "node scripts/check-locales.mjs",
     "check:render": "node scripts/render-check.mjs",
-    "check:layout": "node scripts/layout-check.mjs"
+    "check:layout": "node scripts/layout-check.mjs",
+    "check:lint": "eslint ."
   },
   "dependencies": {
     "@fontsource/montserrat": "^5.3.0",
@@ -18,10 +19,15 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
+    "eslint": "^10.8.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.8.0",
     "typescript": "^5.6.3",
+    "typescript-eslint": "^8.65.0",
     "vite": "^5.4.11"
   }
 }

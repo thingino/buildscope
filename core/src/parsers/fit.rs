@@ -165,13 +165,20 @@ pub fn parse(data: &[u8]) -> Option<FitInfo> {
         if name.contains('/') {
             continue;
         }
-        let uses = ["kernel", "ramdisk", "fdt", "firmware", "loadables", "script"]
-            .iter()
-            .filter_map(|role| {
-                let v = text(props, role);
-                (!v.is_empty()).then(|| (role.to_string(), v))
-            })
-            .collect();
+        let uses = [
+            "kernel",
+            "ramdisk",
+            "fdt",
+            "firmware",
+            "loadables",
+            "script",
+        ]
+        .iter()
+        .filter_map(|role| {
+            let v = text(props, role);
+            (!v.is_empty()).then(|| (role.to_string(), v))
+        })
+        .collect();
         configs.push(FitConfig {
             name: name.to_string(),
             description: text(props, "description"),
@@ -229,7 +236,7 @@ mod tests {
             .prop("data", &vec![0xAA; 4096])
             .begin("hash-1")
             .prop_str("algo", "sha256")
-            .prop(&"value".to_string(), &[0u8; 32])
+            .prop("value", &[0u8; 32])
             .end()
             .end()
             .begin("fdt-1")
@@ -327,7 +334,7 @@ mod tests {
             .end()
             .begin("kernel-1")
             .prop_str("type", "kernel")
-            .prop("data", &vec![0u8; 64])
+            .prop("data", &[0u8; 64])
             .end()
             .end()
             .end();

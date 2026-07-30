@@ -122,7 +122,11 @@ pub fn find_builds(dir: &Path) -> Vec<BuildPaths> {
 /// Build paths from Buildroot's post-image hook contract: images dir as the
 /// argument, the rest in the environment.
 pub fn from_hook(images_dir: &Path) -> BuildPaths {
-    let env_path = |k: &str| std::env::var_os(k).map(PathBuf::from).filter(|p| p.exists());
+    let env_path = |k: &str| {
+        std::env::var_os(k)
+            .map(PathBuf::from)
+            .filter(|p| p.exists())
+    };
     let root = env_path("BASE_DIR")
         .or_else(|| images_dir.parent().map(|p| p.to_path_buf()))
         .unwrap_or_else(|| images_dir.to_path_buf());
@@ -282,8 +286,11 @@ pub fn build_snapshot(
             let Ok(rd) = fs::read_dir(&mods) else {
                 continue;
             };
-            let mut vers: Vec<PathBuf> =
-                rd.flatten().map(|e| e.path()).filter(|p| p.is_dir()).collect();
+            let mut vers: Vec<PathBuf> = rd
+                .flatten()
+                .map(|e| e.path())
+                .filter(|p| p.is_dir())
+                .collect();
             vers.sort();
             if let Some(v) = vers.first() {
                 snap.modules_builtin = fs::read_to_string(v.join("modules.builtin")).ok();
@@ -293,10 +300,7 @@ pub fn build_snapshot(
     }
     if let Some(img_dir) = &paths.images_dir {
         let mut newest: Option<i64> = None;
-        let mut files: Vec<PathBuf> = fs::read_dir(img_dir)?
-            .flatten()
-            .map(|e| e.path())
-            .collect();
+        let mut files: Vec<PathBuf> = fs::read_dir(img_dir)?.flatten().map(|e| e.path()).collect();
         files.sort();
         for f in files {
             let Ok(md) = fs::metadata(&f) else {

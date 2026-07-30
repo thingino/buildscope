@@ -49,6 +49,14 @@ jobs:
           key: cargo-${{ hashFiles('Cargo.lock') }}
           restore-keys: cargo-
 
+      # Formatting and lints are gates, not suggestions: without them here the
+      # tree drifts, which is exactly what happened before this step existed.
+      - name: rustfmt
+        run: cargo fmt --all --check
+
+      - name: clippy
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+
       - name: test
         run: cargo test --workspace --locked
 

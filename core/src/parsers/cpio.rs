@@ -153,7 +153,7 @@ pub fn parse(data: &[u8]) -> Option<CpioInfo> {
     }
 
     // Ran out of archive without a trailer: report what was read.
-    (count > 0).then(|| CpioInfo {
+    (count > 0).then_some(CpioInfo {
         format,
         entry_count: count,
         file_count: files,
@@ -175,19 +175,19 @@ mod tests {
         h.extend_from_slice(MAGIC_NEWC);
         let f = |v: u64| format!("{v:08X}");
         for v in [
-            1u64,             // ino
-            mode as u64,      // mode
-            0,                // uid
-            0,                // gid
-            1,                // nlink
-            0,                // mtime
-            size as u64,      // filesize
+            1u64,        // ino
+            mode as u64, // mode
+            0,           // uid
+            0,           // gid
+            1,           // nlink
+            0,           // mtime
+            size as u64, // filesize
             0,
             0,
             0,
-            0,                // dev/rdev
+            0,                     // dev/rdev
             name.len() as u64 + 1, // namesize, NUL included
-            0,                // check
+            0,                     // check
         ] {
             h.extend_from_slice(f(v).as_bytes());
         }
@@ -231,7 +231,10 @@ mod tests {
         assert!(!c.entries_truncated);
 
         let paths: Vec<&str> = c.entries.iter().map(|e| e.path.as_str()).collect();
-        assert_eq!(paths, vec!["/bin", "/bin/busybox", "/bin/sh", "/etc/inittab"]);
+        assert_eq!(
+            paths,
+            vec!["/bin", "/bin/busybox", "/bin/sh", "/etc/inittab"]
+        );
         let by = |p: &str| c.entries.iter().find(|e| e.path == p).unwrap();
         assert_eq!(by("/bin/busybox").bytes, 300);
         assert_eq!(by("/bin/busybox").kind, "file");

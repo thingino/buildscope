@@ -73,14 +73,23 @@ pub fn print_report(r: &Report) {
             .total_bytes
             .map(human)
             .unwrap_or_else(|| "?".to_string());
-        println!("   flash {} {} via {}", flash.mtd_id.as_deref().unwrap_or("-"), total, flash.source);
+        println!(
+            "   flash {} {} via {}",
+            flash.mtd_id.as_deref().unwrap_or("-"),
+            total,
+            flash.source
+        );
         for p in &flash.partitions {
             if p.overlaps {
                 continue;
             }
             let size = p.size.unwrap_or(0);
             let used = p.used_bytes.or(p.content_bytes).unwrap_or(0);
-            let frac = if size > 0 { used as f64 / size as f64 } else { 0.0 };
+            let frac = if size > 0 {
+                used as f64 / size as f64
+            } else {
+                0.0
+            };
             let verified = match p.verified {
                 Some(true) => " ok",
                 Some(false) => " MISMATCH",
@@ -125,50 +134,66 @@ pub fn print_report(r: &Report) {
                             }
                         )
                     }),
-                "jffs2" => i.detail.get("used_bytes").and_then(|v| v.as_u64()).map(|u| {
-                    format!(
-                        "{} used, {} free",
-                        human(u),
-                        human(
-                            i.detail
-                                .get("free_bytes")
-                                .and_then(|f| f.as_u64())
-                                .unwrap_or(0)
+                "jffs2" => i
+                    .detail
+                    .get("used_bytes")
+                    .and_then(|v| v.as_u64())
+                    .map(|u| {
+                        format!(
+                            "{} used, {} free",
+                            human(u),
+                            human(
+                                i.detail
+                                    .get("free_bytes")
+                                    .and_then(|f| f.as_u64())
+                                    .unwrap_or(0)
+                            )
                         )
-                    )
-                }),
-                "uimage" => i.detail.get("compression").and_then(|v| v.as_str()).map(|c| {
-                    let dt = i
-                        .detail
-                        .get("builtin_device_trees")
-                        .and_then(|v| v.as_array())
-                        .and_then(|a| a.first())
-                        .map(|t| format!(", dtb {}", dtb_who(t)))
-                        .unwrap_or_default();
-                    format!(
-                        "{} payload, {}{}",
-                        human(
-                            i.detail
-                                .get("declared_size")
-                                .and_then(|d| d.as_u64())
-                                .unwrap_or(0)
-                        ),
-                        c,
-                        dt
-                    )
-                }),
-                "uboot-env" => i.detail.get("used_bytes").and_then(|v| v.as_u64()).map(|u| {
-                    format!(
-                        "{} used of {}, crc {}",
-                        human(u),
-                        human(i.bytes),
-                        if i.detail.get("crc_ok").and_then(|c| c.as_bool()).unwrap_or(false) {
-                            "ok"
-                        } else {
-                            "BAD"
-                        }
-                    )
-                }),
+                    }),
+                "uimage" => i
+                    .detail
+                    .get("compression")
+                    .and_then(|v| v.as_str())
+                    .map(|c| {
+                        let dt = i
+                            .detail
+                            .get("builtin_device_trees")
+                            .and_then(|v| v.as_array())
+                            .and_then(|a| a.first())
+                            .map(|t| format!(", dtb {}", dtb_who(t)))
+                            .unwrap_or_default();
+                        format!(
+                            "{} payload, {}{}",
+                            human(
+                                i.detail
+                                    .get("declared_size")
+                                    .and_then(|d| d.as_u64())
+                                    .unwrap_or(0)
+                            ),
+                            c,
+                            dt
+                        )
+                    }),
+                "uboot-env" => i
+                    .detail
+                    .get("used_bytes")
+                    .and_then(|v| v.as_u64())
+                    .map(|u| {
+                        format!(
+                            "{} used of {}, crc {}",
+                            human(u),
+                            human(i.bytes),
+                            if i.detail
+                                .get("crc_ok")
+                                .and_then(|c| c.as_bool())
+                                .unwrap_or(false)
+                            {
+                                "ok"
+                            } else {
+                                "BAD"
+                            }
+                        )
+                    }),
                 "ubi" => {
                     let num = |k: &str| i.detail.get(k).and_then(|v| v.as_u64()).unwrap_or(0);
                     let volumes = i
@@ -283,7 +308,11 @@ pub fn print_report(r: &Report) {
                 }
                 "dtb" | "dtbo" => {
                     let get = |k: &str| {
-                        i.detail.get(k).and_then(|v| v.as_str()).unwrap_or("").to_string()
+                        i.detail
+                            .get(k)
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("")
+                            .to_string()
                     };
                     let model = get("model");
                     let compat = i
@@ -334,7 +363,11 @@ pub fn print_report(r: &Report) {
                         .and_then(|v| v.as_array())
                         .map(|a| a.len())
                         .unwrap_or(0);
-                    let table = i.detail.get("table").and_then(|v| v.as_str()).unwrap_or("?");
+                    let table = i
+                        .detail
+                        .get("table")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("?");
                     Some(format!("{table}, {n} partitions"))
                 }
                 "raw" => i
@@ -362,7 +395,11 @@ pub fn print_report(r: &Report) {
 
     if !r.packages.is_empty() {
         let total: u64 = r.packages.iter().map(|p| p.bytes).sum();
-        println!("   top packages (of {} in {} packages):", human(total), r.packages.len());
+        println!(
+            "   top packages (of {} in {} packages):",
+            human(total),
+            r.packages.len()
+        );
         for p in r.packages.iter().take(10) {
             let label = if p.name == UNATTRIBUTED {
                 "(overlay/post-build)"

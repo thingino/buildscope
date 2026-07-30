@@ -113,8 +113,7 @@ pub fn parse(text: &str) -> Option<Vec<GenimageImage>> {
                                         "offset" => part.offset = parse_size(&val),
                                         "size" => part.size = parse_size(&val),
                                         "image" => {
-                                            part.image =
-                                                Some(val.trim_matches('"').to_string())
+                                            part.image = Some(val.trim_matches('"').to_string())
                                         }
                                         _ => {}
                                     }
@@ -148,7 +147,9 @@ pub fn parse(text: &str) -> Option<Vec<GenimageImage>> {
 
 /// Resolve cumulative offsets (hdimage semantics: next partition follows the
 /// previous one when no explicit offset is given).
-pub fn resolve_offsets(parts: &[GenimagePartition]) -> Vec<(String, u64, Option<u64>, Option<String>)> {
+pub fn resolve_offsets(
+    parts: &[GenimagePartition],
+) -> Vec<(String, u64, Option<u64>, Option<String>)> {
     let mut out = Vec::new();
     let mut cursor = 0u64;
     for p in parts {

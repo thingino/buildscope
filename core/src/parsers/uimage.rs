@@ -141,7 +141,7 @@ mod tests {
     #[test]
     fn rejects_oversized_declaration() {
         let mut img = synthetic(b"x");
-        img[12..16].copy_from_slice(&0xFFFF_FFu32.to_be_bytes());
+        img[12..16].copy_from_slice(&0x00FF_FFFFu32.to_be_bytes());
         assert!(parse(&img).is_none());
     }
 }

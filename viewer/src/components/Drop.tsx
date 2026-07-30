@@ -101,7 +101,7 @@ export default function Drop({ onReports }: { onReports: (r: Report[]) => void }
       // Browsers without entry support still give us a flat file list.
       await ingest(Array.from(e.dataTransfer.files));
     },
-    [ingest]
+    [ingest, t]
   );
 
   const fromInput = useCallback(

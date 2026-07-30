@@ -32,7 +32,14 @@ fn build(dir: &std::path::Path, comp: &str) -> Option<Vec<u8>> {
     let out = dir.join(format!("{comp}.squashfs"));
     let _ = std::fs::remove_file(&out);
     let status = Command::new("mksquashfs")
-        .args([src.to_str()?, out.to_str()?, "-comp", comp, "-no-progress", "-quiet"])
+        .args([
+            src.to_str()?,
+            out.to_str()?,
+            "-comp",
+            comp,
+            "-no-progress",
+            "-quiet",
+        ])
         .status()
         .ok()?;
     status.success().then(|| std::fs::read(&out).ok()).flatten()
@@ -62,7 +69,11 @@ fn matches_unsquashfs_on_real_images() {
 
         // Ground truth: unsquashfs lists every path with its size.
         let out = Command::new("unsquashfs")
-            .args(["-ll", "-no-progress", dir.join(format!("{comp}.squashfs")).to_str().unwrap()])
+            .args([
+                "-ll",
+                "-no-progress",
+                dir.join(format!("{comp}.squashfs")).to_str().unwrap(),
+            ])
             .output()
             .expect("unsquashfs");
         let text = String::from_utf8_lossy(&out.stdout);
@@ -73,7 +84,9 @@ fn matches_unsquashfs_on_real_images() {
             if f.len() < 6 || !f[0].starts_with(['-', 'd', 'l']) {
                 continue;
             }
-            let Ok(size) = f[2].parse::<u64>() else { continue };
+            let Ok(size) = f[2].parse::<u64>() else {
+                continue;
+            };
             let path = f[5].trim_start_matches("squashfs-root");
             if path.is_empty() || line.starts_with('l') {
                 continue; // the root itself, and symlink sizes differ by tool
@@ -107,13 +120,21 @@ fn matches_unsquashfs_on_real_images() {
             sb.bytes_used
         );
         // The big file compresses well, so its cost must be far under its size.
-        let big = listing.entries.iter().find(|e| e.path == "/bin/big").unwrap();
+        let big = listing
+            .entries
+            .iter()
+            .find(|e| e.path == "/bin/big")
+            .unwrap();
         assert!(
             big.compressed_bytes.unwrap() < big.bytes / 10,
             "{comp}: a 400k run of one byte should compress hard, got {:?}",
             big.compressed_bytes
         );
-        assert_eq!(listing.file_count as usize, truth.len(), "{comp}: file count");
+        assert_eq!(
+            listing.file_count as usize,
+            truth.len(),
+            "{comp}: file count"
+        );
         tested += 1;
     }
     assert!(tested > 0, "no compressor could be tested");

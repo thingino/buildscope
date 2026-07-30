@@ -98,10 +98,9 @@ mod tests {
         let mut out = Vec::new();
         for chunk in data.chunks(page) {
             out.extend_from_slice(chunk);
-            for _ in chunk.len()..page {
-                out.push(0xFF);
-            }
-            out.extend(std::iter::repeat(fill).take(spare));
+            // A short final chunk is padded out, as an erased page would be.
+            out.extend(std::iter::repeat_n(0xFF, page - chunk.len()));
+            out.extend(std::iter::repeat_n(fill, spare));
         }
         out
     }
@@ -129,7 +128,10 @@ mod tests {
     #[test]
     fn an_image_without_spare_areas_is_left_alone() {
         let clean = ubi_image(2048);
-        assert!(detect(&clean).is_none(), "a readable image must not be rewritten");
+        assert!(
+            detect(&clean).is_none(),
+            "a readable image must not be rewritten"
+        );
     }
 
     #[test]

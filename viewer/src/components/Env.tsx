@@ -8,7 +8,8 @@ import { EnvVar, ImageReport, Report } from "../types";
 /// explain a good deal of what the rest of this tab shows.
 function EnvPanel({ img, t }: { img: ImageReport; t: TFn }) {
   const d = img.detail as Record<string, unknown>;
-  const vars = (Array.isArray(d.vars) ? d.vars : []) as EnvVar[];
+  // Rebuilt every render otherwise, which would defeat the memo below it.
+  const vars = useMemo(() => (Array.isArray(d.vars) ? d.vars : []) as EnvVar[], [d.vars]);
   const [query, setQuery] = useState("");
 
   const shown = useMemo(() => {

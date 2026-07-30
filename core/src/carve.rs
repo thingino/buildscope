@@ -286,7 +286,11 @@ pub fn carve_flash_image(file_name: &str, data: &[u8], root: &str, scan_mode: Sc
                 source: format!(
                     "gpt (embedded, {}-byte sectors{})",
                     g.sector_size,
-                    if g.header_crc_ok { "" } else { ", header crc BAD" }
+                    if g.header_crc_ok {
+                        ""
+                    } else {
+                        ", header crc BAD"
+                    }
                 ),
                 mtd_id: None,
                 partitions: g
@@ -436,9 +440,12 @@ pub fn carve_flash_image(file_name: &str, data: &[u8], root: &str, scan_mode: Sc
                 };
                 let (a0, a1) = (pa.offset, pa.offset + sa);
                 let (b0, b1) = (pb.offset, pb.offset + sb);
-                if a0 <= b0 && a1 >= b1 && sa > sb {
-                    overlaps[a] = true;
-                } else if a0 < b1 && b0 < a1 && !(b0 <= a0 && b1 >= a1) && !(a0 <= b0 && a1 >= b1) {
+                // Flagged either for containing another partition, or for
+                // straddling one without either containing the other.
+                let contains = a0 <= b0 && a1 >= b1 && sa > sb;
+                let straddles =
+                    a0 < b1 && b0 < a1 && !(b0 <= a0 && b1 >= a1) && !(a0 <= b0 && a1 >= b1);
+                if contains || straddles {
                     overlaps[a] = true;
                 }
             }
@@ -828,11 +835,13 @@ mod tests {
 
     /// Write a payload as consecutive logical blocks of one volume.
     fn push_volume(img: &mut Vec<u8>, vol_id: u32, vol_type: u8, payload: &[u8]) {
-        let mut lnum = 0u32;
-        for chunk in payload.chunks(LEB) {
+        for (lnum, chunk) in payload.chunks(LEB).enumerate() {
             let declared = if vol_type == 2 { chunk.len() as u32 } else { 0 };
-            push_peb(img, Some(vid_hdr(vol_id, lnum, vol_type, declared)), chunk);
-            lnum += 1;
+            push_peb(
+                img,
+                Some(vid_hdr(vol_id, lnum as u32, vol_type, declared)),
+                chunk,
+            );
         }
     }
 
@@ -916,10 +925,18 @@ mod tests {
         flash[64 * K..64 * K + env.len()].copy_from_slice(&env);
         let r = carve_flash_image("cam.bin", &flash, "/tmp", ScanMode::Native);
         let flash_info = r.flash.as_ref().unwrap();
-        let envp = flash_info.partitions.iter().find(|p| p.name == "env").unwrap();
+        let envp = flash_info
+            .partitions
+            .iter()
+            .find(|p| p.name == "env")
+            .unwrap();
         assert_eq!(envp.verified, Some(true), "env must verify from its block");
         assert_eq!(envp.size, Some(64 * K as u64));
-        let envimg = r.images.iter().find(|i| i.partition.as_deref() == Some("env")).unwrap();
+        let envimg = r
+            .images
+            .iter()
+            .find(|i| i.partition.as_deref() == Some("env"))
+            .unwrap();
         assert_eq!(envimg.detail["env_block_bytes"], json!(32 * K));
         assert_eq!(envimg.detail["crc_ok"], json!(true));
         assert!(r
@@ -940,17 +957,20 @@ mod tests {
         let flash = r.flash.as_ref().unwrap();
         // The device size comes from the layout, not the file.
         assert_eq!(flash.total_bytes, Some(1024 * K as u64));
-        assert!(r
-            .scan
-            .warnings
-            .iter()
-            .any(|w| w.contains("truncated")), "{:?}", r.scan.warnings);
+        assert!(
+            r.scan.warnings.iter().any(|w| w.contains("truncated")),
+            "{:?}",
+            r.scan.warnings
+        );
         // rootfs straddles the cut; data begins beyond it entirely.
-        assert!(r
-            .scan
-            .warnings
-            .iter()
-            .any(|w| w.contains("'rootfs' extends past the end")), "{:?}", r.scan.warnings);
+        assert!(
+            r.scan
+                .warnings
+                .iter()
+                .any(|w| w.contains("'rootfs' extends past the end")),
+            "{:?}",
+            r.scan.warnings
+        );
         assert!(r
             .scan
             .warnings
@@ -1047,7 +1067,10 @@ mod tests {
         assert_eq!(rootfs.detail["capacity_bytes"], json!(4 * LEB));
 
         assert!(
-            !r.scan.warnings.iter().any(|w| w.contains("does not contain")),
+            !r.scan
+                .warnings
+                .iter()
+                .any(|w| w.contains("does not contain")),
             "{:?}",
             r.scan.warnings
         );
@@ -1063,7 +1086,7 @@ mod tests {
         let mut dumped = Vec::new();
         for chunk in clean.chunks(page) {
             dumped.extend_from_slice(chunk);
-            dumped.extend(std::iter::repeat(0xA5).take(spare));
+            dumped.extend(std::iter::repeat_n(0xA5, spare));
         }
 
         let r = carve_flash_image("dump.bin", &dumped, "/tmp", ScanMode::Native);
@@ -1095,10 +1118,18 @@ mod tests {
 
         let r = carve_flash_image("nand.bin", &img, "/tmp", ScanMode::Native);
         let flash = r.flash.as_ref().unwrap();
-        assert!(flash.source.starts_with("ubi volume table"), "{}", flash.source);
+        assert!(
+            flash.source.starts_with("ubi volume table"),
+            "{}",
+            flash.source
+        );
         let names: Vec<&str> = flash.partitions.iter().map(|p| p.name.as_str()).collect();
         assert_eq!(names, vec!["boot", "rootfs"]);
-        let rootfs = flash.partitions.iter().find(|p| p.name == "rootfs").unwrap();
+        let rootfs = flash
+            .partitions
+            .iter()
+            .find(|p| p.name == "rootfs")
+            .unwrap();
         assert_eq!(rootfs.used_bytes, Some(290_000));
         assert_eq!(rootfs.verified, Some(true));
     }
@@ -1147,12 +1178,14 @@ mod tests {
             assert_eq!(part(n).verified, Some(true), "partition {n}");
         }
         // Exactly one UBI area, covering the whole file.
-        let containers: Vec<&ImageReport> =
-            r.images.iter().filter(|i| i.format == "ubi").collect();
+        let containers: Vec<&ImageReport> = r.images.iter().filter(|i| i.format == "ubi").collect();
         assert_eq!(containers.len(), 1);
         assert_eq!(containers[0].bytes, bare.len() as u64);
         assert!(
-            !r.scan.warnings.iter().any(|w| w.contains("no volume table")),
+            !r.scan
+                .warnings
+                .iter()
+                .any(|w| w.contains("no volume table")),
             "{:?}",
             r.scan.warnings
         );

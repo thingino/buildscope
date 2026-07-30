@@ -7,6 +7,8 @@ version = "0.1.0"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/thingino/buildscope"
+# u64::is_multiple_of, which the parsers use, stabilised here.
+rust-version = "1.87"
 
 [profile.release]
 lto = true

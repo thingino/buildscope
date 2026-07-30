@@ -10,7 +10,6 @@ use crate::snapshot::Snapshot;
 use serde_json::json;
 use std::collections::{HashMap, HashSet};
 
-
 pub(crate) struct Classified {
     pub(crate) name: String,
     pub(crate) bytes: u64,
@@ -438,7 +437,7 @@ pub(crate) fn classify(name: &str, size: u64, bytes: Option<&[u8]>) -> Classifie
         return c;
     }
     if let Some(info) = fat::parse(data) {
-        c.format = info.kind.to_ascii_lowercase().into();
+        c.format = info.kind.to_ascii_lowercase();
         c.detail = json!({
             "label": info.label,
             "oem": info.oem,
@@ -721,7 +720,11 @@ struct Layout {
     image_hints: Vec<(String, String)>,
 }
 
-fn detect_layout(snap: &Snapshot, images: &[Classified], warnings: &mut Vec<String>) -> Option<Layout> {
+fn detect_layout(
+    snap: &Snapshot,
+    images: &[Classified],
+    warnings: &mut Vec<String>,
+) -> Option<Layout> {
     for t in &snap.env_texts {
         if let Some(p) = mtdparts::find_in_text(&t.text) {
             return Some(Layout {
@@ -890,7 +893,8 @@ pub fn analyze(snap: &Snapshot) -> Report {
     // Package attribution over target/
     let pfl_map = snap.pfl.as_deref().map(pfl::parse);
     if pfl_map.is_none() {
-        warnings.push("packages-file-list.txt not found; per-package attribution unavailable".into());
+        warnings
+            .push("packages-file-list.txt not found; per-package attribution unavailable".into());
     }
     struct Acc {
         bytes: u64,
@@ -957,7 +961,9 @@ pub fn analyze(snap: &Snapshot) -> Report {
             if total > 0 {
                 parts.resolve_remainders(total);
             } else {
-                warnings.push("flash layout has a remainder partition but total size is unknown".into());
+                warnings.push(
+                    "flash layout has a remainder partition but total size is unknown".into(),
+                );
             }
         }
         let total_bytes = if total > 0 { Some(total) } else { None };
@@ -965,12 +971,11 @@ pub fn analyze(snap: &Snapshot) -> Report {
         // Overlap marking: containers get flagged; partial overlaps flag both.
         let n = parts.partitions.len();
         let mut overlaps = vec![false; n];
-        for a in 0..n {
-            for b in 0..n {
+        for (a, pa) in parts.partitions.iter().enumerate() {
+            for (b, pb) in parts.partitions.iter().enumerate() {
                 if a == b {
                     continue;
                 }
-                let (pa, pb) = (&parts.partitions[a], &parts.partitions[b]);
                 let (Some(sa), Some(sb)) = (pa.size, pb.size) else {
                     continue;
                 };
@@ -986,8 +991,7 @@ pub fn analyze(snap: &Snapshot) -> Report {
 
         // Identify a composite whole-flash image.
         let composite_idx = images.iter().position(|i| {
-            (i.format == "raw" || i.format == "disk-image")
-                && total_bytes == Some(i.bytes)
+            (i.format == "raw" || i.format == "disk-image") && total_bytes == Some(i.bytes)
         });
         if let Some(ci) = composite_idx {
             if images[ci].format == "raw" {
@@ -1018,7 +1022,9 @@ pub fn analyze(snap: &Snapshot) -> Report {
         }
         if let Some(ci) = composite_idx {
             if let Some(span_idx) = (0..n).find(|&i| {
-                overlaps[i] && parts.partitions[i].offset == 0 && parts.partitions[i].size == total_bytes
+                overlaps[i]
+                    && parts.partitions[i].offset == 0
+                    && parts.partitions[i].size == total_bytes
             }) {
                 assigned_image[span_idx] = Some(ci);
             }
@@ -1028,11 +1034,9 @@ pub fn analyze(snap: &Snapshot) -> Report {
             if assigned_image[pi].is_some() {
                 continue;
             }
-            if let Some(ii) = images
-                .iter()
-                .enumerate()
-                .position(|(ii, img)| !image_taken.contains(&ii) && image_stem(&img.name) == p.name.to_ascii_lowercase())
-            {
+            if let Some(ii) = images.iter().enumerate().position(|(ii, img)| {
+                !image_taken.contains(&ii) && image_stem(&img.name) == p.name.to_ascii_lowercase()
+            }) {
                 assigned_image[pi] = Some(ii);
                 image_taken.insert(ii);
             }
@@ -1075,15 +1079,18 @@ pub fn analyze(snap: &Snapshot) -> Report {
                 }
             }
             let verified = match (composite_bytes, overlaps[pi]) {
-                (Some(flash_bytes), false) => {
-                    verify_partition(flash_bytes, p, img, assigned_image[pi].and_then(|ii| {
+                (Some(flash_bytes), false) => verify_partition(
+                    flash_bytes,
+                    p,
+                    img,
+                    assigned_image[pi].and_then(|ii| {
                         snap.images
                             .iter()
                             .filter(|i| i.name != REPORT_FILENAME)
                             .nth(ii)
                             .and_then(|i| i.bytes.as_deref())
-                    }))
-                }
+                    }),
+                ),
                 _ => None,
             };
             if verified == Some(false) {
@@ -1123,8 +1130,12 @@ pub fn analyze(snap: &Snapshot) -> Report {
     // Rootfs compression facts from the (single) squashfs image.
     let squash_images: Vec<&Classified> = images.iter().filter(|i| i.squash.is_some()).collect();
     let rootfs = if rootfs_total > 0 || !squash_images.is_empty() {
-        let (compressed, compression) = if squash_images.len() == 1 {
-            let s = squash_images[0].squash.as_ref().unwrap();
+        // Only with exactly one: two rootfs images give no single ratio, and a
+        // library that runs in a browser should not have a way to panic.
+        let single = (squash_images.len() == 1)
+            .then(|| squash_images[0].squash.as_ref())
+            .flatten();
+        let (compressed, compression) = if let Some(s) = single {
             (Some(s.bytes_used), Some(s.compression.clone()))
         } else {
             (None, None)
@@ -1257,9 +1268,7 @@ pub fn analyze(snap: &Snapshot) -> Report {
             name: name.clone(),
             path: format!("/{}", e.path),
             bytes: e.size,
-            package: pfl_map
-                .as_ref()
-                .and_then(|m| m.get(&e.path).cloned()),
+            package: pfl_map.as_ref().and_then(|m| m.get(&e.path).cloned()),
             autoloaded: autoload.contains(&normalize(&name)),
         });
     }
@@ -1308,9 +1317,7 @@ pub fn analyze(snap: &Snapshot) -> Report {
         kernel_version: kver.clone().or(summary.kernel_version),
         rootfs_types: summary.rootfs_types,
         build_active_seconds: times.active_seconds,
-        completed_at_unix: snap
-            .images_mtime
-            .or(times.finished_at.map(|f| f as i64)),
+        completed_at_unix: snap.images_mtime.or(times.finished_at.map(|f| f as i64)),
     };
 
     let image_reports: Vec<ImageReport> = images
@@ -1336,8 +1343,11 @@ pub fn analyze(snap: &Snapshot) -> Report {
             source_bytes: c.source_bytes,
         })
         .collect();
-    removed_not_shipped
-        .sort_by(|a, b| b.source_bytes.cmp(&a.source_bytes).then(a.path.cmp(&b.path)));
+    removed_not_shipped.sort_by(|a, b| {
+        b.source_bytes
+            .cmp(&a.source_bytes)
+            .then(a.path.cmp(&b.path))
+    });
 
     Report {
         schema: SCHEMA,
@@ -1383,7 +1393,7 @@ fn verify_partition(
         if n == 0 {
             return None;
         }
-        return Some(&flash[off..off + n] == &ib[..n]);
+        return Some(flash[off..off + n] == ib[..n]);
     }
     // No candidate file: probe by role expectation.
     let role = partition_role(&p.name);
@@ -1394,11 +1404,17 @@ fn verify_partition(
     let window = &flash[off..window_end];
     let _ = img;
     match role {
-        Role::Kernel => Some(window.len() >= 4 && crate::parsers::be_u32(window, 0) == Some(uimage::MAGIC)),
-        Role::Rootfs => Some(window.len() >= 4 && crate::parsers::le_u32(window, 0) == Some(squashfs::MAGIC)),
+        Role::Kernel => {
+            Some(window.len() >= 4 && crate::parsers::be_u32(window, 0) == Some(uimage::MAGIC))
+        }
+        Role::Rootfs => {
+            Some(window.len() >= 4 && crate::parsers::le_u32(window, 0) == Some(squashfs::MAGIC))
+        }
         Role::Data => Some(
             window.len() >= 2
-                && (window[..2] == [0x85, 0x19] || window[..2] == [0x19, 0x85] || window[..2] == [0xFF, 0xFF]),
+                && (window[..2] == [0x85, 0x19]
+                    || window[..2] == [0x19, 0x85]
+                    || window[..2] == [0xFF, 0xFF]),
         ),
         Role::Env => ubootenv::parse(window).map(|e| e.crc_ok),
         Role::Ubi => Some(ubi::has_header_at(window, 0)),
@@ -1481,7 +1497,10 @@ mod tests {
         lzma_rs::lzma_compress(&mut std::io::Cursor::new(&kernel[..]), &mut stream).unwrap();
 
         // Plain, as most builds write it.
-        assert_eq!(decompress_kernel(&stream, "lzma").as_deref(), Some(&kernel[..]));
+        assert_eq!(
+            decompress_kernel(&stream, "lzma").as_deref(),
+            Some(&kernel[..])
+        );
 
         // With the trailer, as Ingenic writes it.
         let mut with_trailer = stream.clone();
@@ -1544,8 +1563,10 @@ mod tests {
         s.config = Some(
             "BR2_ARCH=\"mipsel\"\nBR2_TOOLCHAIN_USES_UCLIBC=y\nBR2_TARGET_ROOTFS_SQUASHFS=y\nBR2_TARGET_ROOTFS_SQUASHFS4_XZ=y\n".into(),
         );
-        s.pfl = Some("busybox,./bin/busybox\nkmod-x,./lib/modules/3.10.14/kernel/net/x.ko\n".into());
-        s.build_time_log = Some("100.0:start:build:  busybox\n150.0:end  :build:  busybox\n".into());
+        s.pfl =
+            Some("busybox,./bin/busybox\nkmod-x,./lib/modules/3.10.14/kernel/net/x.ko\n".into());
+        s.build_time_log =
+            Some("100.0:start:build:  busybox\n150.0:end  :build:  busybox\n".into());
         s.etc_modules = Some("x\n".into());
         s.target = vec![
             TargetEntry {
@@ -1579,7 +1600,10 @@ mod tests {
             b.resize(20_000, 0xFF);
             b
         };
-        let env = synth_env(&[("bootcmd", "run x"), ("baudrate", "115200")], 64 * K as usize);
+        let env = synth_env(
+            &[("bootcmd", "run x"), ("baudrate", "115200")],
+            64 * K as usize,
+        );
         let kernel = synth_uimage(100_000, 150_000);
         let rootfs = synth_squashfs(300_000, 400_000);
         let data = synth_jffs2(128 * K as usize);
@@ -1655,7 +1679,11 @@ mod tests {
         }
 
         // The composite got reclassified.
-        let fw = report.images.iter().find(|i| i.name == "firmware.bin").unwrap();
+        let fw = report
+            .images
+            .iter()
+            .find(|i| i.name == "firmware.bin")
+            .unwrap();
         assert_eq!(fw.format, "flash-image");
 
         // Rootfs facts and ratio-based package approximation.
@@ -1675,7 +1703,10 @@ mod tests {
         // Modules with autoload flag.
         assert_eq!(report.modules.len(), 1);
         assert!(report.modules[0].autoloaded);
-        assert_eq!(report.modules_meta.as_ref().unwrap().kernel_version, "3.10.14");
+        assert_eq!(
+            report.modules_meta.as_ref().unwrap().kernel_version,
+            "3.10.14"
+        );
 
         // Timings.
         assert_eq!(report.timings.len(), 1);
@@ -1690,7 +1721,8 @@ mod tests {
     fn no_layout_still_reports() {
         let mut s = build_snapshot();
         s.env_texts.clear();
-        s.images.retain(|i| i.name != "u-boot-env.bin" && i.name != "firmware.bin");
+        s.images
+            .retain(|i| i.name != "u-boot-env.bin" && i.name != "firmware.bin");
         let report = analyze(&s);
         assert!(report.flash.is_none());
         assert!(!report.packages.is_empty());

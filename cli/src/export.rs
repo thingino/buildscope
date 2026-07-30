@@ -3,15 +3,15 @@
 //! window.__BUILDSCOPE_REPORT__. The result is one file that renders the
 //! full viewer anywhere, no server, no network.
 
+use buildscope_core::report::Report;
 use std::fs;
 use std::io;
-use buildscope_core::report::Report;
 use std::path::Path;
 
 const B64: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 fn base64(data: &[u8]) -> String {
-    let mut out = String::with_capacity((data.len() + 2) / 3 * 4);
+    let mut out = String::with_capacity(data.len().div_ceil(3) * 4);
     for chunk in data.chunks(3) {
         let b = [
             chunk[0],
@@ -21,8 +21,16 @@ fn base64(data: &[u8]) -> String {
         let n = (b[0] as u32) << 16 | (b[1] as u32) << 8 | b[2] as u32;
         out.push(B64[(n >> 18 & 63) as usize] as char);
         out.push(B64[(n >> 12 & 63) as usize] as char);
-        out.push(if chunk.len() > 1 { B64[(n >> 6 & 63) as usize] as char } else { '=' });
-        out.push(if chunk.len() > 2 { B64[(n & 63) as usize] as char } else { '=' });
+        out.push(if chunk.len() > 1 {
+            B64[(n >> 6 & 63) as usize] as char
+        } else {
+            '='
+        });
+        out.push(if chunk.len() > 2 {
+            B64[(n & 63) as usize] as char
+        } else {
+            '='
+        });
     }
     out
 }
@@ -59,7 +67,11 @@ fn inline_css_urls(css: &str, css_dir: &Path) -> String {
             let file = css_dir.join(clean.trim_start_matches("./"));
             match fs::read(&file) {
                 Ok(bytes) => {
-                    out.push_str(&format!("data:{};base64,{}", mime_of(clean), base64(&bytes)));
+                    out.push_str(&format!(
+                        "data:{};base64,{}",
+                        mime_of(clean),
+                        base64(&bytes)
+                    ));
                 }
                 Err(_) => out.push_str(&rest[..end]),
             }
@@ -104,7 +116,10 @@ pub fn build_single_file(dist: &Path, report_json: &str) -> io::Result<String> {
 
     // Inline the module script and inject the report just before it.
     let Some(pos) = html.find("<script type=\"module\"") else {
-        return Err(io::Error::new(io::ErrorKind::InvalidData, "no module script in dist index.html"));
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "no module script in dist index.html",
+        ));
     };
     let tag_end = html[pos..]
         .find("></script>")

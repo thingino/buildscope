@@ -135,7 +135,9 @@ pub fn parse(data: &[u8]) -> Option<UbifsInfo> {
 /// Reserved-space fields the report does not surface but the parser reads, kept
 /// so a future consumer does not have to rediscover the offsets.
 pub fn max_bud_bytes(data: &[u8]) -> Option<u64> {
-    (le_u32(data, 0)? == MAGIC).then(|| le_u64(data, 48)).flatten()
+    (le_u32(data, 0)? == MAGIC)
+        .then(|| le_u64(data, 48))
+        .flatten()
 }
 
 /// A node header that passed its CRC.
@@ -410,14 +412,14 @@ mod tests {
     #[test]
     fn reconstructs_paths_and_sizes_from_nodes() {
         let img = volume(vec![
-            ino(1, 0, 1),                       // root
-            dent(1, "etc", 2, 1, 2),            // /etc
+            ino(1, 0, 1),            // root
+            dent(1, "etc", 2, 1, 2), // /etc
             ino(2, 0, 3),
-            dent(2, "passwd", 3, 0, 4),         // /etc/passwd
+            dent(2, "passwd", 3, 0, 4), // /etc/passwd
             ino(3, 1234, 5),
-            dent(1, "bin", 4, 1, 6),            // /bin
+            dent(1, "bin", 4, 1, 6), // /bin
             ino(4, 0, 7),
-            dent(4, "sh", 5, 2, 8),             // /bin/sh -> symlink
+            dent(4, "sh", 5, 2, 8), // /bin/sh -> symlink
             ino(5, 7, 9),
         ]);
         let l = listing(&img);

@@ -265,3 +265,16 @@ natively and in a browser, and why it is straightforward to test.
 ## License
 
 MIT, see [LICENSE](LICENSE).
+
+## Working on it
+
+```
+cargo fmt --all --check                                   # formatting
+cargo clippy --workspace --all-targets -- -D warnings     # lints, no warnings allowed
+cargo test --workspace                                    # 103 tests
+cd viewer && npm run build                                # locales, lint, types, bundle
+```
+
+CI runs all four on every push, so a tree that drifts stops the deploy rather
+than reaching the site. The viewer has two further checks that need real
+reports to run against, described in `viewer/README.md`.

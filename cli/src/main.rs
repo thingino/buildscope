@@ -97,7 +97,18 @@ enum Cmd {
 /// Extensions that are never firmware artifacts, skipped when carving a
 /// directory of release assets.
 const NON_ARTIFACT_EXT: &[&str] = &[
-    "json", "md", "txt", "sha256sum", "sha256", "sha1", "md5", "asc", "sig", "log", "cfg", "html",
+    "json",
+    "md",
+    "txt",
+    "sha256sum",
+    "sha256",
+    "sha1",
+    "md5",
+    "asc",
+    "sig",
+    "log",
+    "cfg",
+    "html",
 ];
 
 fn is_artifact_candidate(path: &Path) -> bool {
@@ -130,7 +141,11 @@ fn provenance(path: &Path) -> String {
     if let Ok(cwd) = std::env::current_dir() {
         if let Ok(rel) = path.strip_prefix(&cwd) {
             let rel = rel.to_string_lossy();
-            return if rel.is_empty() { ".".to_string() } else { rel.into_owned() };
+            return if rel.is_empty() {
+                ".".to_string()
+            } else {
+                rel.into_owned()
+            };
         }
     }
     path.file_name()
@@ -178,7 +193,10 @@ fn load_report(path: &Path) -> Result<Report, String> {
     }
     let builds = walker::find_builds(path);
     match builds.len() {
-        0 => Err(format!("{}: no Buildroot output tree found", path.display())),
+        0 => Err(format!(
+            "{}: no Buildroot output tree found",
+            path.display()
+        )),
         1 => {
             let snap = walker::build_snapshot(&builds[0], None, None)
                 .map_err(|e| format!("{}: {e}", path.display()))?;
@@ -397,7 +415,10 @@ fn main() {
             };
             let d = diff(&ra, &rb);
             if json {
-                println!("{}", serde_json::to_string_pretty(&d).expect("serialize drift"));
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&d).expect("serialize drift")
+                );
             } else {
                 summary::print_drift(&d);
             }
@@ -416,7 +437,7 @@ fn main() {
                     Err(single) => {
                         // Not hook mode: this is an ordinary directory, and
                         // one holding several builds yields all of them.
-                        let found = scan_dirs(&[input.clone()], false, None, None);
+                        let found = scan_dirs(std::slice::from_ref(input), false, None, None);
                         if found.is_empty() {
                             eprintln!("buildscope: {single}");
                             std::process::exit(1);
@@ -490,5 +511,7 @@ fn default_viewer_dir() -> Option<PathBuf> {
         }
     }
     candidates.push(PathBuf::from("viewer/dist"));
-    candidates.into_iter().find(|c| c.join("index.html").is_file())
+    candidates
+        .into_iter()
+        .find(|c| c.join("index.html").is_file())
 }

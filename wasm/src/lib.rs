@@ -61,7 +61,13 @@ pub extern "C" fn bs_alloc(len: usize) -> *mut u8 {
     ptr
 }
 
-/// Release a buffer previously handed out by this module.
+/// Release a buffer obtained from `bs_alloc`, or a length-prefixed result
+/// buffer returned by any of the functions below.
+///
+/// # Safety
+/// `ptr` must be a pointer this module returned and has not already freed, and
+/// `len` must be the same length it was allocated with -- for a result buffer,
+/// four bytes more than the payload length written into its header.
 #[no_mangle]
 pub unsafe extern "C" fn bs_free(ptr: *mut u8, len: usize) {
     if ptr.is_null() || len == 0 {
@@ -114,7 +120,13 @@ pub extern "C" fn bs_drop(handle: u32) {
     SNAPSHOTS.with(|s| s.borrow_mut().remove(&handle));
 }
 
-/// Attach a text section. `name` is used by the kinds that carry a filename.
+/// Hand one named text input to a scan: the `.config`, the package file list,
+/// an environment source, and so on. `kind` selects which.
+///
+/// # Safety
+/// Both pointers must reference at least their stated number of readable
+/// bytes, and both must be valid UTF-8. The buffers are only read, and only
+/// for the duration of the call.
 #[no_mangle]
 pub unsafe extern "C" fn bs_set_text(
     handle: u32,
@@ -149,10 +161,11 @@ pub unsafe extern "C" fn bs_set_text(
     })
 }
 
-/// Add target-tree entries as newline-separated `size\tflags\tpath` records.
-/// `flags` is a bitmask: 1 = symlink, 2 = not charged (hardlink duplicate).
-/// The browser cannot see inode links, so it never sets bit 2; the report's
-/// `scan_mode` records which kind of walk produced the numbers.
+/// Add rootfs entries as `size\tflags\tpath` records, one per line.
+///
+/// # Safety
+/// `ptr` must reference `len` readable bytes of UTF-8. The buffer is only read,
+/// and only for the duration of the call.
 #[no_mangle]
 pub unsafe extern "C" fn bs_add_targets(handle: u32, ptr: *const u8, len: usize) -> u32 {
     let blob = text(ptr, len);
@@ -187,7 +200,13 @@ pub unsafe extern "C" fn bs_add_targets(handle: u32, ptr: *const u8, len: usize)
     })
 }
 
-/// Add one file from images/. Pass `bytes_len` 0 to record size only.
+/// Add one file from `images/`, with its bytes so the format parsers can read
+/// it.
+///
+/// # Safety
+/// `name_ptr` must reference `name_len` readable bytes of UTF-8, and
+/// `bytes_ptr` must reference `bytes_len` readable bytes. Both buffers are only
+/// read, and only for the duration of the call.
 #[no_mangle]
 pub unsafe extern "C" fn bs_add_image(
     handle: u32,
@@ -213,10 +232,12 @@ pub unsafe extern "C" fn bs_add_image(
     })
 }
 
-/// Add installed-but-not-shipped candidates as newline-separated
-/// `source_bytes\tpackage\tpath` records. The caller derives these by
-/// diffing packages-file-list.txt against the target tree it enumerated,
-/// recovering sizes from per-package/ where those files are available.
+/// Add installed-but-not-shipped entries as `size\tpackage\tpath` records, one
+/// per line.
+///
+/// # Safety
+/// `ptr` must reference `len` readable bytes of UTF-8. The buffer is only read,
+/// and only for the duration of the call.
 #[no_mangle]
 pub unsafe extern "C" fn bs_add_removed(handle: u32, ptr: *const u8, len: usize) -> u32 {
     let blob = text(ptr, len);
@@ -269,7 +290,12 @@ pub extern "C" fn bs_analyze(handle: u32) -> *mut u8 {
     }
 }
 
-/// Analyze a bare firmware artifact; returns length-prefixed report JSON.
+/// Analyze a bare firmware artifact, with no build tree behind it.
+///
+/// # Safety
+/// `name_ptr` must reference `name_len` readable bytes of UTF-8, and
+/// `bytes_ptr` must reference `bytes_len` readable bytes. Both buffers are only
+/// read, and only for the duration of the call.
 #[no_mangle]
 pub unsafe extern "C" fn bs_carve(
     name_ptr: *const u8,

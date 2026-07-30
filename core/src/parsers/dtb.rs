@@ -71,7 +71,7 @@ fn render_value(value: &[u8]) -> String {
             .collect();
         return parts.join(", ");
     }
-    if value.len() % 4 == 0 && value.len() <= 64 {
+    if value.len().is_multiple_of(4) && value.len() <= 64 {
         let cells: Vec<String> = value
             .chunks_exact(4)
             .map(|c| format!("0x{:x}", u32::from_be_bytes([c[0], c[1], c[2], c[3]])))
@@ -130,9 +130,7 @@ pub fn parse(data: &[u8]) -> Option<DtbInfo> {
                     }
                 }
                 match (path, name) {
-                    ("/", "model") => {
-                        info.model = fdt::prop_str(value).unwrap_or("").to_string()
-                    }
+                    ("/", "model") => info.model = fdt::prop_str(value).unwrap_or("").to_string(),
                     ("/", "compatible") => info.compatible = string_list(value),
                     ("/chosen", "bootargs") => {
                         info.bootargs = fdt::prop_str(value).unwrap_or("").to_string()
@@ -238,7 +236,10 @@ mod tests {
         let d = parse(&b.finish()).expect("dtbo");
         assert!(d.is_overlay);
         assert_eq!(d.targets, vec!["/soc/mmc@1c0f000"]);
-        assert!(d.model.is_empty(), "an overlay names its target, not itself");
+        assert!(
+            d.model.is_empty(),
+            "an overlay names its target, not itself"
+        );
     }
 
     #[test]
@@ -255,7 +256,10 @@ mod tests {
             .map(|(k, v)| (k.as_str(), v.as_str()))
             .collect();
         assert_eq!(root[0], ("model", "\"Acme Widget Board\""));
-        assert_eq!(root[1], ("compatible", "\"acme,widget-c\", \"acme,widget\""));
+        assert_eq!(
+            root[1],
+            ("compatible", "\"acme,widget-c\", \"acme,widget\"")
+        );
         assert!(!d.nodes_truncated);
     }
 
@@ -284,7 +288,7 @@ mod tests {
         let tree = board();
         let mut blob = vec![0x5Au8; 5000];
         blob.extend_from_slice(&tree);
-        blob.extend(std::iter::repeat(0x00).take(3000));
+        blob.extend(std::iter::repeat_n(0x00, 3000));
 
         let hits = find_embedded(&blob, 8);
         assert_eq!(hits.len(), 1);

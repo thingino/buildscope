@@ -13,9 +13,14 @@ function displayName(p: string): string {
 
 const MAP_W = 900;
 const MAP_H = 560;
+const NARROW_PX = 760;
 
 function Treemap({ packages, total }: { packages: PackageReport[]; total: number }) {
   const { node, show, hide } = useTooltip();
+  // On a phone the box is a third of the width, so a cell that is roomy on a
+  // desktop renders as a sliver: give the map more height and only label
+  // cells that are actually big enough to read.
+  const narrow = typeof window !== "undefined" && window.innerWidth < NARROW_PX;
   const rects = useMemo(
     () =>
       squarify(
@@ -29,12 +34,12 @@ function Treemap({ packages, total }: { packages: PackageReport[]; total: number
   );
   return (
     <div className="treemap-box">
-      <div className="treemap" style={{ aspectRatio: `${MAP_W} / ${MAP_H}` }}>
+      <div className="treemap" style={{ aspectRatio: narrow ? "4 / 5" : `${MAP_W} / ${MAP_H}` }}>
         {rects.map((r) => {
           const cat = categorize(r.data.name);
           const wp = (r.w / MAP_W) * 100;
           const hp = (r.h / MAP_H) * 100;
-          const showLabel = r.w > 70 && r.h > 30;
+          const showLabel = narrow ? r.w > 170 && r.h > 60 : r.w > 70 && r.h > 30;
           return (
             <div
               key={r.data.name}

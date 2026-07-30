@@ -2,7 +2,7 @@
 
 use crate::inputs::{buildtime, config::BrConfig, pfl};
 use crate::parsers::{
-    cpio, ext, fat, fit, genimage, gpt, jffs2, mbr, mtdparts, padding, squashfs,
+    cpio, dtb, ext, fat, fit, genimage, gpt, jffs2, mbr, mtdparts, padding, squashfs,
     squashfs_reader, ubi, ubifs, ubootenv, uimage,
 };
 use crate::report::*;
@@ -30,6 +30,7 @@ pub(crate) struct Classified {
     pub(crate) fat: Option<fat::FatInfo>,
     pub(crate) cpio: Option<cpio::CpioInfo>,
     pub(crate) fit: Option<fit::FitInfo>,
+    pub(crate) dtb: Option<dtb::DtbInfo>,
     pub(crate) content_end: u64,
     pub(crate) partition: Option<String>,
 }
@@ -73,6 +74,7 @@ pub(crate) fn classify(name: &str, size: u64, bytes: Option<&[u8]>) -> Classifie
         fat: None,
         cpio: None,
         fit: None,
+        dtb: None,
         content_end: size,
         partition: None,
     };
@@ -241,6 +243,7 @@ pub(crate) fn classify(name: &str, size: u64, bytes: Option<&[u8]>) -> Classifie
                 "arch": i.arch,
                 "os": i.os,
                 "compression": i.compression,
+                "board": i.board,
                 "bytes": i.bytes,
                 "external": i.external,
                 "load": i.load.map(|v| format!("0x{v:08x}")),
@@ -258,14 +261,28 @@ pub(crate) fn classify(name: &str, size: u64, bytes: Option<&[u8]>) -> Classifie
         c.fit = Some(info);
         return c;
     }
-    if let Some(bytes) = fit::parse_dtb(data) {
-        c.format = "dtb".into();
-        c.detail = json!({
-            "total_bytes": bytes,
-            "padding_bytes": size.saturating_sub(bytes),
-        });
-        c.content_end = bytes.min(size);
-        return c;
+    // Not a FIT, so a device tree describing a board -- or an overlay
+    // patching one. Buildroot ships a directory full of these, all about the
+    // same size, so what matters is which board each one is for.
+    if fit::parse(data).is_none() {
+        if let Some(info) = dtb::parse(data) {
+            c.format = if info.is_overlay { "dtbo" } else { "dtb" }.into();
+            c.detail = json!({
+                "model": info.model,
+                "compatible": info.compatible,
+                "bootargs": info.bootargs,
+                "node_count": info.node_count,
+                "property_count": info.property_count,
+                "total_bytes": info.total_bytes,
+                "struct_bytes": info.struct_bytes,
+                "strings_bytes": info.strings_bytes,
+                "overlay_targets": info.targets,
+                "padding_bytes": size.saturating_sub(info.total_bytes),
+            });
+            c.content_end = info.total_bytes.min(size);
+            c.dtb = Some(info);
+            return c;
+        }
     }
     // A cpio archive names itself in its first six bytes.
     if let Some(info) = cpio::parse(data) {

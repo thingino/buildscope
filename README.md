@@ -44,7 +44,13 @@ buildscope scan output/
   - cpio (`newc`/`crc`): the whole archive listing with names, sizes and kinds,
     so an initramfs rootfs is as browsable as a build tree
   - FIT (`.itb`): each payload itemised -- kernel, ramdisk, device tree -- with
-    type, load address, compression and hashes, plus the configurations
+    type, load address, compression and hashes, plus the configurations. A
+    device tree payload is read in turn, so `fdt-1` is reported as the board it
+    describes.
+  - device trees: the `model` and `compatible` that say which board a `.dtb` is
+    for, plus the kernel command line it carries. A Buildroot build ships a
+    directory of these, all much the same size, so which is which is the whole
+    question. An overlay is identified as one, by the nodes it patches.
   - uImage: declared payload size, compression type, load and entry address,
     header CRC check
   - U-Boot environment images: CRC validity, bytes used vs environment size,

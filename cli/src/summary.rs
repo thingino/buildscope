@@ -257,7 +257,40 @@ pub fn print_report(r: &Report) {
                         )
                     ))
                 }
-                "dtb" => Some("device tree".to_string()),
+                "dtb" | "dtbo" => {
+                    let get = |k: &str| {
+                        i.detail.get(k).and_then(|v| v.as_str()).unwrap_or("").to_string()
+                    };
+                    let model = get("model");
+                    let compat = i
+                        .detail
+                        .get("compatible")
+                        .and_then(|v| v.as_array())
+                        .and_then(|a| a.first())
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
+                    let targets = i
+                        .detail
+                        .get("overlay_targets")
+                        .and_then(|v| v.as_array())
+                        .map(|a| a.len())
+                        .unwrap_or(0);
+                    let who = if !model.is_empty() {
+                        model
+                    } else if !compat.is_empty() {
+                        compat.to_string()
+                    } else if targets > 0 {
+                        format!("overlay, {targets} fragment(s)")
+                    } else {
+                        "device tree".to_string()
+                    };
+                    let nodes = i
+                        .detail
+                        .get("node_count")
+                        .and_then(|v| v.as_u64())
+                        .unwrap_or(0);
+                    Some(format!("{who}, {nodes} nodes"))
+                }
                 "cpio" => {
                     let num = |k: &str| i.detail.get(k).and_then(|v| v.as_u64()).unwrap_or(0);
                     Some(format!(

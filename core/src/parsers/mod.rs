@@ -2,6 +2,7 @@
 //! `None` when the input is not that format. No parser ever guesses.
 
 pub mod cpio;
+pub mod dtb;
 pub mod ext;
 pub mod fat;
 pub mod fdt;

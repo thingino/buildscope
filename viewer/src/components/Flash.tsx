@@ -71,7 +71,15 @@ function imageNote(i: ImageReport): string {
       )} of payload`;
     }
     case "dtb":
-      return "device tree";
+    case "dtbo": {
+      const compat = (d.compatible ?? []) as unknown as string[];
+      const targets = (d.overlay_targets ?? []) as unknown as string[];
+      const who =
+        (d.model as string) ||
+        (Array.isArray(compat) && compat.length ? compat[0] : "") ||
+        (Array.isArray(targets) && targets.length ? `patches ${targets.join(", ")}` : "device tree");
+      return `${who} · ${d.node_count} nodes${d.bootargs ? " · has bootargs" : ""}`;
+    }
     case "ubifs":
       return (
         `${humanBytes(d.total_bytes as number)} · ${d.leb_count} blocks · ${d.compression}` +

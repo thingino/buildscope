@@ -9,6 +9,7 @@
 //! Payloads live either in a `data` property or, for a FIT built with external
 //! data, at a `data-offset` past the end of the tree.
 
+use super::dtb;
 use super::fdt::{self, Event};
 use std::collections::BTreeMap;
 
@@ -28,6 +29,10 @@ pub struct FitImage {
     pub entry: Option<u32>,
     /// Algorithms of the hash nodes attached to this image.
     pub hashes: Vec<String>,
+    /// For a device-tree payload carried inline, the board it describes. A FIT
+    /// often holds several, one per board variant, and the file names inside
+    /// it are only `fdt-1`, `fdt-2` and so on.
+    pub board: String,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -118,6 +123,19 @@ pub fn parse(data: &[u8]) -> Option<FitInfo> {
             })
             .collect();
 
+        // A device tree payload can say which board it is for.
+        let board = props
+            .get("data")
+            .and_then(|d| dtb::parse(d))
+            .map(|d| {
+                if d.model.is_empty() {
+                    d.compatible.first().cloned().unwrap_or_default()
+                } else {
+                    d.model
+                }
+            })
+            .unwrap_or_default();
+
         images.push(FitImage {
             name: name.to_string(),
             description: text(props, "description"),
@@ -130,6 +148,7 @@ pub fn parse(data: &[u8]) -> Option<FitInfo> {
             load: num(props, "load"),
             entry: num(props, "entry"),
             hashes,
+            board,
         });
     }
 
@@ -289,6 +308,35 @@ mod tests {
         assert_eq!(f.images[0].bytes, 100_000);
         assert_eq!(f.tree_bytes, img.len() as u64);
         assert_eq!(f.total_bytes, img.len() as u64 + 100_000);
+    }
+
+    /// A FIT usually carries one device tree per board variant, named only
+    /// `fdt-1`, `fdt-2` and so on. The payload knows better.
+    #[test]
+    fn a_device_tree_payload_names_its_board() {
+        let mut inner = Builder::new();
+        inner.begin("").prop_str("model", "Acme Widget Board").end();
+        let board_dtb = inner.finish();
+
+        let mut b = Builder::new();
+        b.begin("")
+            .begin("images")
+            .begin("fdt-1")
+            .prop_str("type", "flat_dt")
+            .prop("data", &board_dtb)
+            .end()
+            .begin("kernel-1")
+            .prop_str("type", "kernel")
+            .prop("data", &vec![0u8; 64])
+            .end()
+            .end()
+            .end();
+        let f = parse(&b.finish()).expect("fit");
+        let fdt = f.images.iter().find(|i| i.name == "fdt-1").unwrap();
+        assert_eq!(fdt.board, "Acme Widget Board");
+        // A kernel payload is not a device tree and claims no board.
+        let k = f.images.iter().find(|i| i.name == "kernel-1").unwrap();
+        assert_eq!(k.board, "");
     }
 
     #[test]

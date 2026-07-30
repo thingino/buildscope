@@ -35,7 +35,7 @@ enum Cmd {
         /// Also write the report to this path ("-" for stdout)
         #[arg(long)]
         out: Option<String>,
-        /// Do not write buildscope-report.json into images/
+        /// Do not write buildscope-report.json into the build directory
         #[arg(long)]
         no_write: bool,
         /// Suppress the terminal summary
@@ -278,8 +278,10 @@ fn main() {
             for (paths, report) in &results {
                 let json = serde_json::to_string_pretty(report).expect("serialize report");
                 if !no_write {
-                    if let Some(img_dir) = paths.as_ref().and_then(|p| p.images_dir.as_ref()) {
-                        let dest = img_dir.join(REPORT_FILENAME);
+                    // Next to uenv.txt and the build's other metadata, not in
+                    // images/, which holds only things that get flashed.
+                    if let Some(root) = paths.as_ref().map(|p| p.root.clone()) {
+                        let dest = root.join(REPORT_FILENAME);
                         match std::fs::write(&dest, format!("{json}\n")) {
                             Ok(()) => {
                                 if !quiet {

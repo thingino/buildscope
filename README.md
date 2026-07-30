@@ -101,8 +101,9 @@ buildscope scan output/
   files are filtered out.
 - **Build timings** per package from `build-time.log`.
 
-Output is one schema-versioned `buildscope-report.json` per build, plus a
-terminal summary. A report records where it was scanned from as a path relative
+Output is one schema-versioned `buildscope-report.json` per build, written into
+the build directory beside the build's other metadata rather than into
+`images/`, which holds only what gets flashed. Plus a terminal summary. A report records where it was scanned from as a path relative
 to where the command ran -- `output/master/my-build` -- rather than an absolute
 one, because a report gets committed, attached to releases and published, and
 the builder's home directory is nobody else's business.

@@ -5,7 +5,7 @@
 - Core parsers: squashfs superblock, jffs2 node scan, uImage header, U-Boot
   env, mtdparts, MBR, padding detection
 - Buildroot inputs: packages-file-list.txt, .config, build-time.log, modules
-- `scan` with a terminal summary and a report written into images/
+- `scan` with a terminal summary and a report written into the build dir
 - Hooked mode via BR2_ROOTFS_POST_IMAGE_SCRIPT
 - Web viewer: overview (partition bars, images), packages (table + treemap),
   modules, build timings; `serve` command

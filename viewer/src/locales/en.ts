@@ -12,6 +12,7 @@ const en: Record<string, string> = {
   settings_lang: "Language",
   btn_close: "Close",
   title_settings: "Settings",
+  title_home: "Back to the start",
   title_close: "Close",
   ctx_hook: "hook",
   ctx_inferred: "inferred",

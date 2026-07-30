@@ -6,6 +6,7 @@ const ru: Record<string, string> = {
   settings_lang: "Язык",
   btn_close: "Закрыть",
   title_settings: "Настройки",
+  title_home: "Вернуться к началу",
   title_close: "Закрыть",
   ctx_hook: "хук",
   ctx_inferred: "выведено",

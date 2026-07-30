@@ -7,6 +7,7 @@ const es: Record<string, string> = {
   settings_lang: "Idioma",
   btn_close: "Cerrar",
   title_settings: "Ajustes",
+  title_home: "Volver al inicio",
   title_close: "Cerrar",
   ctx_hook: "hook",
   ctx_inferred: "inferido",

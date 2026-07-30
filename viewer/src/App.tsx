@@ -160,6 +160,19 @@ function Viewer() {
     });
   }, []);
 
+  // Home is this page without the fragment that records which build and tab
+  // are open. The query is kept, so a reader who arrived with ?lang= does not
+  // lose their language by going back to the start.
+  const goHome = `${location.pathname}${location.search}`;
+  const resetToHome = useCallback(() => {
+    setCurrent(0);
+    setTab("flash");
+    history.replaceState(null, "", goHome);
+    // In the browser the start is the drop target, so let go of what was
+    // dropped. Served or inlined, the reports are not ours to discard.
+    if (api === null && inlineReports() === null) setStaticReports([]);
+  }, [api, goHome]);
+
   const staticMode = api === null;
   const showDrop = staticMode && staticReports.length === 0;
   // Selected tab may not apply to the current report (switching builds, or
@@ -170,14 +183,28 @@ function Viewer() {
   return (
     <div className="app">
       <header className="top">
-        <div className="brand">
+        {/* The way back. A bare anchor would not do it on its own: going from
+            "#b=0&t=files" to the same path only changes the fragment, which
+            the browser handles without reloading, so the state is reset here.
+            It stays an anchor so it behaves like one -- a middle click still
+            opens the app fresh in a new tab. */}
+        <a
+          className="brand"
+          href={goHome}
+          title={t("title_home")}
+          onClick={(e) => {
+            if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+            e.preventDefault();
+            resetToHome();
+          }}
+        >
           <span className="brand-mark" aria-hidden>
             <i className="bm bm-1" />
             <i className="bm bm-2" />
             <i className="bm bm-3" />
           </span>
           buildscope
-        </div>
+        </a>
         {report && (
           <div className="readout">
             {report.flash?.mtd_id && report.flash.total_bytes && (

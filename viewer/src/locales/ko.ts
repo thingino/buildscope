@@ -7,6 +7,7 @@ const ko: Record<string, string> = {
   settings_lang: "언어",
   btn_close: "닫기",
   title_settings: "설정",
+  title_home: "처음으로 돌아가기",
   title_close: "닫기",
   ctx_hook: "훅",
   ctx_inferred: "추론",

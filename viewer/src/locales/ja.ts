@@ -7,6 +7,7 @@ const ja: Record<string, string> = {
   settings_lang: "言語",
   btn_close: "閉じる",
   title_settings: "設定",
+  title_home: "最初に戻る",
   title_close: "閉じる",
   ctx_hook: "フック",
   ctx_inferred: "推定",

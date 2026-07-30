@@ -7,6 +7,7 @@ const uk: Record<string, string> = {
   settings_lang: "Мова",
   btn_close: "Закрити",
   title_settings: "Налаштування",
+  title_home: "Повернутися на початок",
   title_close: "Закрити",
   ctx_hook: "хук",
   ctx_inferred: "виведено",

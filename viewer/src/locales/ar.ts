@@ -6,6 +6,7 @@ const ar: Record<string, string> = {
   settings_lang: "اللغة",
   btn_close: "إغلاق",
   title_settings: "الإعدادات",
+  title_home: "العودة إلى البداية",
   title_close: "إغلاق",
   ctx_hook: "خطّاف",
   ctx_inferred: "مُستنتج",

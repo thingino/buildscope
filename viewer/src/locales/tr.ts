@@ -7,6 +7,7 @@ const tr: Record<string, string> = {
   settings_lang: "Dil",
   btn_close: "Kapat",
   title_settings: "Ayarlar",
+  title_home: "Başa dön",
   title_close: "Kapat",
   ctx_hook: "hook",
   ctx_inferred: "çıkarsanan",

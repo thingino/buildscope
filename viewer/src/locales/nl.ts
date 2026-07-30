@@ -7,6 +7,7 @@ const nl: Record<string, string> = {
   settings_lang: "Taal",
   btn_close: "Sluiten",
   title_settings: "Instellingen",
+  title_home: "Terug naar het begin",
   title_close: "Sluiten",
   ctx_hook: "hook",
   ctx_inferred: "afgeleid",

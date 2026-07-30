@@ -70,6 +70,8 @@ body {
 }
 
 .brand {
+  text-decoration: none;
+  cursor: pointer;
   font-size: 16px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -77,6 +79,14 @@ body {
   align-items: center;
   gap: 10px;
   color: var(--accent);
+}
+
+.brand:hover {
+  color: var(--accent-hover);
+}
+
+.brand:hover .bm-1 {
+  background: var(--accent-hover);
 }
 
 .brand-mark {

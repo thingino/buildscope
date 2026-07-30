@@ -183,7 +183,7 @@ const en: Record<string, string> = {
   drop_sub_html:
     "Everything is analyzed in this browser: a bare <code>.bin</code> has its partition map carved out of the image itself, and a <code>buildscope-report.json</code> is rendered as-is. No uploads.",
   drop_cli_hint:
-    "Analyzing a Buildroot output directory needs its build tree, so that runs locally: <code>buildscope serve output/</code>.",
+    "Analyzing a Buildroot output directory needs its build tree, so that runs locally: <code>buildscope export output/my-build</code>.",
   choose_files: "choose files",
   working: "working: {what}",
   stage_reading: "reading {name}",

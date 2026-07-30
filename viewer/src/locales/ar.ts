@@ -177,7 +177,7 @@ const ar: Record<string, string> = {
   drop_sub_html:
     "يجري التحليل بالكامل داخل هذا المتصفح: ملف <code>.bin</code> المفرد تُستخرج خريطة أقسامه من الصورة نفسها، وملف <code>buildscope-report.json</code> يُعرض كما هو. لا يُرفع أي شيء.",
   drop_cli_hint:
-    "تحليل مجلد output الخاص بـ Buildroot يحتاج إلى شجرة البناء، لذا يجري محليًا: <code>buildscope serve output/</code>.",
+    "تحليل مجلد output الخاص بـ Buildroot يحتاج إلى شجرة البناء، لذا يجري محليًا: <code>buildscope export output/my-build</code>.",
   choose_files: "اختيار ملفات",
   working: "جارٍ العمل: {what}",
   stage_reading: "قراءة {name}",

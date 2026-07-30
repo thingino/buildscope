@@ -178,7 +178,7 @@ const it: Record<string, string> = {
   drop_sub_html:
     "Tutto viene analizzato in questo browser: di un semplice <code>.bin</code> viene ricavata la mappa delle partizioni dall'immagine stessa, e un <code>buildscope-report.json</code> viene mostrato così com'è. Non viene caricato nulla.",
   drop_cli_hint:
-    "Analizzare una directory di output di Buildroot richiede il suo albero di build, quindi questo avviene in locale: <code>buildscope serve output/</code>.",
+    "Analizzare una directory di output di Buildroot richiede il suo albero di build, quindi questo avviene in locale: <code>buildscope export output/my-build</code>.",
   choose_files: "scegli i file",
   working: "in corso: {what}",
   stage_reading: "lettura di {name}",

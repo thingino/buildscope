@@ -5,6 +5,7 @@
 
 use std::fs;
 use std::io;
+use buildscope_core::report::Report;
 use std::path::Path;
 
 const B64: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -121,6 +122,80 @@ pub fn build_single_file(dist: &Path, report_json: &str) -> io::Result<String> {
     html.replace_range(pos..tag_end, &replacement);
 
     Ok(html)
+}
+
+/// Copy the built viewer and write one report per build beside it, in the
+/// layout the viewer already looks for.
+///
+/// The alternative -- one file with every build inlined -- means downloading
+/// all of them to read any one of them, which at fleet scale is tens of
+/// megabytes before the first pixel. Here the index is a few hundred bytes per
+/// build and a report is fetched only when it is opened. It is all static, so
+/// any web host will do and nothing needs to be running.
+pub fn build_site(dist: &Path, reports: &[Report], out: &Path) -> io::Result<()> {
+    fs::create_dir_all(out.join("api").join("report"))?;
+    copy_tree(dist, out)?;
+
+    // The index the viewer asks for first. Cheap facts only: enough to fill a
+    // picker and to say which builds are nearest their limits, without
+    // fetching a single report.
+    let entries: Vec<serde_json::Value> = reports
+        .iter()
+        .enumerate()
+        .map(|(i, r)| {
+            let fullest = r
+                .flash
+                .as_ref()
+                .map(|f| {
+                    f.partitions
+                        .iter()
+                        .filter(|p| !p.overlaps)
+                        .filter_map(|p| {
+                            let size = p.size?;
+                            let used = p.used_bytes.or(p.content_bytes)?;
+                            (size > 0).then(|| (p.name.clone(), used as f64 / size as f64))
+                        })
+                        .max_by(|a, b| a.1.total_cmp(&b.1))
+                })
+                .unwrap_or(None);
+            serde_json::json!({
+                "id": i,
+                "name": r.build.name,
+                "flash_bytes": r.flash.as_ref().and_then(|f| f.total_bytes),
+                "rootfs_bytes": r.rootfs.as_ref().and_then(|x| x.compressed_bytes),
+                "fullest_partition": fullest.as_ref().map(|(n, _)| n),
+                "fullest_fill": fullest.as_ref().map(|(_, f)| f),
+            })
+        })
+        .collect();
+    fs::write(
+        out.join("api").join("index"),
+        serde_json::json!({ "reports": entries }).to_string(),
+    )?;
+
+    for (i, r) in reports.iter().enumerate() {
+        fs::write(
+            out.join("api").join("report").join(i.to_string()),
+            serde_json::to_string(r).expect("serialize report"),
+        )?;
+    }
+    Ok(())
+}
+
+/// Copy the viewer bundle as it is: the site is served over HTTP, so the
+/// module scripts that a file:// page cannot load are fine here.
+fn copy_tree(from: &Path, to: &Path) -> io::Result<()> {
+    for entry in fs::read_dir(from)? {
+        let entry = entry?;
+        let target = to.join(entry.file_name());
+        if entry.file_type()?.is_dir() {
+            fs::create_dir_all(&target)?;
+            copy_tree(&entry.path(), &target)?;
+        } else {
+            fs::copy(entry.path(), &target)?;
+        }
+    }
+    Ok(())
 }
 
 #[cfg(test)]

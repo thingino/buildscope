@@ -178,7 +178,7 @@ const pl: Record<string, string> = {
   drop_sub_html:
     "Wszystko jest analizowane w tej przeglądarce: samo <code>.bin</code> dostaje mapę partycji wydobytą z obrazu, a <code>buildscope-report.json</code> jest wyświetlany bez zmian. Nic nie jest wysyłane.",
   drop_cli_hint:
-    "Analiza katalogu wynikowego Buildroot wymaga drzewa kompilacji, dlatego odbywa się lokalnie: <code>buildscope serve output/</code>.",
+    "Analiza katalogu wynikowego Buildroot wymaga drzewa kompilacji, dlatego odbywa się lokalnie: <code>buildscope export output/my-build</code>.",
   choose_files: "wybierz pliki",
   working: "w toku: {what}",
   stage_reading: "czytanie {name}",

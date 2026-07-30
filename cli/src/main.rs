@@ -1,5 +1,4 @@
 mod export;
-mod serve;
 mod summary;
 mod walker;
 
@@ -49,24 +48,6 @@ enum Cmd {
         #[arg(long)]
         genimage: Option<PathBuf>,
     },
-    /// Scan, then serve reports and the web viewer locally
-    Serve {
-        #[arg(required = true)]
-        dirs: Vec<PathBuf>,
-        #[arg(long, default_value_t = 8380)]
-        port: u16,
-        /// Addresses to listen on, comma separated. Both loopbacks by
-        /// default; "all" means every interface on both IP families
-        #[arg(long, value_delimiter = ',', default_value = "127.0.0.1,::1")]
-        bind: Vec<String>,
-        /// Directory with the built viewer (index.html + assets)
-        #[arg(long)]
-        viewer_dir: Option<PathBuf>,
-        #[arg(long)]
-        flash_map: Option<String>,
-        #[arg(long)]
-        genimage: Option<PathBuf>,
-    },
     /// Analyze bare firmware artifacts with no build tree (a released .bin,
     /// a flash dump, a lone rootfs image)
     Carve {
@@ -93,13 +74,20 @@ enum Cmd {
         #[arg(long)]
         json: bool,
     },
-    /// Write a self-contained HTML report (viewer + data in one file)
+    /// Write the viewer and the data together: one self-contained HTML file,
+    /// or a static site any web host can serve
     Export {
-        /// report.json or a build dir
-        input: PathBuf,
-        /// Output file (default: <build-name>.html)
+        /// report.json files, build dirs, or a directory of builds
+        #[arg(required = true)]
+        inputs: Vec<PathBuf>,
+        /// Output file (default: <build-name>.html), or the site directory
         #[arg(short, long)]
         out: Option<PathBuf>,
+        /// Write a static site instead of one file: the viewer, plus one JSON
+        /// per build fetched as it is opened. For a fleet, where inlining
+        /// every build would mean downloading all of them to read one.
+        #[arg(long)]
+        site: bool,
         /// Directory with the built viewer (index.html + assets)
         #[arg(long)]
         viewer_dir: Option<PathBuf>,
@@ -301,28 +289,6 @@ fn main() {
                 }
             }
         }
-        Cmd::Serve {
-            dirs,
-            port,
-            bind,
-            viewer_dir,
-            flash_map,
-            genimage,
-        } => {
-            let results = scan_dirs(&dirs, false, flash_map.as_deref(), genimage.as_deref());
-            if results.is_empty() {
-                std::process::exit(1);
-            }
-            let reports: Vec<serve::ReportEntry> = results
-                .iter()
-                .map(|(_, r)| serve::ReportEntry {
-                    name: r.build.name.clone(),
-                    json: serde_json::to_string(r).expect("serialize report"),
-                })
-                .collect();
-            let viewer = viewer_dir.or_else(default_viewer_dir);
-            serve::serve(&bind, port, reports, viewer);
-        }
         Cmd::Carve {
             files,
             out,
@@ -416,22 +382,57 @@ fn main() {
             }
         }
         Cmd::Export {
-            input,
+            inputs,
             out,
+            site,
             viewer_dir,
         } => {
-            let report = match load_report(&input) {
-                Ok(r) => r,
-                Err(e) => {
-                    eprintln!("buildscope: {e}");
-                    std::process::exit(1);
+            // Each input is a report, a build, or a directory of builds.
+            let mut reports = Vec::new();
+            for input in &inputs {
+                match load_report(input) {
+                    Ok(r) => reports.push(r),
+                    Err(single) => {
+                        // Not hook mode: this is an ordinary directory, and
+                        // one holding several builds yields all of them.
+                        let found = scan_dirs(&[input.clone()], false, None, None);
+                        if found.is_empty() {
+                            eprintln!("buildscope: {single}");
+                            std::process::exit(1);
+                        }
+                        reports.extend(found.into_iter().map(|(_, r)| r));
+                    }
                 }
-            };
+            }
             let Some(dist) = viewer_dir.or_else(default_viewer_dir) else {
                 eprintln!("buildscope: no built viewer found; build viewer/ or pass --viewer-dir");
                 std::process::exit(1);
             };
-            let json = serde_json::to_string(&report).expect("serialize report");
+
+            if site {
+                let dir = out.unwrap_or_else(|| PathBuf::from("buildscope-site"));
+                match export::build_site(&dist, &reports, &dir) {
+                    Ok(()) => println!(
+                        "wrote {} ({} build{}); serve it with any web host",
+                        dir.display(),
+                        reports.len(),
+                        if reports.len() == 1 { "" } else { "s" }
+                    ),
+                    Err(e) => {
+                        eprintln!("buildscope: export --site: {e}");
+                        std::process::exit(1);
+                    }
+                }
+                return;
+            }
+
+            // One file. Several reports go in as an array, which is how the
+            // viewer offers a picker and a drift comparison with no server.
+            let json = if reports.len() == 1 {
+                serde_json::to_string(&reports[0]).expect("serialize report")
+            } else {
+                serde_json::to_string(&reports).expect("serialize reports")
+            };
             let html = match export::build_single_file(&dist, &json) {
                 Ok(h) => h,
                 Err(e) => {
@@ -439,9 +440,15 @@ fn main() {
                     std::process::exit(1);
                 }
             };
-            let dest = out.unwrap_or_else(|| PathBuf::from(format!("{}.html", report.build.name)));
+            let dest = out.unwrap_or_else(|| {
+                PathBuf::from(if reports.len() == 1 {
+                    format!("{}.html", reports[0].build.name)
+                } else {
+                    "buildscope.html".to_string()
+                })
+            });
             match std::fs::write(&dest, html) {
-                Ok(()) => println!("wrote {}", dest.display()),
+                Ok(()) => println!("wrote {} ({} builds)", dest.display(), reports.len()),
                 Err(e) => {
                     eprintln!("buildscope: write {}: {e}", dest.display());
                     std::process::exit(1);

@@ -177,7 +177,7 @@ const ru: Record<string, string> = {
   drop_sub_html:
     "Всё анализируется в этом браузере: для отдельного <code>.bin</code> карта разделов извлекается из самого образа, а <code>buildscope-report.json</code> отображается как есть. Ничего не загружается на сервер.",
   drop_cli_hint:
-    "Для анализа каталога output Buildroot нужно дерево сборки, поэтому он выполняется локально: <code>buildscope serve output/</code>.",
+    "Для анализа каталога output Buildroot нужно дерево сборки, поэтому он выполняется локально: <code>buildscope export output/my-build</code>.",
   choose_files: "выбрать файлы",
   working: "выполняется: {what}",
   stage_reading: "чтение {name}",

@@ -84,14 +84,26 @@
   `target/`, `images/` and named files are visited. Worth doing only if people
   actually ask for it: anyone with a build tree can run the CLI.
 
+## Phase 7 (done)
+
+- `export` takes any number of builds and inlines them all, so a local file
+  has a build picker and a drift comparison with nothing running
+- `export --site` writes the viewer plus one JSON per build, fetched as each
+  is opened, for publishing a fleet to any static host
+- `serve` removed. Everything it did is now either a file you open or a
+  directory you host, and the tool ships with no network listener at all.
+
 ## Phase 3c
 
 - Render CI-published reports on the same site, so a project's build history
-  is browsable without scanning anything locally
+  is browsable without scanning anything locally: `export --site` produces the
+  files, so what is left is the workflow that publishes them
 - CI aggregation recipe: publish one report per build, retain history,
   trends over time
 - Fleet-scale viewer work: search in the build picker, and an overview table
-  across builds (which are nearest their partition limits)
+  across builds. The site index already carries what the table needs -- each
+  build's flash size and the partition nearest its limit -- so the work is in
+  the viewer.
 
 ## Distant / recorded, not planned
 

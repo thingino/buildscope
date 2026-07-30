@@ -178,7 +178,7 @@ const ko: Record<string, string> = {
   drop_sub_html:
     "모든 분석은 이 브라우저에서 이뤄집니다. 단독 <code>.bin</code>은 이미지 자체에서 파티션 맵을 추출하고, <code>buildscope-report.json</code>은 그대로 표시합니다. 아무것도 업로드되지 않습니다.",
   drop_cli_hint:
-    "Buildroot 출력 디렉터리를 분석하려면 빌드 트리가 필요하므로 이 작업은 로컬에서 실행합니다: <code>buildscope serve output/</code>.",
+    "Buildroot 출력 디렉터리를 분석하려면 빌드 트리가 필요하므로 이 작업은 로컬에서 실행합니다: <code>buildscope export output/my-build</code>.",
   choose_files: "파일 선택",
   working: "처리 중: {what}",
   stage_reading: "{name} 읽는 중",

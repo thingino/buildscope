@@ -6,14 +6,19 @@ thingino-family theme, and the chart colors are a CVD-validated palette.
 
 ## Where the data comes from
 
-1. **Served**: `buildscope serve <dirs>` exposes `/api/index` and
-   `/api/report/<n>` and serves this bundle; the app finds the API itself.
-2. **Carved in the browser**: with no API the page becomes a drop target backed
-   by the WASM build of the analysis core (`buildscope.wasm`). Drop a firmware
-   image, a folder of images, or a `buildscope-report.json`. Nothing is
-   uploaded.
-3. **Inlined**: `buildscope export` writes one self-contained HTML file with
-   the report baked in as `window.__BUILDSCOPE_REPORT__`.
+1. **Inlined**: `buildscope export` writes one self-contained HTML file with
+   the data baked in as `window.__BUILDSCOPE_REPORT__` -- one report, or an
+   array of them, which is what gives a local file a build picker and a drift
+   comparison with nothing running.
+2. **Fetched**: `buildscope export --site` writes this bundle plus `api/index`
+   and one `api/report/<n>` per build, as plain files. The app looks for that
+   index on load and, finding it, fetches a report only when it is opened.
+   Any static host will do; browsers block `fetch` over `file://`, so this
+   form needs to be served rather than opened.
+3. **Carved in the browser**: with neither of those the page becomes a drop
+   target backed by the WASM build of the analysis core (`buildscope.wasm`).
+   Drop a firmware image, a folder of images, or a `buildscope-report.json`.
+   Nothing is uploaded.
 
 Picking a *build directory* is deliberately not offered. Both
 `webkitdirectory` and dropped-directory recursion enumerate every file beneath
@@ -105,7 +110,7 @@ The WASM core comes from the workspace root:
 cargo build --release --target wasm32-unknown-unknown -p buildscope-wasm
 ```
 
-`buildscope serve` picks up the bundle from `viewer/dist`, from beside the
+`buildscope export` picks up the bundle from `viewer/dist`, from beside the
 binary, or via `--viewer-dir`.
 
 ## Checks

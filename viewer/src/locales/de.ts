@@ -178,7 +178,7 @@ const de: Record<string, string> = {
   drop_sub_html:
     "Alles wird in diesem Browser analysiert: Bei einer reinen <code>.bin</code> wird die Partitionskarte direkt aus dem Image gelesen, und eine <code>buildscope-report.json</code> wird so dargestellt, wie sie ist. Nichts wird hochgeladen.",
   drop_cli_hint:
-    "Die Analyse eines Buildroot-Ausgabeverzeichnisses braucht dessen Build-Baum und läuft daher lokal: <code>buildscope serve output/</code>.",
+    "Die Analyse eines Buildroot-Ausgabeverzeichnisses braucht dessen Build-Baum und läuft daher lokal: <code>buildscope export output/my-build</code>.",
   choose_files: "Dateien wählen",
   working: "läuft: {what}",
   stage_reading: "{name} wird gelesen",

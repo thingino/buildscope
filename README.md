@@ -108,31 +108,41 @@ terminal summary.
 
 ```
 buildscope scan output/                  # one build, or a directory of builds
-buildscope serve output/                 # browse them in the local web viewer
 buildscope diff output/old output/new    # what grew, what shrank, what appeared
 buildscope export output/my-build        # one self-contained HTML file
+buildscope export --site -o site/ output/  # a static site, one JSON per build
 buildscope carve firmware.bin            # a released image, with no build tree
 ```
 
 `diff` takes reports, build directories, or bare images, and `--json` gives the
 full delta for scripting.
 
-`serve` listens on **both IP families**: by default on both loopbacks
-(`127.0.0.1` and `::1`), so an IPv6-only client works with no extra flags.
-`--bind` takes a comma-separated list of addresses, or `all` for every
-interface on both families:
+`export` takes as many builds as you like. Given several, it inlines them all
+into one file, which is how a local HTML gets a build picker and a drift
+comparison with nothing running:
 
 ```
-buildscope serve output/                      # 127.0.0.1 and [::1]
-buildscope serve output/ --bind all           # every interface, IPv4 + IPv6
-buildscope serve output/ --bind ::1           # IPv6 loopback only
-buildscope serve output/ --bind 2001:db8::5   # a specific IPv6 address
+buildscope export output/master/cam-a output/master/cam-b -o compare.html
 ```
 
-It prints every URL it is listening on, with IPv6 literals bracketed the way a
-browser needs them. Addresses are bound IPv6-first, because a wildcard IPv6
-socket on a dual-stack host also carries IPv4: binding IPv4 first would make
-the IPv6 bind fail and silently drop IPv6 support.
+For a fleet, inlining every build would mean downloading all of them to read
+one, so `--site` writes the viewer once and one JSON per build beside it:
+
+```
+buildscope export --site -o site/ output/master/
+```
+
+```
+site/index.html      the viewer
+site/api/index       a few hundred bytes per build: name, flash size, the
+                     partition nearest its limit
+site/api/report/0    one per build, fetched only when that build is opened
+```
+
+Those are plain files, so any static host serves them -- GitHub Pages, nginx,
+an object store -- with nothing of buildscope's running. Browsers block `fetch`
+over `file://`, so a site has to be served; a single exported file does not,
+and opens straight from disk.
 
 ## Analyzing firmware you did not build
 
@@ -141,7 +151,6 @@ With no build tree at all, buildscope recovers what the image itself knows:
 ```
 buildscope carve firmware.bin
 buildscope carve downloaded-release/     # every image in the directory
-buildscope serve downloaded-release/     # browse them all
 ```
 
 The partition layout comes from the image. A CRC-valid U-Boot environment
@@ -231,7 +240,7 @@ cargo build --release --target wasm32-unknown-unknown -p buildscope-wasm
 cd viewer && npm ci && npm run build     # viewer at viewer/dist
 ```
 
-`buildscope serve` picks the viewer up from `viewer/dist`, from beside the
+`buildscope export` picks the viewer up from `viewer/dist`, from beside the
 binary, or from `--viewer-dir`.
 
 ## Layout
@@ -239,7 +248,7 @@ binary, or from `--viewer-dir`.
 | Path | What it is |
 |---|---|
 | `core/` | the analysis core: format parsers, report schema, diff. Pure, no I/O |
-| `cli/` | the `buildscope` command, native filesystem walker, local server |
+| `cli/` | the `buildscope` command and its native filesystem walker |
 | `wasm/` | the core compiled to WebAssembly behind a plain C ABI, plus parity harnesses |
 | `viewer/` | the web viewer (React + Vite) |
 | `hooks/` | the Buildroot post-image hook |

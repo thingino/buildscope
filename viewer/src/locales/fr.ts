@@ -178,7 +178,7 @@ const fr: Record<string, string> = {
   drop_sub_html:
     "Tout est analysé dans ce navigateur : un simple <code>.bin</code> voit sa carte de partitions extraite de l'image elle-même, et un <code>buildscope-report.json</code> est affiché tel quel. Rien n'est envoyé.",
   drop_cli_hint:
-    "Analyser un répertoire de sortie Buildroot nécessite son arborescence de génération, cela se fait donc en local : <code>buildscope serve output/</code>.",
+    "Analyser un répertoire de sortie Buildroot nécessite son arborescence de génération, cela se fait donc en local : <code>buildscope export output/my-build</code>.",
   choose_files: "choisir des fichiers",
   working: "en cours : {what}",
   stage_reading: "lecture de {name}",

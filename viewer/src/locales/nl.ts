@@ -178,7 +178,7 @@ const nl: Record<string, string> = {
   drop_sub_html:
     "Alles wordt in deze browser geanalyseerd: bij een losse <code>.bin</code> wordt de partitiekaart uit de image zelf gehaald, en een <code>buildscope-report.json</code> wordt weergegeven zoals hij is. Er wordt niets geüpload.",
   drop_cli_hint:
-    "Voor het analyseren van een Buildroot-uitvoermap is de build-boom nodig, dus dat gebeurt lokaal: <code>buildscope serve output/</code>.",
+    "Voor het analyseren van een Buildroot-uitvoermap is de build-boom nodig, dus dat gebeurt lokaal: <code>buildscope export output/my-build</code>.",
   choose_files: "bestanden kiezen",
   working: "bezig: {what}",
   stage_reading: "{name} lezen",

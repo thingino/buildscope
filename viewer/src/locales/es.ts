@@ -178,7 +178,7 @@ const es: Record<string, string> = {
   drop_sub_html:
     "Todo se analiza en este navegador: de un <code>.bin</code> suelto se extrae el mapa de particiones de la propia imagen, y un <code>buildscope-report.json</code> se muestra tal cual. No se sube nada.",
   drop_cli_hint:
-    "Analizar un directorio de salida de Buildroot necesita su árbol de compilación, así que eso se hace en local: <code>buildscope serve output/</code>.",
+    "Analizar un directorio de salida de Buildroot necesita su árbol de compilación, así que eso se hace en local: <code>buildscope export output/my-build</code>.",
   choose_files: "elegir archivos",
   working: "en curso: {what}",
   stage_reading: "leyendo {name}",

@@ -2,6 +2,11 @@
 const ru: Record<string, string> = {
   // header
   lang_label: "Язык",
+  settings_title: "Настройки",
+  settings_lang: "Язык",
+  btn_close: "Закрыть",
+  title_settings: "Настройки",
+  title_close: "Закрыть",
   ctx_hook: "хук",
   ctx_inferred: "выведено",
   ctx_artifact: "артефакт",

@@ -2,6 +2,11 @@
 const ar: Record<string, string> = {
   // header
   lang_label: "اللغة",
+  settings_title: "الإعدادات",
+  settings_lang: "اللغة",
+  btn_close: "إغلاق",
+  title_settings: "الإعدادات",
+  title_close: "إغلاق",
   ctx_hook: "خطّاف",
   ctx_inferred: "مُستنتج",
   ctx_artifact: "ناتج",

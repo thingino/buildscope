@@ -3,6 +3,11 @@
 const nl: Record<string, string> = {
   // header
   lang_label: "Taal",
+  settings_title: "Instellingen",
+  settings_lang: "Taal",
+  btn_close: "Sluiten",
+  title_settings: "Instellingen",
+  title_close: "Sluiten",
   ctx_hook: "hook",
   ctx_inferred: "afgeleid",
   ctx_artifact: "artefact",

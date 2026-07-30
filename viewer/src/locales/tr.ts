@@ -3,6 +3,11 @@
 const tr: Record<string, string> = {
   // header
   lang_label: "Dil",
+  settings_title: "Ayarlar",
+  settings_lang: "Dil",
+  btn_close: "Kapat",
+  title_settings: "Ayarlar",
+  title_close: "Kapat",
   ctx_hook: "hook",
   ctx_inferred: "çıkarsanan",
   ctx_artifact: "artefakt",

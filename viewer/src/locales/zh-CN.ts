@@ -3,6 +3,11 @@
 const zhCN: Record<string, string> = {
   // header
   lang_label: "语言",
+  settings_title: "设置",
+  settings_lang: "语言",
+  btn_close: "关闭",
+  title_settings: "设置",
+  title_close: "关闭",
   ctx_hook: "钩子",
   ctx_inferred: "推断",
   ctx_artifact: "产物",

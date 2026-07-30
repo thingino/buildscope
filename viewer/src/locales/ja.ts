@@ -3,6 +3,11 @@
 const ja: Record<string, string> = {
   // header
   lang_label: "言語",
+  settings_title: "設定",
+  settings_lang: "言語",
+  btn_close: "閉じる",
+  title_settings: "設定",
+  title_close: "閉じる",
   ctx_hook: "フック",
   ctx_inferred: "推定",
   ctx_artifact: "成果物",

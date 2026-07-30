@@ -8,6 +8,11 @@
 const en: Record<string, string> = {
   // header
   lang_label: "Language",
+  settings_title: "Settings",
+  settings_lang: "Language",
+  btn_close: "Close",
+  title_settings: "Settings",
+  title_close: "Close",
   ctx_hook: "hook",
   ctx_inferred: "inferred",
   ctx_artifact: "artifact",

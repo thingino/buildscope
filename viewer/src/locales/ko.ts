@@ -3,6 +3,11 @@
 const ko: Record<string, string> = {
   // header
   lang_label: "언어",
+  settings_title: "설정",
+  settings_lang: "언어",
+  btn_close: "닫기",
+  title_settings: "설정",
+  title_close: "닫기",
   ctx_hook: "훅",
   ctx_inferred: "추론",
   ctx_artifact: "산출물",

@@ -3,6 +3,11 @@
 const es: Record<string, string> = {
   // header
   lang_label: "Idioma",
+  settings_title: "Ajustes",
+  settings_lang: "Idioma",
+  btn_close: "Cerrar",
+  title_settings: "Ajustes",
+  title_close: "Cerrar",
   ctx_hook: "hook",
   ctx_inferred: "inferido",
   ctx_artifact: "artefacto",

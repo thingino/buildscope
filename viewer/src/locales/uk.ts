@@ -3,6 +3,11 @@
 const uk: Record<string, string> = {
   // header
   lang_label: "Мова",
+  settings_title: "Налаштування",
+  settings_lang: "Мова",
+  btn_close: "Закрити",
+  title_settings: "Налаштування",
+  title_close: "Закрити",
   ctx_hook: "хук",
   ctx_inferred: "виведено",
   ctx_artifact: "артефакт",

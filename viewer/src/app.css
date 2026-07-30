@@ -586,6 +586,30 @@ body {
   font-size: 11px;
 }
 
+/* Header icon button: the family's gear is a small outline-secondary button
+   with tight padding carrying only the glyph. */
+.iconbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink-2);
+  padding: 5px 8px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.iconbtn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.icon {
+  display: block;
+}
+
 .linkbtn {
   background: none;
   border: none;
@@ -918,6 +942,20 @@ body {
   justify-content: center;
 }
 
+/* The family's dialog actions are outline buttons (btn-outline-*), not
+   filled ones; same accent, transparent body. */
+.btn-outline {
+  background: transparent;
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn-outline:hover {
+  background: rgba(255, 140, 0, 0.1);
+  border-color: var(--accent-hover);
+  color: var(--accent-hover);
+}
+
 .btn-quiet {
   background: var(--surface-2);
   border-color: var(--line);
@@ -996,13 +1034,9 @@ body {
   .top-right {
     flex-wrap: wrap;
   }
-  /* The language picker is used once; the build name matters on every
-     glance, so it keeps the rest of the row. */
-  .lang-select {
-    flex: 0 0 auto;
-    max-width: 7.5rem;
-  }
-  .top-right .select:not(.lang-select) {
+  /* The build name matters on every glance, so the picker takes the row and
+     the gear keeps its intrinsic width beside it. */
+  .top-right .select {
     flex: 1 1 8rem;
     min-width: 0;
   }
@@ -1148,6 +1182,94 @@ body {
   }
 }
 
+/* ---------- settings dialog ---------- */
+
+/* Same shape as the family's settings overlay: a dimmed full-screen
+   backdrop, a centred card, and a header / body / footer split with the
+   action button at the end of the footer. */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.dialog {
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  width: 100%;
+  max-width: 26rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55);
+}
+
+.dialog-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.dialog-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--accent);
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.dialog-x {
+  margin-inline-start: auto;
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--ink-2);
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1;
+  padding: 3px 6px;
+}
+
+.dialog-x:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.dialog-body {
+  padding: 14px;
+}
+
+.dialog-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--line);
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.setting-label {
+  color: var(--ink-2);
+  font-family: var(--sans);
+  font-size: 12px;
+}
+
+.setting-row .select {
+  flex: 1 1 auto;
+}
+
 /* ---------- right-to-left ---------- */
 
 /* Layout mirrors itself through the logical properties used above. Two kinds
@@ -1208,7 +1330,3 @@ body {
   text-align: start;
 }
 
-/* The picker sits at the inline end of the header in both directions. */
-.lang-select {
-  max-width: 9.5rem;
-}

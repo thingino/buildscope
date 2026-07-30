@@ -4,10 +4,11 @@ import Drop from "./components/Drop";
 import Flash from "./components/Flash";
 import Modules from "./components/Modules";
 import Packages from "./components/Packages";
+import Settings, { GearIcon } from "./components/Settings";
 import Timings from "./components/Timings";
 import { inlineReports, Loaded, parseReportJson, tryApi } from "./data";
 import { dateOf, humanBytes, seconds } from "./format";
-import { I18nContext, Lang, NAMES, SUPPORTED, useI18n, useI18nState, useT } from "./i18n";
+import { I18nContext, useI18nState, useT } from "./i18n";
 import { IndexEntry, Report } from "./types";
 
 type Tab = "flash" | "packages" | "modules" | "time" | "drift";
@@ -55,8 +56,8 @@ export default function App() {
 }
 
 function Viewer() {
-  const { lang, setLang } = useI18n();
   const t = useT();
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [api, setApi] = useState<Loaded | null | "loading">("loading");
   const [staticReports, setStaticReports] = useState<Report[]>([]);
   const [current, setCurrent] = useState(() => readHash().b);
@@ -173,18 +174,6 @@ function Viewer() {
           </div>
         )}
         <div className="top-right">
-          <select
-            className="select lang-select"
-            aria-label={t("lang_label")}
-            value={lang}
-            onChange={(e) => setLang(e.target.value as Lang)}
-          >
-            {SUPPORTED.map((l) => (
-              <option key={l} value={l}>
-                {NAMES[l]}
-              </option>
-            ))}
-          </select>
           {entries.length > 1 && (
             <select
               className="select"
@@ -198,6 +187,14 @@ function Viewer() {
               ))}
             </select>
           )}
+          <button
+            className="iconbtn"
+            onClick={() => setSettingsOpen(true)}
+            title={t("title_settings")}
+            aria-label={t("title_settings")}
+          >
+            <GearIcon />
+          </button>
           {staticMode && staticReports.length > 0 && (
             <label className="btn btn-sm">
               {t("add_report")}
@@ -265,6 +262,8 @@ function Viewer() {
       ) : (
         <div className="empty page-empty">{loadError ?? t("loading")}</div>
       )}
+
+      {settingsOpen && <Settings onClose={() => setSettingsOpen(false)} />}
 
       <footer className="foot">
         <a

@@ -1,13 +1,29 @@
 # buildscope
 
-Size and composition analyzer for [Buildroot](https://buildroot.org) output trees.
+Size and composition analyzer for [Buildroot](https://buildroot.org) output
+trees and the firmware images they produce.
 
-Point it at any Buildroot output directory and get a full accounting of where
-your flash bytes went: every artifact in `images/`, real partition budgets, and
-per-package attribution of the rootfs, with no changes to your build required.
+**Analyze firmware in your browser: [buildscope.thingino.com](https://buildscope.thingino.com)**
+(nothing is uploaded, everything runs locally)
+
+Point buildscope at any Buildroot output directory and get a full accounting of
+where your flash bytes went: every artifact in `images/`, real partition
+budgets, and per-package attribution of the rootfs. No changes to your build
+are required, and nothing is ever added to your firmware.
 
 ```
 buildscope scan output/
+```
+
+```
+== camera_t31x_gc4653-3.10.14-uclibc ==
+   mipsel | uclibc | 3.10.14 | build time 9m25s
+   flash jz_sfc 16.00 MiB via mtdparts (uenv.txt)
+   boot       320.0 KiB [####################..] 290.0 KiB used ( 90.6%)  ok
+   env         64.0 KiB [......................]     686 B used (  1.0%)  ok
+   kernel      1.38 MiB [#####################.]  1.33 MiB used ( 96.6%)  ok
+   rootfs      4.00 MiB [######################]  3.96 MiB used ( 99.1%)  ok
+   data       10.25 MiB [......................]   3.5 KiB used (  0.0%)  ok
 ```
 
 ## What it reports
@@ -22,84 +38,85 @@ buildscope scan output/
     header CRC check
   - U-Boot environment images: CRC validity, bytes used vs environment size,
     variable count
-  - composite flash images: trailing-padding detection and partition content
-    verification by magic at each offset
+  - composite flash images: trailing-padding detection, and verification that
+    each partition really holds what its name implies
 - **Partition budgets** parsed from the build itself (a `mtdparts=` string in
   an environment source, a genimage configuration, a partition table inside a
   disk image), never from a hardcoded table: content size vs partition size vs
-  true used bytes, for every partition. `--flash-map` and `--genimage` exist
-  for layouts stored somewhere unusual.
+  true used bytes, for every partition. `--flash-map` and `--genimage` cover
+  layouts kept somewhere unusual.
 - **Per-package sizes**: every file in the final rootfs attributed to the
-  Buildroot package that installed it via `packages-file-list.txt`, with
-  per-package approximate compressed cost derived from the measured rootfs
-  compression ratio.
+  Buildroot package that installed it via `packages-file-list.txt`, with a
+  per-package approximate compressed cost from the measured rootfs compression
+  ratio.
 - **Kernel modules**: size, owning package, and whether anything auto-loads
   them.
+- **Installed but not shipped**: files a package installed that are absent from
+  the final rootfs (project-level trims and replacements), with install sizes
+  recovered from `per-package/`. Buildroot's own always-removed development
+  files are filtered out.
 - **Build timings** per package from `build-time.log`.
-- **Installed but not shipped**: files a package installed that are absent
-  from the final rootfs (project-level trims and replacements), with install
-  sizes recovered from `per-package/`. Buildroot's own always-removed
-  development files are filtered out.
 
-Output is a single schema-versioned `report.json` per build, plus a terminal
-summary. A local web viewer renders reports with partition bars, package
-treemaps, drift comparison, and sortable tables:
+Output is one schema-versioned `buildscope-report.json` per build, plus a
+terminal summary.
+
+## Commands
 
 ```
-buildscope serve output/
+buildscope scan output/                  # one build, or a directory of builds
+buildscope serve output/                 # browse them in the local web viewer
+buildscope diff output/old output/new    # what grew, what shrank, what appeared
+buildscope export output/my-build        # one self-contained HTML file
+buildscope carve firmware.bin            # a released image, with no build tree
 ```
 
-Compare two builds (reports or output dirs) from the terminal:
-
-```
-buildscope diff output/old-build output/new-build
-buildscope diff a/images/buildscope-report.json b/images/buildscope-report.json --json
-```
-
-Or produce a single self-contained HTML file (viewer and data in one, for
-attaching to an issue or a release):
-
-```
-buildscope export output/my-build -o my-build.html
-```
+`serve` binds to localhost by default; `--bind 0.0.0.0` exposes it on your
+network. `diff` takes reports, build directories, or bare images, and `--json`
+gives the full delta for scripting.
 
 ## Analyzing firmware you did not build
 
-With no build tree at all, buildscope recovers what the image itself knows.
-Point `carve` at a released image, a flash dump, or a directory of them:
+With no build tree at all, buildscope recovers what the image itself knows:
 
 ```
 buildscope carve firmware.bin
-buildscope carve downloaded-release/          # every image in the directory
-buildscope serve downloaded-release/          # browse them all in the viewer
+buildscope carve downloaded-release/     # every image in the directory
+buildscope serve downloaded-release/     # browse them all
 ```
 
-The partition layout comes from the image: a CRC-valid U-Boot environment
+The partition layout comes from the image. A CRC-valid U-Boot environment
 block is located by scanning, and its `mtdparts` variable is the partition
-table. Each partition is then carved and identified with the same parsers used
-on build trees, so you get real per-partition usage, filesystem facts, and
-kernel image details. Per-package attribution is impossible without a build
-tree, and the report says so rather than guessing.
+table; failing that, a partition table is read directly. Each partition is
+then carved and identified with the same parsers used on build trees, so you
+get real per-partition usage, filesystem facts, and kernel image details.
+Per-package attribution is impossible without a build tree, and the report
+says so rather than guessing.
 
 Because every partition is checked against what its name implies, this doubles
 as an integrity check: a short or partly-transferred image is reported as
 truncated against the layout it declares.
 
-`diff` and `export` accept bare images too, so two releases of the same camera
-can be compared without either build tree:
+## In the browser
 
-```
-buildscope diff old-release/cam.bin new-release/cam.bin
-```
+The analysis core also compiles to WebAssembly, so
+[buildscope.thingino.com](https://buildscope.thingino.com) can do all of the
+above with no server: drop a Buildroot output directory for the full
+breakdown, or a bare firmware image to carve it. Nothing is uploaded. The File
+API supplies names and sizes as metadata, so enumerating a target tree is free
+and only the small build inputs and the files in `images/` are actually read.
+
+Browser scans record `scan_mode: browser`, which differs from a native scan in
+exactly one way: the File API exposes no inode links, so hardlinked files
+cannot be charged once. Buildroot target trees rarely contain any.
 
 ## Two ways to run it
 
 **Post-hoc (default).** `buildscope scan <dir>` works on any existing output
-directory, including builds finished long ago. Context (`.config`, `build/`,
-`target/`, `images/`) is discovered from the tree layout. You can pass a single
-build directory or a parent containing many.
+directory, including builds that finished long ago. Context (`.config`,
+`build/`, `target/`, `images/`) is discovered from the tree layout. Pass a
+single build directory or a parent containing many.
 
-**Hooked.** For automatic reports on every build, add the bundled hook to your
+**Hooked.** For a report on every build, add the bundled hook to your
 defconfig:
 
 ```
@@ -107,38 +124,49 @@ BR2_ROOTFS_POST_IMAGE_SCRIPT="path/to/buildscope/hooks/post-image.sh"
 ```
 
 Buildroot then invokes buildscope after image assembly with exact context
-(`BINARIES_DIR`, `TARGET_DIR`, `BUILD_DIR`, `BR2_CONFIG`), and a `report.json`
-report lands in `images/` on every build. Both modes produce identical
-reports on the same tree; the report records which mode produced it.
+(`BINARIES_DIR`, `TARGET_DIR`, `BUILD_DIR`, `BR2_CONFIG`), and the report lands
+in `images/` on every build. Projects that assemble their final image after
+Buildroot's image step should instead call `buildscope scan "$OUTPUT_DIR"` at
+the end of that step. Both modes produce identical reports for the same tree;
+the report records which one produced it.
 
 ## Design rules
 
-- Read-only over what Buildroot already produces. Nothing is ever embedded in
-  or added to your firmware images.
-- No host tools required: all image formats are parsed natively.
-- If something cannot be determined, the report says unknown. It never guesses.
-
-## In the browser
-
-The analysis core also compiles to WebAssembly, so the viewer can scan
-locally with no server and no uploads: drop a Buildroot output directory for
-the full breakdown, or a bare firmware image to carve. The File API supplies
-names and sizes as metadata, so enumerating a target tree is free and only the
-small build inputs and the files in `images/` are actually read.
-
-Browser scans record `scan_mode: browser`, which differs from a native scan in
-exactly one way: the File API exposes no inode links, so hardlinked files
-cannot be charged once. Buildroot target trees rarely contain any.
+- Read-only over what Buildroot already produces. Nothing is ever embedded in,
+  or added to, your firmware images.
+- No host tools required: every image format is parsed natively.
+- If something cannot be determined, the report says so. It never guesses.
 
 ## Building
 
+Rust (stable) for the CLI and the WASM core, Node 20+ for the viewer:
+
 ```
-cargo build --release        # CLI at target/release/buildscope
+cargo build --release                    # CLI at target/release/buildscope
+cargo test --workspace                   # unit and integration tests
+
 cargo build --release --target wasm32-unknown-unknown -p buildscope-wasm
+cd viewer && npm ci && npm run build     # viewer at viewer/dist
 ```
 
-The viewer is a separate npm project under `viewer/`; see `viewer/README.md`.
+`buildscope serve` picks the viewer up from `viewer/dist`, from beside the
+binary, or from `--viewer-dir`.
+
+## Layout
+
+| Path | What it is |
+|---|---|
+| `core/` | the analysis core: format parsers, report schema, diff. Pure, no I/O |
+| `cli/` | the `buildscope` command, native filesystem walker, local server |
+| `wasm/` | the core compiled to WebAssembly behind a plain C ABI, plus parity harnesses |
+| `viewer/` | the web viewer (React + Vite) |
+| `hooks/` | the Buildroot post-image hook |
+| `docs/` | roadmap |
+
+The core never touches the filesystem: it consumes a snapshot (a file list plus
+the contents that matter) and returns a report. That is why the same code runs
+natively and in a browser, and why it is straightforward to test.
 
 ## License
 
-MIT
+MIT, see [LICENSE](LICENSE).

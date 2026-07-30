@@ -1,0 +1,90 @@
+name: deploy
+
+# Build the WASM analysis core and the viewer from source, gate on the test
+# suite, then publish the bundle to GitHub Pages (buildscope.thingino.com).
+# The WASM module is never a committed blob: every deployed byte is built
+# here, from this repository.
+#
+# The custom domain is a repository setting (Settings > Pages) plus a DNS
+# CNAME for buildscope.thingino.com pointing at thingino.github.io; there is
+# deliberately no CNAME file in the artifact.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      # Plain git rather than a checkout action: same speed, one less
+      # dependency in the supply chain.
+      - name: clone
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git clone --depth 1 --single-branch --no-tags \
+            --branch "${GITHUB_REF_NAME}" \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}" .
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: cargo-${{ hashFiles('Cargo.lock') }}
+          restore-keys: cargo-
+
+      - name: test
+        run: cargo test --workspace --locked
+
+      - name: build wasm core
+        run: |
+          rustup target add wasm32-unknown-unknown
+          cargo build --release --locked --target wasm32-unknown-unknown -p buildscope-wasm
+
+      - name: build viewer
+        working-directory: viewer
+        run: |
+          npm ci
+          npm run build
+
+      # Guard against shipping a page whose scanner is missing or stale: the
+      # module must instantiate and export everything the viewer calls.
+      - name: verify published bundle
+        run: |
+          test -f viewer/dist/index.html
+          node --input-type=module -e '
+            import { readFileSync } from "node:fs";
+            const wasm = readFileSync("viewer/dist/buildscope.wasm");
+            const { instance } = await WebAssembly.instantiate(wasm, {});
+            const need = ["bs_alloc","bs_free","bs_new","bs_drop","bs_set_text",
+              "bs_add_targets","bs_add_removed","bs_add_image","bs_set_images_mtime",
+              "bs_analyze","bs_carve","bs_schema","memory"];
+            const missing = need.filter((n) => !(n in instance.exports));
+            if (missing.length) throw new Error("missing exports: " + missing.join(", "));
+            const schema = instance.exports.bs_schema();
+            if (schema !== 1) throw new Error("unexpected report schema " + schema);
+            console.log(`scanner ok: ${wasm.length} bytes, report schema ${schema}`);
+          '
+
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: viewer/dist
+      - id: deployment
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0

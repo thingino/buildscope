@@ -5,8 +5,8 @@ use serde::{Deserialize, Serialize};
 
 pub const SCHEMA: u32 = 1;
 
-/// Filename used for buildscope writes into images/. Scanners must skip
-/// this file when reading images/ so reports never describe themselves.
+/// Filename buildscope writes into images/. Scanners must skip this file
+/// when reading images/ so reports never describe themselves.
 pub const REPORT_FILENAME: &str = "buildscope-report.json";
 
 /// Synthetic package name for rootfs files not present in

@@ -36,7 +36,7 @@ enum Cmd {
         /// Also write the report to this path ("-" for stdout)
         #[arg(long)]
         out: Option<String>,
-        /// Do not write the report file into images/
+        /// Do not write buildscope-report.json into images/
         #[arg(long)]
         no_write: bool,
         /// Suppress the terminal summary
@@ -77,7 +77,7 @@ enum Cmd {
         out: Option<String>,
         /// Write a report file next to each analyzed image
         #[arg(long)]
-        write_report: bool,
+        write: bool,
         /// Suppress the terminal summary
         #[arg(long, short)]
         quiet: bool,
@@ -325,7 +325,7 @@ fn main() {
         Cmd::Carve {
             files,
             out,
-            write_report,
+            write,
             quiet,
         } => {
             // Expand directories into their artifact candidates.
@@ -360,7 +360,7 @@ fn main() {
                 std::process::exit(1);
             }
             for (path, report) in &reports {
-                if write_report {
+                if write {
                     let dest = path.with_extension("buildscope.json");
                     let json = serde_json::to_string_pretty(report).expect("serialize report");
                     match std::fs::write(&dest, format!("{json}\n")) {

@@ -61,6 +61,19 @@ function Treemap({ packages, total }: { packages: PackageReport[]; total: number
                   </div>
                 )
               }
+              onClick={(e) =>
+                show(
+                  e,
+                  <div>
+                    <div className="tt-title">{displayName(r.data.name)}</div>
+                    <div>{CATEGORY_LABEL[cat]}</div>
+                    <div>
+                      {humanBytes(r.data.bytes)} · {pct(r.data.bytes / total)} of rootfs
+                    </div>
+                    <div>{r.data.file_count} files</div>
+                  </div>
+                )
+              }
               onMouseLeave={hide}
             >
               <div className="tm-fill" style={{ background: CATEGORY_COLOR[cat] }}>
@@ -173,7 +186,8 @@ export default function Packages({ report }: { report: Report }) {
 
       <div className="pkg-split">
         <div className="panel pkg-table">
-          <table className="tbl">
+          <div className="tbl-wrap">
+              <table className="tbl">
             <thead>
               <tr>
                 <th>package</th>
@@ -230,6 +244,7 @@ export default function Packages({ report }: { report: Report }) {
               })}
             </tbody>
           </table>
+              </div>
         </div>
         <div className="panel pkg-map">
           <Treemap packages={filtered} total={total || 1} />
@@ -255,7 +270,8 @@ function NotShipped({ report }: { report: Report }) {
           {removed.length} files removed before imaging · {humanBytes(totalBytes)} at install time
         </span>
       </div>
-      <table className="tbl">
+      <div className="tbl-wrap">
+              <table className="tbl">
         <thead>
           <tr>
             <th>path</th>
@@ -273,6 +289,7 @@ function NotShipped({ report }: { report: Report }) {
           ))}
         </tbody>
       </table>
+              </div>
       {removed.length > 20 && (
         <button className="linkbtn" onClick={() => setShowAll(!showAll)}>
           {showAll ? "show top" : `show all ${removed.length}`}

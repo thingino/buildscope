@@ -5,7 +5,7 @@
 - Core parsers: squashfs superblock, jffs2 node scan, uImage header, U-Boot
   env, mtdparts, MBR, padding detection
 - Buildroot inputs: packages-file-list.txt, .config, build-time.log, modules
-- `scan` with terminal summary and report file
+- `scan` with a terminal summary and a report written into images/
 - Hooked mode via BR2_ROOTFS_POST_IMAGE_SCRIPT
 - Web viewer: overview (partition bars, images), packages (table + treemap),
   modules, build timings; `serve` command
@@ -42,8 +42,8 @@
 
 - Static deployment (GitHub Pages) usable in two modes: the browser scanner
   above, and rendering CI-published report.json files
-- CI aggregation recipe: publish one report per build, retain history, trends
-  over time
+- CI aggregation recipe: publish one report per build, retain history,
+  trends over time
 - Fleet-scale viewer work: search in the build picker, and an overview table
   across builds (which are nearest their partition limits)
 

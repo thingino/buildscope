@@ -78,6 +78,19 @@ function DieMap({ parts, total }: { parts: PartitionReport[]; total: number }) {
                   </div>
                 )
               }
+              onClick={(e) =>
+                show(
+                  e,
+                  <div>
+                    <div className="tt-title">{p.name}{p.read_only ? " (ro)" : ""}</div>
+                    <div>{hex(p.offset)} – {hex(p.offset + size)}</div>
+                    <div>partition {humanBytes(size)}</div>
+                    {p.image && <div>image {p.image} ({humanBytes(p.content_bytes ?? 0)})</div>}
+                    <div>used {humanBytes(used)} ({pct(frac)})</div>
+                    <div>free {humanBytes(Math.max(0, size - used))}</div>
+                  </div>
+                )
+              }
               onMouseLeave={hide}
             >
               <div className="seg-name">{p.name}</div>
@@ -92,7 +105,7 @@ function DieMap({ parts, total }: { parts: PartitionReport[]; total: number }) {
       </div>
       <div className="diemap-axis">
         <span>{hex(0)}</span>
-        <span className="muted">widths proportional, small partitions clamped for legibility</span>
+        <span className="muted diemap-note">widths proportional, small partitions clamped for legibility</span>
         <span>{hex(total)}</span>
       </div>
       {node}
@@ -114,7 +127,8 @@ export default function Flash({ report }: { report: Report }) {
               </span>
             </div>
             <DieMap parts={flash.partitions} total={flash.total_bytes} />
-            <table className="tbl">
+            <div className="tbl-wrap">
+              <table className="tbl">
               <thead>
                 <tr>
                   <th>partition</th>
@@ -155,6 +169,7 @@ export default function Flash({ report }: { report: Report }) {
                 })}
               </tbody>
             </table>
+              </div>
           </div>
         </>
       ) : (
@@ -171,7 +186,8 @@ export default function Flash({ report }: { report: Report }) {
           <span className="panel-title">images/</span>
           <span className="muted">{report.images.length} files</span>
         </div>
-        <table className="tbl">
+        <div className="tbl-wrap">
+              <table className="tbl">
           <thead>
             <tr>
               <th>file</th>
@@ -197,6 +213,7 @@ export default function Flash({ report }: { report: Report }) {
               ))}
           </tbody>
         </table>
+              </div>
       </div>
 
       {report.scan.warnings.length > 0 && (

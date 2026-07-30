@@ -25,7 +25,8 @@ function DeltaTable({ title, list }: { title: string; list: NamedDelta[] }) {
         <span className="panel-title">{title}</span>
         <span className="muted">{list.length} changed</span>
       </div>
-      <table className="tbl">
+      <div className="tbl-wrap">
+              <table className="tbl">
         <thead>
           <tr>
             <th>name</th>
@@ -52,6 +53,7 @@ function DeltaTable({ title, list }: { title: string; list: NamedDelta[] }) {
           ))}
         </tbody>
       </table>
+              </div>
       {list.length > 20 && (
         <button className="linkbtn" onClick={() => setShowAll(!showAll)}>
           {showAll ? "show top" : `show all ${list.length}`}
@@ -164,6 +166,7 @@ export default function Drift({
               <div className="panel-head">
                 <span className="panel-title">Partitions (used bytes)</span>
               </div>
+              <div className="tbl-wrap">
               <table className="tbl">
                 <thead>
                   <tr>
@@ -192,6 +195,7 @@ export default function Drift({
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           )}
 

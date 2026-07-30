@@ -61,7 +61,8 @@ export default function Modules({ report }: { report: Report }) {
       </div>
 
       <div className="panel">
-        <table className="tbl">
+        <div className="tbl-wrap">
+              <table className="tbl">
           <thead>
             <tr>
               <th>module</th>
@@ -89,6 +90,7 @@ export default function Modules({ report }: { report: Report }) {
             ))}
           </tbody>
         </table>
+              </div>
       </div>
     </div>
   );

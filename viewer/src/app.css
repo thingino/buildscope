@@ -916,3 +916,183 @@ body {
   font-family: var(--mono);
   font-size: 11.5px;
 }
+
+/* ---------- wide data scrolls inside its panel ---------- */
+
+.tbl-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  /* Pull the scroll edges out to the panel padding so a scrolled table
+     does not look cropped mid-cell. */
+  margin: 0 -16px;
+  padding: 0 16px;
+}
+
+.ok,
+.crit {
+  white-space: nowrap;
+}
+
+/* ---------- narrow screens ---------- */
+
+@media (max-width: 760px) {
+  body {
+    font-size: 12.5px;
+  }
+
+  .app {
+    padding: 0 12px 24px;
+  }
+
+  .top {
+    gap: 10px;
+    padding: 10px 0 10px;
+  }
+
+  .brand {
+    font-size: 15px;
+  }
+
+  .readout {
+    font-size: 11px;
+    gap: 4px 0;
+  }
+
+  .readout-item:first-child {
+    padding-left: 0;
+  }
+
+  .top-right {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .top-right .select {
+    width: 100%;
+  }
+
+  .buildline {
+    flex-wrap: wrap;
+    padding-top: 12px;
+  }
+
+  .buildname {
+    font-size: 15px;
+    overflow-wrap: anywhere;
+  }
+
+  /* Tabs stay on one line and scroll rather than wrapping into a block. */
+  .tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .tab {
+    padding: 8px 10px 9px;
+    white-space: nowrap;
+  }
+
+  .panel {
+    padding: 12px 12px 14px;
+  }
+
+  .tbl-wrap {
+    margin: 0 -12px;
+    padding: 0 12px;
+  }
+
+  .tbl {
+    font-size: 12px;
+  }
+  .tbl th,
+  .tbl td {
+    padding: 5px 8px;
+  }
+  /* Keep rows one line tall and let the table scroll sideways: wrapping
+     detail columns instead produces very tall, ragged rows. */
+  .tbl td.mono-dim {
+    white-space: nowrap;
+  }
+  .trunc {
+    max-width: 200px;
+  }
+
+  .panel-head {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  /* Stat tiles two-up instead of a single wide row. */
+  .statrow {
+    gap: 8px;
+  }
+  .stat {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 0;
+    padding: 8px 12px 9px;
+  }
+  .stat-value {
+    font-size: 16px;
+  }
+
+  /* The flash map becomes a vertical list: proportional widths are
+     unreadable on a phone, so each partition gets its own row. */
+  .diemap {
+    flex-direction: column;
+    height: auto;
+    gap: 4px;
+  }
+  .seg {
+    width: auto !important;
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 10px;
+    align-items: baseline;
+    padding: 8px 10px 14px;
+  }
+  .seg-size {
+    margin-top: 0;
+  }
+  .seg-fillpct {
+    position: static;
+    text-align: right;
+  }
+  .diemap-note {
+    display: none;
+  }
+
+  .controls {
+    gap: 8px;
+  }
+  .search,
+  .select {
+    flex: 1 1 100%;
+    width: auto;
+  }
+
+  .pkg-table {
+    max-height: none;
+  }
+
+  .timing-row,
+  .timing-step {
+    grid-template-columns: 118px 1fr 58px;
+    gap: 8px;
+    font-size: 11.5px;
+  }
+
+  .drop {
+    margin-top: 40px;
+    padding: 32px 18px 28px;
+  }
+  .drop-actions {
+    flex-direction: column;
+  }
+
+  .tooltip {
+    max-width: calc(100vw - 32px);
+  }
+}

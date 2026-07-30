@@ -20,6 +20,7 @@ const ja: Record<string, string> = {
   // tabs
   tab_flash: "フラッシュ",
   tab_packages: "パッケージ",
+  tab_files: "ファイル",
   tab_modules: "モジュール",
   tab_time: "ビルド時間",
   tab_drift: "差分",
@@ -87,6 +88,16 @@ const ja: Record<string, string> = {
   th_install_size: "インストール時サイズ",
   show_all: "全 {n} 件を表示",
   show_top: "上位のみ表示",
+
+  // files tab
+  files_source_rootfs: "rootfs（パッケージ別）",
+  files_total: "ファイル数",
+  files_bytes: "非圧縮",
+  filter_paths: "パスを絞り込み",
+  files_matching: "{n} 件一致",
+  files_capped: "一覧は打ち切られています。表示されていないファイルがあります。",
+  no_files: "このレポートにファイル一覧はありません。",
+  no_matches: "この絞り込みに一致するものはありません。",
 
   // modules tab
   stat_modules: "モジュール",

@@ -9,6 +9,10 @@ pub const SCHEMA: u32 = 1;
 /// when reading images/ so reports never describe themselves.
 pub const REPORT_FILENAME: &str = "buildscope-report.json";
 
+/// Ceiling on the per-package file list, so a rootfs with tens of thousands
+/// of files cannot turn a report into a multi-megabyte document.
+pub const MAX_FILES_PER_PACKAGE: usize = 3000;
+
 /// Synthetic package name for rootfs files not present in
 /// packages-file-list.txt (overlay contents, post-build script output).
 pub const UNATTRIBUTED: &str = "_unattributed";
@@ -107,7 +111,15 @@ pub struct PackageReport {
     pub bytes: u64,
     pub file_count: u64,
     pub compressed_bytes_approx: Option<u64>,
-    pub top_files: Vec<FileRef>,
+    /// Every file the package installed, largest first, so a reader can
+    /// browse the rootfs rather than guess from package totals. Capped at
+    /// `MAX_FILES_PER_PACKAGE`; the alias keeps reports written before this
+    /// held the whole list readable.
+    #[serde(alias = "top_files")]
+    pub files: Vec<FileRef>,
+    /// True when the list above was cut short by the cap.
+    #[serde(default)]
+    pub files_truncated: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

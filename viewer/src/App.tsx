@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Drift from "./components/Drift";
 import Drop from "./components/Drop";
+import Files from "./components/Files";
 import Flash from "./components/Flash";
 import Modules from "./components/Modules";
 import Packages from "./components/Packages";
@@ -11,10 +12,11 @@ import { dateOf, humanBytes, seconds } from "./format";
 import { I18nContext, useI18nState, useT } from "./i18n";
 import { IndexEntry, Report } from "./types";
 
-type Tab = "flash" | "packages" | "modules" | "time" | "drift";
+type Tab = "flash" | "packages" | "files" | "modules" | "time" | "drift";
 const TABS: { id: Tab; key: string }[] = [
   { id: "flash", key: "tab_flash" },
   { id: "packages", key: "tab_packages" },
+  { id: "files", key: "tab_files" },
   { id: "modules", key: "tab_modules" },
   { id: "time", key: "tab_time" },
   { id: "drift", key: "tab_drift" },
@@ -28,6 +30,13 @@ function tabHasData(tab: Tab, r: Report, reportCount: number): boolean {
       return true;
     case "packages":
       return r.packages.length > 0 || r.rootfs !== null;
+    case "files":
+      // Either an attributed rootfs walk, or an image that reconstructed its
+      // own contents.
+      return (
+        r.packages.some((p) => (p.files ?? p.top_files ?? []).length > 0) ||
+        r.images.some((i) => Array.isArray((i.detail as { entries?: unknown[] }).entries))
+      );
     case "modules":
       return r.modules.length > 0;
     case "time":
@@ -252,6 +261,7 @@ function Viewer() {
           <main key={`${current}:${effectiveTab}`} className="content">
             {effectiveTab === "flash" && <Flash report={report} />}
             {effectiveTab === "packages" && <Packages report={report} />}
+            {effectiveTab === "files" && <Files report={report} />}
             {effectiveTab === "modules" && <Modules report={report} />}
             {effectiveTab === "time" && <Timings report={report} />}
             {effectiveTab === "drift" && entries.length > 1 && (

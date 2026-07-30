@@ -24,6 +24,15 @@ that path and `scan-check.html` still tests it; reaching it from a browser
 needs a directory *handle* (File System Access API) so only `target/`,
 `images/` and named files are ever visited.
 
+## The Files tab
+
+Browses a listing as a collapsible directory tree with per-directory totals,
+the owning package per file, and a path filter. Two kinds of source feed it:
+the rootfs walk attributed to packages (present whenever a build tree was
+scanned), and any image that reconstructed its own contents, which today means
+jffs2. Directories are ordered before files and both by size, so the heavy
+paths surface first.
+
 ## Languages
 
 The interface is translated into the same 15 languages as the other thingino

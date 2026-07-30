@@ -19,6 +19,7 @@ const ru: Record<string, string> = {
   // tabs
   tab_flash: "Флеш",
   tab_packages: "Пакеты",
+  tab_files: "Файлы",
   tab_modules: "Модули",
   tab_time: "Время сборки",
   tab_drift: "Изменения",
@@ -86,6 +87,16 @@ const ru: Record<string, string> = {
   th_install_size: "размер установки",
   show_all: "показать все ({n})",
   show_top: "свернуть",
+
+  // files tab
+  files_source_rootfs: "rootfs (с разбивкой по пакетам)",
+  files_total: "файлы",
+  files_bytes: "без сжатия",
+  filter_paths: "фильтр путей",
+  files_matching: "совпадений: {n}",
+  files_capped: "Список усечён; часть файлов не показана.",
+  no_files: "В этом отчёте нет списка файлов.",
+  no_matches: "Ничего не соответствует этому фильтру.",
 
   // modules tab
   stat_modules: "модули",

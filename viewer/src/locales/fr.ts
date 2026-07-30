@@ -20,6 +20,7 @@ const fr: Record<string, string> = {
   // tabs
   tab_flash: "Flash",
   tab_packages: "Paquets",
+  tab_files: "Fichiers",
   tab_modules: "Modules",
   tab_time: "Temps de génération",
   tab_drift: "Dérive",
@@ -87,6 +88,16 @@ const fr: Record<string, string> = {
   th_install_size: "taille installée",
   show_all: "tout afficher ({n})",
   show_top: "afficher moins",
+
+  // files tab
+  files_source_rootfs: "rootfs (attribué aux paquets)",
+  files_total: "fichiers",
+  files_bytes: "non compressé",
+  filter_paths: "filtrer les chemins",
+  files_matching: "{n} correspondances",
+  files_capped: "La liste a été tronquée ; certains fichiers ne sont pas affichés.",
+  no_files: "Aucune liste de fichiers dans ce rapport.",
+  no_matches: "Rien ne correspond à ce filtre.",
 
   // modules tab
   stat_modules: "modules",

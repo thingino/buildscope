@@ -8,7 +8,7 @@
 //! (seed 0, no inversion).
 
 use crate::crc::crc32_jffs2;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 pub const MAGIC: u16 = 0x1985;
 
@@ -20,6 +20,23 @@ const NODETYPE_SUMMARY: u16 = 0x2006;
 
 const DT_DIR: u8 = 4;
 const DT_REG: u8 = 8;
+const DT_LNK: u8 = 10;
+
+/// One live directory entry, with the path it resolves to.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Jffs2Entry {
+    pub path: String,
+    pub ino: u32,
+    /// Logical size from the newest inode node for this ino; directories and
+    /// entries whose inode never appeared report 0.
+    pub bytes: u64,
+    /// "file" | "dir" | "link" | "other"
+    pub kind: &'static str,
+}
+
+/// Ceiling on the reconstructed listing, so a pathological image cannot
+/// produce an unbounded report.
+const MAX_ENTRIES: usize = 4000;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Jffs2Info {
@@ -45,6 +62,11 @@ pub struct Jffs2Info {
     /// Sum of the latest known logical file size (isize) per inode.
     pub logical_content_bytes: u64,
     pub endianness: &'static str,
+    /// The directory tree rebuilt from the dirent and inode nodes. Names sit
+    /// in dirents as plain bytes and sizes come from inode headers, so this
+    /// needs no decompression, which is why it works on a bare image.
+    pub entries: Vec<Jffs2Entry>,
+    pub entries_truncated: bool,
 }
 
 fn align4(x: u64) -> u64 {
@@ -93,6 +115,8 @@ fn scan(data: &[u8], big_endian: bool) -> Jffs2Info {
         live_other: 0,
         logical_content_bytes: 0,
         endianness: if big_endian { "big" } else { "little" },
+        entries: Vec::new(),
+        entries_truncated: false,
     };
 
     // (pino, name) -> (version, ino, dtype); highest version wins.
@@ -214,6 +238,63 @@ fn scan(data: &[u8], big_endian: bool) -> Jffs2Info {
     for (_, (_, isize)) in &isizes {
         info.logical_content_bytes += *isize as u64;
     }
+
+    // Rebuild paths: children by parent inode, walked from the root (ino 1).
+    // A deletion dirent (ino 0) removes the name, and the highest version of
+    // each (parent, name) already won above.
+    let mut children: HashMap<u32, Vec<(Vec<u8>, u32, u8)>> = HashMap::new();
+    for ((pino, name), (_, ino, dtype)) in &dirents {
+        if *ino == 0 {
+            continue;
+        }
+        children
+            .entry(*pino)
+            .or_default()
+            .push((name.clone(), *ino, *dtype));
+    }
+    for list in children.values_mut() {
+        list.sort();
+    }
+
+    let mut entries: Vec<Jffs2Entry> = Vec::new();
+    let mut stack: Vec<(u32, String)> = vec![(1, String::new())];
+    let mut seen_dirs: HashSet<u32> = HashSet::new();
+    seen_dirs.insert(1);
+    while let Some((ino, prefix)) = stack.pop() {
+        let Some(list) = children.get(&ino) else {
+            continue;
+        };
+        for (name, child_ino, dtype) in list {
+            if entries.len() >= MAX_ENTRIES {
+                info.entries_truncated = true;
+                break;
+            }
+            let name = String::from_utf8_lossy(name).into_owned();
+            let path = format!("{prefix}/{name}");
+            let kind = match *dtype {
+                DT_REG => "file",
+                DT_DIR => "dir",
+                DT_LNK => "link",
+                _ => "other",
+            };
+            entries.push(Jffs2Entry {
+                path: path.clone(),
+                ino: *child_ino,
+                bytes: if *dtype == DT_REG {
+                    isizes.get(child_ino).map(|(_, s)| *s as u64).unwrap_or(0)
+                } else {
+                    0
+                },
+                kind,
+            });
+            // Directory loops would otherwise recurse forever.
+            if *dtype == DT_DIR && seen_dirs.insert(*child_ino) {
+                stack.push((*child_ino, path));
+            }
+        }
+    }
+    entries.sort_by(|a, b| a.path.cmp(&b.path));
+    info.entries = entries;
     info
 }
 
@@ -260,6 +341,24 @@ mod tests {
         buf.extend_from_slice(&totlen.to_le_bytes());
         let crc = crc32_jffs2(&buf[start..start + 8]);
         buf.extend_from_slice(&crc.to_le_bytes());
+    }
+
+    fn push_dirent(buf: &mut Vec<u8>, pino: u32, version: u32, ino: u32, dtype: u8, name: &[u8]) {
+        let totlen = 40 + name.len() as u32;
+        push_header(buf, NODETYPE_DIRENT, totlen);
+        buf.extend_from_slice(&pino.to_le_bytes());
+        buf.extend_from_slice(&version.to_le_bytes());
+        buf.extend_from_slice(&ino.to_le_bytes());
+        buf.extend_from_slice(&0u32.to_le_bytes()); // mctime
+        buf.push(name.len() as u8);
+        buf.push(dtype);
+        buf.extend_from_slice(&[0, 0]);
+        buf.extend_from_slice(&0u32.to_le_bytes()); // node_crc
+        buf.extend_from_slice(&0u32.to_le_bytes()); // name_crc
+        buf.extend_from_slice(name);
+        while buf.len() % 4 != 0 {
+            buf.push(0xFF);
+        }
     }
 
     fn synthetic_image() -> Vec<u8> {
@@ -314,6 +413,39 @@ mod tests {
             65536
         );
         assert_eq!(info.endianness, "little");
+    }
+
+    /// Names and sizes come out of dirent and inode nodes with no
+    /// decompression, so a bare image yields a real listing.
+    #[test]
+    fn rebuilds_paths_from_nodes() {
+        let info = parse(&synthetic_image()).unwrap();
+        assert_eq!(info.entries.len(), 1);
+        let e = &info.entries[0];
+        assert_eq!(e.path, "/hello");
+        assert_eq!(e.ino, 2);
+        assert_eq!(e.bytes, 123); // isize from the inode node
+        assert_eq!(e.kind, "file");
+        assert!(!info.entries_truncated);
+    }
+
+    /// A directory dirent contributes a path and is descended into, and a
+    /// dirent whose parent is unreachable from the root is left out.
+    #[test]
+    fn nested_paths_and_orphans() {
+        let mut buf: Vec<u8> = Vec::new();
+        // /sub  (dir, ino 2, parent 1)
+        push_dirent(&mut buf, 1, 1, 2, DT_DIR, b"sub");
+        // /sub/file  (file, ino 3, parent 2)
+        push_dirent(&mut buf, 2, 1, 3, DT_REG, b"file");
+        // orphan: parent 99 never appears under the root
+        push_dirent(&mut buf, 99, 1, 4, DT_REG, b"orphan");
+        buf.resize(65536, 0xFF);
+
+        let info = parse(&buf).unwrap();
+        let paths: Vec<&str> = info.entries.iter().map(|e| e.path.as_str()).collect();
+        assert_eq!(paths, vec!["/sub", "/sub/file"]);
+        assert_eq!(info.live_files, 2); // orphan still counts as a live dirent
     }
 
     #[test]

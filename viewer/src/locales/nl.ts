@@ -20,6 +20,7 @@ const nl: Record<string, string> = {
   // tabs
   tab_flash: "Flash",
   tab_packages: "Pakketten",
+  tab_files: "Bestanden",
   tab_modules: "Modules",
   tab_time: "Bouwtijd",
   tab_drift: "Afwijking",
@@ -87,6 +88,16 @@ const nl: Record<string, string> = {
   th_install_size: "installatiegrootte",
   show_all: "alle {n} tonen",
   show_top: "minder tonen",
+
+  // files tab
+  files_source_rootfs: "rootfs (toegewezen aan pakketten)",
+  files_total: "bestanden",
+  files_bytes: "ongecomprimeerd",
+  filter_paths: "paden filteren",
+  files_matching: "{n} treffers",
+  files_capped: "De lijst is afgekapt; sommige bestanden worden niet weergegeven.",
+  no_files: "Geen bestandslijst in dit rapport.",
+  no_matches: "Niets komt overeen met dat filter.",
 
   // modules tab
   stat_modules: "modules",

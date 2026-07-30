@@ -25,6 +25,7 @@ const en: Record<string, string> = {
   // tabs
   tab_flash: "Flash",
   tab_packages: "Packages",
+  tab_files: "Files",
   tab_modules: "Modules",
   tab_time: "Build time",
   tab_drift: "Drift",
@@ -92,6 +93,16 @@ const en: Record<string, string> = {
   th_install_size: "install size",
   show_all: "show all {n}",
   show_top: "show top",
+
+  // files tab
+  files_source_rootfs: "rootfs (attributed to packages)",
+  files_total: "files",
+  files_bytes: "uncompressed",
+  filter_paths: "filter paths",
+  files_matching: "{n} matching",
+  files_capped: "The listing was capped; some files are not shown.",
+  no_files: "No file listing in this report.",
+  no_matches: "Nothing matches that filter.",
 
   // modules tab
   stat_modules: "modules",

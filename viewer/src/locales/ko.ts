@@ -20,6 +20,7 @@ const ko: Record<string, string> = {
   // tabs
   tab_flash: "플래시",
   tab_packages: "패키지",
+  tab_files: "파일",
   tab_modules: "모듈",
   tab_time: "빌드 시간",
   tab_drift: "변화",
@@ -87,6 +88,16 @@ const ko: Record<string, string> = {
   th_install_size: "설치 크기",
   show_all: "전체 {n}개 표시",
   show_top: "상위만 표시",
+
+  // files tab
+  files_source_rootfs: "rootfs(패키지별 분류)",
+  files_total: "파일 수",
+  files_bytes: "비압축",
+  filter_paths: "경로 필터",
+  files_matching: "{n}개 일치",
+  files_capped: "목록이 잘렸습니다. 일부 파일은 표시되지 않습니다.",
+  no_files: "이 보고서에는 파일 목록이 없습니다.",
+  no_matches: "이 필터와 일치하는 항목이 없습니다.",
 
   // modules tab
   stat_modules: "모듈",

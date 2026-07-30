@@ -20,6 +20,7 @@ const uk: Record<string, string> = {
   // tabs
   tab_flash: "Флеш",
   tab_packages: "Пакети",
+  tab_files: "Файли",
   tab_modules: "Модулі",
   tab_time: "Час збірки",
   tab_drift: "Зміни",
@@ -87,6 +88,16 @@ const uk: Record<string, string> = {
   th_install_size: "розмір установки",
   show_all: "показати всі ({n})",
   show_top: "показати менше",
+
+  // files tab
+  files_source_rootfs: "rootfs (розподілено за пакетами)",
+  files_total: "файли",
+  files_bytes: "нестиснуто",
+  filter_paths: "фільтрувати шляхи",
+  files_matching: "збігів: {n}",
+  files_capped: "Список обрізано; деякі файли не показані.",
+  no_files: "У цьому звіті немає списку файлів.",
+  no_matches: "Ніщо не відповідає цьому фільтру.",
 
   // modules tab
   stat_modules: "модулі",

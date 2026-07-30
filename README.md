@@ -49,6 +49,11 @@ buildscope scan output/
   Buildroot package that installed it via `packages-file-list.txt`, with a
   per-package approximate compressed cost from the measured rootfs compression
   ratio.
+- **A browsable file listing**: every path in the rootfs with its size and
+  owning package, so "why is this partition full" is a tree you can walk rather
+  than a number. A jffs2 partition additionally reconstructs its own listing
+  from the image, names and sizes included, which needs no decompression and so
+  works on a bare `.bin` too.
 - **Kernel modules**: size, owning package, and whether anything auto-loads
   them.
 - **Installed but not shipped**: files a package installed that are absent from

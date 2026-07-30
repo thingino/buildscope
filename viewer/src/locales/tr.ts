@@ -20,6 +20,7 @@ const tr: Record<string, string> = {
   // tabs
   tab_flash: "Flash",
   tab_packages: "Paketler",
+  tab_files: "Dosyalar",
   tab_modules: "Modüller",
   tab_time: "Derleme süresi",
   tab_drift: "Değişim",
@@ -87,6 +88,16 @@ const tr: Record<string, string> = {
   th_install_size: "kurulum boyutu",
   show_all: "tümünü göster ({n})",
   show_top: "daha az göster",
+
+  // files tab
+  files_source_rootfs: "rootfs (paketlere atanmış)",
+  files_total: "dosya",
+  files_bytes: "sıkıştırılmamış",
+  filter_paths: "yolları süz",
+  files_matching: "{n} eşleşme",
+  files_capped: "Liste kısaltıldı; bazı dosyalar gösterilmiyor.",
+  no_files: "Bu raporda dosya listesi yok.",
+  no_matches: "Bu süzgeçle eşleşen bir şey yok.",
 
   // modules tab
   stat_modules: "modüller",

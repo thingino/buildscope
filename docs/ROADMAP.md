@@ -46,6 +46,14 @@
   on the test suite, and refuses to publish a bundle whose scanner does not
   instantiate with the expected exports and report schema.
 
+## Phase 4 (done)
+
+- Full per-package file lists in the report (capped, with a truncation flag),
+  and a Files tab that browses the rootfs as a directory tree with sizes and
+  owning packages
+- jffs2 listings rebuilt from dirent and inode nodes, so the contents of a data
+  partition are visible with or without a build tree
+
 ## Considered and deferred
 
 - Browser scanning of a Buildroot output directory. The WASM core implements
@@ -70,7 +78,10 @@
 
 - Per-file true compressed cost via squashfs block/fragment mapping instead of
   ratio approximation
-- Deep in-image file listing for artifact-only mode (full squashfs/jffs2
-  directory reconstruction)
+- Listing squashfs contents in artifact-only mode. jffs2 already works because
+  its names and sizes sit in plain node headers; squashfs keeps its inode and
+  directory tables compressed, so this needs decoders for xz, gzip, zstd and
+  lz4 (pure-Rust ones exist, at maybe 150-400 KB of WASM) plus a real squashfs
+  reader. Worth it to browse a released rootfs with no build tree.
 - FIT image parsing (needs a minimal DTB reader)
 - ext4/ubifs deep stats beyond superblock level

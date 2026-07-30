@@ -19,6 +19,7 @@ const ar: Record<string, string> = {
   // tabs
   tab_flash: "الفلاش",
   tab_packages: "الحزم",
+  tab_files: "الملفات",
   tab_modules: "الوحدات",
   tab_time: "زمن البناء",
   tab_drift: "الفروق",
@@ -86,6 +87,16 @@ const ar: Record<string, string> = {
   th_install_size: "حجم التثبيت",
   show_all: "إظهار الكل ({n})",
   show_top: "طيّ القائمة",
+
+  // files tab
+  files_source_rootfs: "rootfs (منسوبة إلى الحزم)",
+  files_total: "الملفات",
+  files_bytes: "غير مضغوط",
+  filter_paths: "تصفية المسارات",
+  files_matching: "ملفات مطابقة: {n}",
+  files_capped: "تم اقتطاع القائمة؛ بعض الملفات غير معروضة.",
+  no_files: "لا توجد قائمة ملفات في هذا التقرير.",
+  no_matches: "لا شيء يطابق هذه التصفية.",
 
   // modules tab
   stat_modules: "الوحدات",

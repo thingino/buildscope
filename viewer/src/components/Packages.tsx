@@ -274,7 +274,7 @@ export default function Packages({ report }: { report: Report }) {
                       <tr className="subrow">
                         <td colSpan={5}>
                           <div className="topfiles">
-                            {p.top_files.map((f) => (
+                            {(p.files ?? p.top_files ?? []).map((f) => (
                               <div key={f.path} className="topfile">
                                 <span className="mono-dim">{f.path}</span>
                                 <span className="num">{humanBytes(f.bytes)}</span>

@@ -7,7 +7,6 @@ use crate::snapshot::Snapshot;
 use serde_json::json;
 use std::collections::{HashMap, HashSet};
 
-const TOP_FILES: usize = 8;
 
 pub(crate) struct Classified {
     pub(crate) name: String,
@@ -90,6 +89,12 @@ pub(crate) fn classify(name: &str, size: u64, bytes: Option<&[u8]>) -> Classifie
             "logical_content_bytes": info.logical_content_bytes,
             "crc_errors": info.crc_errors,
             "endianness": info.endianness,
+            "entries_truncated": info.entries_truncated,
+            "entries": info.entries.iter().map(|e| json!({
+                "path": e.path,
+                "bytes": e.bytes,
+                "kind": e.kind,
+            })).collect::<Vec<_>>(),
         });
         c.jffs2 = Some(info);
         return c;
@@ -407,12 +412,6 @@ pub fn analyze(snap: &Snapshot) -> Report {
             acc.files.push((e.size, e.path.clone()));
         }
     }
-    if let Some(acc) = per_pkg.get(UNATTRIBUTED) {
-        warnings.push(format!(
-            "{} files ({} bytes) not attributable to a package (overlay or post-build)",
-            acc.count, acc.bytes
-        ));
-    }
 
     // Images classification
     let mut images: Vec<Classified> = snap
@@ -641,20 +640,22 @@ pub fn analyze(snap: &Snapshot) -> Report {
         .into_iter()
         .map(|(name, mut acc)| {
             acc.files.sort_by(|a, b| b.0.cmp(&a.0).then(a.1.cmp(&b.1)));
+            let truncated = acc.files.len() > MAX_FILES_PER_PACKAGE;
             PackageReport {
                 name,
                 bytes: acc.bytes,
                 file_count: acc.count,
                 compressed_bytes_approx: ratio.map(|r| (acc.bytes as f64 * r) as u64),
-                top_files: acc
+                files: acc
                     .files
                     .iter()
-                    .take(TOP_FILES)
+                    .take(MAX_FILES_PER_PACKAGE)
                     .map(|(b, p)| FileRef {
                         path: format!("/{p}"),
                         bytes: *b,
                     })
                     .collect(),
+                files_truncated: truncated,
             }
         })
         .collect();

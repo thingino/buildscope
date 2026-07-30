@@ -67,12 +67,21 @@ export interface ImageReport {
   detail: Record<string, unknown>;
 }
 
+export interface FileRef {
+  path: string;
+  bytes: number;
+}
+
 export interface PackageReport {
   name: string;
   bytes: number;
   file_count: number;
   compressed_bytes_approx: number | null;
-  top_files: { path: string; bytes: number }[];
+  /** Every file the package installed, largest first. */
+  files: FileRef[];
+  files_truncated?: boolean;
+  /** Reports written before the full list existed carry only the top few. */
+  top_files?: FileRef[];
 }
 
 export interface ModuleReport {

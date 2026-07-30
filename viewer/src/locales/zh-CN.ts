@@ -20,6 +20,7 @@ const zhCN: Record<string, string> = {
   // tabs
   tab_flash: "闪存",
   tab_packages: "软件包",
+  tab_files: "文件",
   tab_modules: "模块",
   tab_time: "构建时间",
   tab_drift: "差异",
@@ -87,6 +88,16 @@ const zhCN: Record<string, string> = {
   th_install_size: "安装大小",
   show_all: "显示全部 {n} 项",
   show_top: "只显示前几项",
+
+  // files tab
+  files_source_rootfs: "rootfs（按软件包归属）",
+  files_total: "文件数",
+  files_bytes: "未压缩",
+  filter_paths: "筛选路径",
+  files_matching: "匹配 {n} 项",
+  files_capped: "列表已截断，部分文件未显示。",
+  no_files: "此报告中没有文件列表。",
+  no_matches: "没有匹配该筛选条件的内容。",
 
   // modules tab
   stat_modules: "模块",

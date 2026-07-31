@@ -210,15 +210,26 @@ function Viewer() {
     });
   }, []);
 
-  // Home is this page without the fragment that records which build and tab
-  // are open. The query is kept, so a reader who arrived with ?lang= does not
-  // lose their language by going back to the start.
-  const goHome = `${location.pathname}${location.search}`;
+  // Home is the start of the site, which is the drop target -- so leaving a
+  // fleet is part of going home, and ?fleet= comes off. Everything else in the
+  // query stays: a reader who arrived with ?lang= or ?repo= keeps them.
+  //
+  // Within a fleet the step up from a build is its overview, and the header's
+  // own control does that; this is the step above both.
+  const goHome = useMemo(() => {
+    const u = new URL(window.location.href);
+    u.searchParams.delete("fleet");
+    return `${u.pathname}${u.search}`;
+  }, []);
   const resetToHome = useCallback(() => {
+    // A fleet is loaded state, not a view: dropping back to the file selector
+    // is a different page, so let the browser make it one.
+    if (fleetMode) {
+      window.location.assign(goHome);
+      return;
+    }
     setCurrent(0);
     setTab("flash");
-    // For a fleet the start is its overview, not its first build.
-    if (fleetMode) setOverview(true);
     history.replaceState(null, "", goHome);
     // In the browser the start is the drop target, so let go of what was
     // dropped. Served or inlined, the reports are not ours to discard.

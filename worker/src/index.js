@@ -41,6 +41,27 @@ function allowed(tag, name) {
     return !tag.includes('..'); /* no path games */
 }
 
+/* Fresh for five minutes, then a full day during which a stale copy is served
+ * instantly while it revalidates behind the reader's back. Five minutes rather
+ * than longer because a snapshot is re-uploaded to the same tag with --clobber
+ * on every rerun; the long stale window is safe because revalidation is an
+ * If-None-Match away, and a rerun changes the ETag. */
+const CACHE_CONTROL = 'public, max-age=300, stale-while-revalidate=86400';
+
+/* An If-None-Match may list several, and may weaken them with W/. */
+function matches(header, etag) {
+    if (!header || !etag) return false;
+    const want = etag.replace(/^W\//, '');
+    return header.split(',').some((t) => t.trim().replace(/^W\//, '') === want);
+}
+
+function notModified(etag, origin) {
+    const h = new Headers(cors(origin));
+    if (etag) h.set('ETag', etag);
+    h.set('Cache-Control', CACHE_CONTROL);
+    return new Response(null, { status: 304, headers: h });
+}
+
 function cors(origin) {
     return {
         'Access-Control-Allow-Origin': origin,
@@ -79,8 +100,12 @@ export default {
         const key = new Request(`${url.origin}/fleet?repo=${which}&tag=${tag}&name=${name}`,
                                 { method: 'GET' });
         const cache = caches.default;
+        const inm = request.headers.get('If-None-Match');
         const hit = await cache.match(key);
         if (hit) {
+            const etag = hit.headers.get('ETag');
+            /* Nothing to send: the reader's copy is the one we have. */
+            if (matches(inm, etag)) return notModified(etag, origin);
             const h = new Headers(hit.headers);
             for (const [k, v] of Object.entries(cors(origin))) h.set(k, v);
             h.set('X-Fleet-Cache', 'HIT');
@@ -100,12 +125,23 @@ export default {
         /* Pass the length through, or the viewer's progress bar goes indeterminate. */
         const len = upstream.headers.get('Content-Length');
         if (len) h.set('Content-Length', len);
-        /* Minutes, not a day. Unlike a released image, a snapshot is re-uploaded
-         * to the same tag with --clobber on every rerun, so caching it hard
-         * would serve yesterday's fleet from a tag that has since changed. */
-        h.set('Cache-Control', 'public, max-age=300');
+        h.set('Cache-Control', CACHE_CONTROL);
+        /* Upstream's validators, forwarded. Without them a reader whose copy has
+         * expired can only re-download the whole asset, and no cache lifetime
+         * would be safe, because nothing could notice a rerun replacing it. */
+        for (const v of ['ETag', 'Last-Modified']) {
+            const got = upstream.headers.get(v);
+            if (got) h.set(v, got);
+        }
 
         const res = new Response(upstream.body, { status: 200, headers: h });
+        if (matches(inm, h.get('ETag'))) {
+            /* The reader already has this version, so nothing goes back. The
+             * response itself feeds the cache -- no clone, because tee-ing a
+             * stream whose other half is never read would strand it. */
+            if (request.method === 'GET') ctx.waitUntil(cache.put(key, res));
+            return notModified(h.get('ETag'), origin);
+        }
         /* clone() tees the stream: the client and the cache each get a copy, and
          * the bytes are still never held in memory. cache.put only takes GETs. */
         if (request.method === 'GET') ctx.waitUntil(cache.put(key, res.clone()));

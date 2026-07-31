@@ -65,10 +65,13 @@ jobs:
         run: |
           BIN=target/${{ matrix.target }}/release/buildscope
           file "$BIN"
-          file "$BIN" | grep -q "statically linked" || {
-            echo "not statically linked; it would not run in the build container"
+          # Ask the question that matters -- does it need a loader? -- rather
+          # than matching file(1)'s wording, which says "statically linked" for
+          # one of these targets and "static-pie linked" for the other.
+          if readelf -l "$BIN" | grep -q "Requesting program interpreter"; then
+            echo "dynamically linked; it would not run in the build container"
             exit 1
-          }
+          fi
           # Native build, so this runner can execute what it just produced.
           "$BIN" --version
 

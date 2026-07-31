@@ -15,7 +15,14 @@ thingino-family theme, and the chart colors are a CVD-validated palette.
    index on load and, finding it, fetches a report only when it is opened.
    Any static host will do; browsers block `fetch` over `file://`, so this
    form needs to be served rather than opened.
-3. **Carved in the browser**: with neither of those the page becomes a drop
+3. **A fleet snapshot**: `?fleet=<tag-or-url>` reads the pair
+   `buildscope export --fleet` writes. The index is small and loads up front,
+   so a fleet of any size paints its overview from a few hundred bytes per
+   build; the tarball is not fetched until a build is opened, and is then
+   decompressed once with the browser's own `DecompressionStream` and held
+   unparsed, so only the report being read costs anything to turn into
+   objects. Browsing 166 builds and opening two of them costs two requests.
+4. **Carved in the browser**: with none of those the page becomes a drop
    target backed by the WASM build of the analysis core (`buildscope.wasm`).
    Drop a firmware image, a folder of images, or a `buildscope-report.json`.
    Nothing is uploaded.
@@ -32,6 +39,23 @@ elsewhere rather than present and broken.
 
 `per-package/` is not visited -- it is 804,325 entries on its own and feeds one
 section of the report, which says so rather than appearing empty.
+
+## The fleet view
+
+Where a snapshot holds many builds, the way in is a list of all of them rather
+than one of them: name, branch, flash and rootfs size, and how full the fullest
+partition is. Sorted by name, because at fleet scale the first question is
+usually where a known device is, and an order that shifts between runs is hard
+to navigate; fill is one click on its column.
+
+A second view maps them. One row per device on a single absolute scale, so an
+8 MiB chip is half the bar of a 16 MiB one rather than being stretched to match
+it, each partition a fixed hue -- faint for its extent, solid for what is used
+-- so a layout that differs from its neighbours shows up as a step in the
+stack. Segments like `env`, 64 KiB on a 16 MiB chip, are 0.4% of a bar and
+unreadable as geometry, so the sizes are available as aligned columns beside
+it, sortable per partition. Both come from the index, so neither costs a
+report.
 
 ## The Flash tab
 
@@ -63,6 +87,21 @@ behind the kernel's own compression. The table says which board each is for
 and what it costs; picking a row shows its nodes and properties, rendered the
 way `dtc` prints them, with a filter over node paths, property names and
 values. The tab appears only for a report that has one.
+
+## The Kernel tab
+
+Which version, what was compiled into it, what ships beside it as loadable
+modules, and the options that decided all three. They belong together because
+they answer each other -- a driver is built in because a `CONFIG_` line said
+`y`, and is a `.ko` because it said `m` -- and because which of them exist
+depends on what was analyzed rather than on the subject: a build tree brings
+the modules and the built-in list, a bare image brings the config out of the
+kernel itself via `CONFIG_IKCONFIG`, and either alone is worth showing.
+
+The two long lists sit behind the counts that raise the question about them,
+so the default view stays short. Disabled options are kept as `n` and hidden
+until asked for: that an option was considered and turned off is worth being
+able to find, but it is most of the file.
 
 ## The Files tab
 

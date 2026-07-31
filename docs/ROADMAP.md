@@ -94,17 +94,39 @@
 - `serve` removed. Everything it did is now either a file you open or a
   directory you host, and the tool ships with no network listener at all.
 
-## Phase 3c
+## Phase 3c (done)
 
-- Render CI-published reports on the same site, so a project's build history
-  is browsable without scanning anything locally: `export --site` produces the
-  files, so what is left is the workflow that publishes them
-- CI aggregation recipe: publish one report per build, retain history,
-  trends over time
-- Fleet-scale viewer work: search in the build picker, and an overview table
-  across builds. The site index already carries what the table needs -- each
-  build's flash size and the partition nearest its limit -- so the work is in
-  the viewer.
+- CI-published reports render on the same site, so a project's build history is
+  browsable without scanning anything locally. Rather than hosting a site per
+  run, `export --fleet` writes two release assets: a small index that paints
+  the overview, and a gzipped tar of every report, fetched only when a build is
+  opened. Both are ordinary files, versioned by the release that produced them,
+  so history costs nothing to keep.
+- CI aggregation, running across 166 cameras: a prebuilt static binary
+  installed per matrix job, one report each, a collector that survives a
+  cancelled run and publishes whatever succeeded.
+- Fleet-scale viewer work: an overview of every build with filter and sortable
+  columns, a flash-map view comparing layouts across the fleet with optional
+  aligned per-partition numbers, and prev/next stepping between builds.
+- A Cloudflare Worker (`worker/`) serving the two assets past GitHub's missing
+  CORS on release bytes, and answering which releases carry a snapshot without
+  spending the reader's API quota.
+
+## Phase 8 (done)
+
+- Provenance in the report: the target's `os-release`, so a build says which
+  branch and revision it came from. It is a Buildroot-generated file, so this
+  stays as generic as the rest of the tool.
+- The kernel's own `.config`, recovered from the image by `CONFIG_IKCONFIG`.
+  The build tree's `.config` goes with the tree; this survives into the
+  artifact, so a carved image can still say what its kernel was built with.
+- Prebuilt release binaries, static musl per architecture, so a consumer
+  downloads the tool instead of building it in every matrix job.
+
+## Still open
+
+- Trends over time. The release history holds every snapshot, so the data is
+  already there; what is missing is a view that reads more than one.
 
 ## Distant / recorded, not planned
 

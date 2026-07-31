@@ -3,16 +3,27 @@
 A browser cannot read GitHub release asset bytes. The blob host they redirect to
 sends no `Access-Control-Allow-Origin`, and that is true of every route to them:
 the download link, the signed URL behind it, and the REST asset endpoint, whose
-302 does carry CORS but lands on a blob that does not. Listing releases is fine
-without help, because `api.github.com` does send CORS.
+302 does carry CORS but lands on a blob that does not.
 
-So only the bytes need a hop, and this is it. It fetches the asset server-side,
+So the bytes need a hop, and this is it. It fetches the asset server-side,
 where CORS does not apply, and re-serves it with the header the browser needs.
 
 ```
 GET /fleet?tag=firmware-2026-07-30&name=fleet-index.json
 GET /fleet?repo=gtxaspec&tag=firmware-2026-07-30&name=fleet-reports.tar.gz
+GET /fleet/releases?repo=gtxaspec
 ```
+
+Discovering *which* releases carry a snapshot goes through here too, and not
+for CORS. `api.github.com` would answer that, but its releases endpoint embeds
+every release's full asset list: for a firmware repo that is ~18 MB of JSON and
+8000 asset objects to learn a handful of tag names, spent out of the reader's
+own 60-per-hour unauthenticated quota, so a shared address runs out and the
+page silently shows nothing. `/fleet/releases` answers the same question in
+tens of bytes, from three cheap signals instead of the expensive one: the
+newest tag from the 302 that `github.com/<repo>/releases/latest` returns, which
+needs no parsing and no quota; candidates from the tags endpoint, which carries
+no asset lists; and one `HEAD` each to see which actually have the asset.
 
 Only `firmware-*` tags, only `fleet-index.json` and `fleet-reports.tar.gz`, only
 the repos named in `REPOS`. That allow-list is the security model: without it
@@ -30,7 +41,11 @@ npx wrangler deploy     # from worker/
 npx wrangler tail
 ```
 
-The response is cached at the edge for five minutes, not the day a released
-image would get: a snapshot is re-uploaded to the same tag with `--clobber` on
-every rerun, so caching it hard would serve a stale fleet from a tag that has
-since changed.
+Responses are `max-age=300, stale-while-revalidate=86400`. Five minutes fresh
+rather than the day a released image would get, because a snapshot is
+re-uploaded to the same tag with `--clobber` on every rerun; the long stale
+window is safe because upstream's `ETag` and `Last-Modified` are passed
+through and `If-None-Match` is answered with a 304. A reader whose copy has
+expired revalidates in a few bytes instead of pulling megabytes again, and a
+rerun changes the ETag, so freshness is better than a short cache alone would
+give.

@@ -15,8 +15,13 @@ import { Loaded } from "./data";
 import { IndexEntry, Report } from "./types";
 
 const ASSET_PROXY = "https://thingino-dfu-fw.gtxent.workers.dev/fw";
-const RELEASES_API =
-  "https://api.github.com/repos/themactep/thingino-firmware/releases?per_page=30";
+/** Short names the proxy also knows; `?repo=` picks one. Kept in step with
+ *  its allow-list, which is what actually decides what can be read. */
+const REPOS: Record<string, string> = {
+  thingino: "themactep/thingino-firmware",
+  gtxaspec: "gtxaspec/thingino-firmware",
+};
+const DEFAULT_REPO = "thingino";
 const RELEASE_PREFIX = "firmware-";
 const INDEX_ASSET = "fleet-index.json";
 const TAR_ASSET = "fleet-reports.tar.gz";
@@ -34,24 +39,34 @@ export function fleetSpec(): string | null {
   return new URLSearchParams(window.location.search).get("fleet");
 }
 
+/** `?repo=`, falling back to the main one. An unknown name is not an error
+ *  worth stopping for: the proxy would reject it anyway. */
+export function fleetRepo(): string {
+  const r = new URLSearchParams(window.location.search).get("repo");
+  return r && r in REPOS ? r : DEFAULT_REPO;
+}
+
 /**
  * A spec is either a URL to a directory holding the two assets, or a release
  * tag. The URL form keeps this useful to any project that publishes a
  * snapshot; the tag form is the shorthand for the one that ships with it.
  */
-export function resolveSource(spec: string): FleetSource {
+export function resolveSource(spec: string, repo = DEFAULT_REPO): FleetSource {
   if (/^https?:\/\//i.test(spec)) {
     const base = spec.endsWith("/") ? spec : spec + "/";
     return { indexUrl: base + INDEX_ASSET, tarUrl: base + TAR_ASSET, tag: null };
   }
   const at = (name: string) =>
-    `${ASSET_PROXY}?tag=${encodeURIComponent(spec)}&name=${encodeURIComponent(name)}`;
+    `${ASSET_PROXY}?repo=${encodeURIComponent(repo)}` +
+    `&tag=${encodeURIComponent(spec)}&name=${encodeURIComponent(name)}`;
   return { indexUrl: at(INDEX_ASSET), tarUrl: at(TAR_ASSET), tag: spec };
 }
 
 /** Newest first. Metadata only, so this is a plain cross-origin fetch. */
-export async function listReleases(): Promise<string[]> {
-  const res = await fetch(RELEASES_API);
+export async function listReleases(repo = DEFAULT_REPO): Promise<string[]> {
+  const res = await fetch(
+    `https://api.github.com/repos/${REPOS[repo] ?? REPOS[DEFAULT_REPO]}/releases?per_page=30`
+  );
   if (!res.ok) throw new Error(`releases: HTTP ${res.status}`);
   const rs = (await res.json()) as { tag_name: string; draft: boolean }[];
   return rs
@@ -129,17 +144,18 @@ export async function loadFleet(
   spec: string,
   onProgress?: (done: number, total: number | null) => void
 ): Promise<Loaded & { tag: string | null; tags: string[] }> {
+  const repo = fleetRepo();
   let tags: string[] = [];
   let resolved = spec;
   if (spec === "latest" || spec === "") {
-    tags = await listReleases();
+    tags = await listReleases(repo);
     if (tags.length === 0) throw new Error("no firmware releases found");
     resolved = tags[0];
   }
-  const src = resolveSource(resolved);
+  const src = resolveSource(resolved, repo);
   // The picker needs the list even when the caller named a tag outright.
   // Failing to get it costs the picker, not the snapshot.
-  if (src.tag && tags.length === 0) tags = await listReleases().catch(() => []);
+  if (src.tag && tags.length === 0) tags = await listReleases(repo).catch(() => []);
 
   const res = await fetch(src.indexUrl);
   if (!res.ok) throw new Error(`fleet index: HTTP ${res.status}`);

@@ -203,9 +203,9 @@ const ja: Record<string, string> = {
   drift_modules: "カーネルモジュール",
 
   // drop zone
-  drop_title: "ファームウェアイメージ、イメージのフォルダー、レポートをドロップ",
+  drop_title: "任意のファームウェアイメージ、イメージのフォルダ、またはレポートをドロップ",
   drop_sub_html:
-    "すべてこのブラウザー内で解析します。単体の <code>.bin</code> はイメージ自体からパーティション構成を抽出し、<code>buildscope-report.json</code> はそのまま表示します。何もアップロードされません。",
+    "Buildroot でビルドされたあらゆる機器に対応します。素の <code>.bin</code> はイメージ自体からパーティション構成を読み出し、<code>buildscope-report.json</code> はそのまま表示します。すべてこのブラウザ内で処理され、アップロードは行いません。",
   drop_cli_hint:
     "Buildroot の出力ディレクトリの解析にはビルドツリーが必要なため、そちらはローカルで実行します: <code>buildscope export output/my-build</code>。",
   choose_files: "ファイルを選択",

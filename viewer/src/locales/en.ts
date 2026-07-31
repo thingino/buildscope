@@ -208,9 +208,9 @@ const en: Record<string, string> = {
   drift_modules: "Kernel modules",
 
   // drop zone
-  drop_title: "drop a firmware image, a folder of images, or a report",
+  drop_title: "drop any firmware image, a folder of images, or a report",
   drop_sub_html:
-    "Everything is analyzed in this browser: a bare <code>.bin</code> has its partition map carved out of the image itself, and a <code>buildscope-report.json</code> is rendered as-is. No uploads.",
+    "Any device built with Buildroot: a bare <code>.bin</code> has its partition map carved out of the image itself, and a <code>buildscope-report.json</code> is rendered as-is. Everything runs in this browser. Nothing is uploaded.",
   drop_cli_hint:
     "Analyzing a Buildroot output directory needs its build tree, so that runs locally: <code>buildscope export output/my-build</code>.",
   choose_files: "choose files",

@@ -203,9 +203,9 @@ const pl: Record<string, string> = {
   drift_modules: "Moduły jądra",
 
   // drop zone
-  drop_title: "przeciągnij obraz firmware, katalog obrazów lub raport",
+  drop_title: "upuść dowolny obraz firmware, folder z obrazami lub raport",
   drop_sub_html:
-    "Wszystko jest analizowane w tej przeglądarce: samo <code>.bin</code> dostaje mapę partycji wydobytą z obrazu, a <code>buildscope-report.json</code> jest wyświetlany bez zmian. Nic nie jest wysyłane.",
+    "Dowolne urządzenie zbudowane z Buildroot: z surowego pliku <code>.bin</code> mapa partycji jest wydobywana z samego obrazu, a <code>buildscope-report.json</code> jest wyświetlany bez zmian. Wszystko działa w tej przeglądarce. Nic nie jest wysyłane.",
   drop_cli_hint:
     "Analiza katalogu wynikowego Buildroot wymaga drzewa kompilacji, dlatego odbywa się lokalnie: <code>buildscope export output/my-build</code>.",
   choose_files: "wybierz pliki",

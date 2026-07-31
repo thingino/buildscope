@@ -203,9 +203,9 @@ const pt: Record<string, string> = {
   drift_modules: "Módulos do kernel",
 
   // drop zone
-  drop_title: "arraste uma imagem de firmware, uma pasta de imagens ou um relatório",
+  drop_title: "largue qualquer imagem de firmware, uma pasta de imagens ou um relatório",
   drop_sub_html:
-    "Tudo é analisado neste navegador: de um <code>.bin</code> isolado extrai-se o mapa de partições da própria imagem, e um <code>buildscope-report.json</code> é apresentado tal como está. Nada é enviado.",
+    "Qualquer dispositivo construído com Buildroot: a um <code>.bin</code> simples é extraído o mapa de partições da própria imagem, e um <code>buildscope-report.json</code> é apresentado tal como está. Tudo corre neste navegador. Nada é enviado.",
   drop_cli_hint:
     "Analisar um diretório de saída do Buildroot exige a sua árvore de compilação, pelo que isso corre localmente: <code>buildscope export output/my-build</code>.",
   choose_files: "escolher ficheiros",

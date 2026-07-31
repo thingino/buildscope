@@ -203,9 +203,9 @@ const zhCN: Record<string, string> = {
   drift_modules: "内核模块",
 
   // drop zone
-  drop_title: "拖入固件镜像、镜像文件夹或报告",
+  drop_title: "拖入任意固件镜像、镜像文件夹或报告",
   drop_sub_html:
-    "一切都在本浏览器中分析：单独的 <code>.bin</code> 会从镜像本身提取出分区布局，而 <code>buildscope-report.json</code> 按原样呈现。不会上传任何内容。",
+    "支持任何用 Buildroot 构建的设备：对于裸 <code>.bin</code>，分区表直接从镜像本身解析；<code>buildscope-report.json</code> 则原样呈现。全部在本浏览器中运行，不会上传任何内容。",
   drop_cli_hint:
     "分析 Buildroot 输出目录需要它的构建目录树，因此这一步在本地运行：<code>buildscope export output/my-build</code>。",
   choose_files: "选择文件",

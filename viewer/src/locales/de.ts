@@ -203,9 +203,9 @@ const de: Record<string, string> = {
   drift_modules: "Kernel-Module",
 
   // drop zone
-  drop_title: "Firmware-Image, Ordner mit Images oder Bericht hier ablegen",
+  drop_title: "ein beliebiges Firmware-Image, einen Ordner mit Images oder einen Bericht ablegen",
   drop_sub_html:
-    "Alles wird in diesem Browser analysiert: Bei einer reinen <code>.bin</code> wird die Partitionskarte direkt aus dem Image gelesen, und eine <code>buildscope-report.json</code> wird so dargestellt, wie sie ist. Nichts wird hochgeladen.",
+    "Jedes mit Buildroot gebaute Gerät: Bei einer blanken <code>.bin</code> wird die Partitionstabelle aus dem Image selbst herausgelöst, und eine <code>buildscope-report.json</code> wird unverändert dargestellt. Alles läuft in diesem Browser. Nichts wird hochgeladen.",
   drop_cli_hint:
     "Die Analyse eines Buildroot-Ausgabeverzeichnisses braucht dessen Build-Baum und läuft daher lokal: <code>buildscope export output/my-build</code>.",
   choose_files: "Dateien wählen",

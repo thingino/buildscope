@@ -205,7 +205,7 @@ const ko: Record<string, string> = {
   // drop zone
   drop_title: "펌웨어 이미지, 이미지 폴더 또는 보고서를 끌어다 놓으세요",
   drop_sub_html:
-    "모든 분석은 이 브라우저에서 이뤄집니다. 단독 <code>.bin</code>은 이미지 자체에서 파티션 맵을 추출하고, <code>buildscope-report.json</code>은 그대로 표시합니다. 아무것도 업로드되지 않습니다.",
+    "Buildroot로 빌드한 모든 장치를 지원합니다. 순수 <code>.bin</code>은 이미지 자체에서 파티션 맵을 추출하고, <code>buildscope-report.json</code>은 그대로 표시합니다. 모든 처리는 이 브라우저에서 이루어지며 업로드하지 않습니다.",
   drop_cli_hint:
     "Buildroot 출력 디렉터리를 분석하려면 빌드 트리가 필요하므로 이 작업은 로컬에서 실행합니다: <code>buildscope export output/my-build</code>.",
   choose_files: "파일 선택",

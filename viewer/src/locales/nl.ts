@@ -203,9 +203,9 @@ const nl: Record<string, string> = {
   drift_modules: "Kernelmodules",
 
   // drop zone
-  drop_title: "sleep een firmware-image, een map met images of een rapport hierheen",
+  drop_title: "sleep een willekeurige firmware-image, een map met images of een rapport hierheen",
   drop_sub_html:
-    "Alles wordt in deze browser geanalyseerd: bij een losse <code>.bin</code> wordt de partitiekaart uit de image zelf gehaald, en een <code>buildscope-report.json</code> wordt weergegeven zoals hij is. Er wordt niets geüpload.",
+    "Elk apparaat gebouwd met Buildroot: bij een kale <code>.bin</code> wordt de partitiekaart uit de image zelf gehaald, en een <code>buildscope-report.json</code> wordt ongewijzigd weergegeven. Alles draait in deze browser. Er wordt niets geüpload.",
   drop_cli_hint:
     "Voor het analyseren van een Buildroot-uitvoermap is de build-boom nodig, dus dat gebeurt lokaal: <code>buildscope export output/my-build</code>.",
   choose_files: "bestanden kiezen",

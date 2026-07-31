@@ -202,9 +202,9 @@ const ar: Record<string, string> = {
   drift_modules: "وحدات النواة",
 
   // drop zone
-  drop_title: "أفلِت صورة برنامج ثابت أو مجلد صور أو تقريرًا",
+  drop_title: "أفلِت أي صورة برنامج ثابت أو مجلد صور أو تقريرًا",
   drop_sub_html:
-    "يجري التحليل بالكامل داخل هذا المتصفح: ملف <code>.bin</code> المفرد تُستخرج خريطة أقسامه من الصورة نفسها، وملف <code>buildscope-report.json</code> يُعرض كما هو. لا يُرفع أي شيء.",
+    "أي جهاز مبني بـ Buildroot: صورة <code>.bin</code> مجردة يُستخرج مخطط أقسامها من الصورة نفسها، ويُعرض <code>buildscope-report.json</code> كما هو. كل شيء يعمل في هذا المتصفح. لا يتم رفع أي شيء.",
   drop_cli_hint:
     "تحليل مجلد output الخاص بـ Buildroot يحتاج إلى شجرة البناء، لذا يجري محليًا: <code>buildscope export output/my-build</code>.",
   choose_files: "اختيار ملفات",

@@ -25,6 +25,7 @@ const de: Record<string, string> = {
   fleet_filter: "Builds filtern",
   fleet_builds: "{n} Builds",
   th_build: "Build",
+  th_branch: "Branch",
   th_flash: "Flash",
   th_rootfs: "Rootfs",
   fleet_entry_title: "Veröffentlichte Builds",

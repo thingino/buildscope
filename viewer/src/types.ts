@@ -19,6 +19,9 @@ export interface Report {
     rootfs_types: string[];
     build_active_seconds: number | null;
     completed_at_unix: number | null;
+    /** Parsed target os-release. Absent on reports written before it was
+     *  captured, and empty for a bare artifact with no build tree. */
+    os_release?: Record<string, string>;
   };
   flash: FlashInfo | null;
   images: ImageReport[];
@@ -161,6 +164,8 @@ export interface IndexEntry {
   id?: number;
   /** Fleet snapshot: the member holding this report inside the tarball. */
   file?: string;
+  /** Branch/revision the build came from, when its os-release recorded one. */
+  build_ref?: string | null;
   flash_bytes?: number | null;
   rootfs_bytes?: number | null;
   fullest_partition?: string | null;

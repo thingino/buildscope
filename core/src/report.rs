@@ -2,6 +2,7 @@
 //! the viewer and any downstream consumer treat this as the contract.
 
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 
 pub const SCHEMA: u32 = 1;
 
@@ -43,6 +44,12 @@ pub struct BuildInfo {
     /// Union of instrumented build-step intervals from build-time.log.
     pub build_active_seconds: Option<f64>,
     pub completed_at_unix: Option<i64>,
+    /// The target's os-release, parsed. Standard freedesktop keys plus
+    /// whatever the project adds; a branch and revision usually land in
+    /// VERSION_CODENAME and BUILD_ID. Empty when the tree had no such file,
+    /// which is the case for a bare artifact.
+    #[serde(default)]
+    pub os_release: BTreeMap<String, String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

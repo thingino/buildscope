@@ -46,6 +46,7 @@ pub const KIND_ETC_MODULES: u32 = 5;
 pub const KIND_MODULES_BUILTIN: u32 = 6;
 pub const KIND_ENV_TEXT: u32 = 7;
 pub const KIND_GENIMAGE: u32 = 8;
+pub const KIND_OS_RELEASE: u32 = 9;
 
 thread_local! {
     static SNAPSHOTS: RefCell<HashMap<u32, Snapshot>> = RefCell::new(HashMap::new());
@@ -152,6 +153,7 @@ pub unsafe extern "C" fn bs_set_text(
             KIND_PFL => snap.pfl = Some(body),
             KIND_BUILD_TIME_LOG => snap.build_time_log = Some(body),
             KIND_ETC_MODULES => snap.etc_modules = Some(body),
+            KIND_OS_RELEASE => snap.os_release = Some(body),
             KIND_MODULES_BUILTIN => snap.modules_builtin = Some(body),
             KIND_ENV_TEXT => snap.env_texts.push(NamedText { name, text: body }),
             KIND_GENIMAGE => snap.genimage_texts.push(NamedText { name, text: body }),

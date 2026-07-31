@@ -25,6 +25,7 @@ const tr: Record<string, string> = {
   fleet_filter: "yapıları filtrele",
   fleet_builds: "{n} yapı",
   th_build: "yapı",
+  th_branch: "dal",
   th_flash: "flash",
   th_rootfs: "rootfs",
   fleet_entry_title: "Yayınlanan yapılar",

@@ -94,6 +94,7 @@ export default function Fleet({
             <thead>
               <tr>
                 {head("name", t("th_build"))}
+                <th>{t("th_branch")}</th>
                 {head("flash", t("th_flash"), true)}
                 {head("rootfs", t("th_rootfs"), true)}
                 <th>{t("th_partition")}</th>
@@ -108,6 +109,7 @@ export default function Fleet({
                 return (
                   <tr key={`${i}:${e.name}`} className="rowlink" onClick={() => onOpen(i)}>
                     <td>{e.name}</td>
+                    <td className="muted">{e.build_ref ?? "–"}</td>
                     <td className="num">{e.flash_bytes ? humanBytes(e.flash_bytes) : "–"}</td>
                     <td className="num">{e.rootfs_bytes ? humanBytes(e.rootfs_bytes) : "–"}</td>
                     <td className="muted">{e.fullest_partition ?? "–"}</td>

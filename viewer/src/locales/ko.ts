@@ -25,6 +25,7 @@ const ko: Record<string, string> = {
   fleet_filter: "빌드 필터",
   fleet_builds: "빌드 {n}개",
   th_build: "빌드",
+  th_branch: "브랜치",
   th_flash: "플래시",
   th_rootfs: "루트FS",
   fleet_entry_title: "게시된 빌드",

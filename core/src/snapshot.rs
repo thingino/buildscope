@@ -85,6 +85,10 @@ pub struct Snapshot {
     pub build_time_log: Option<String>,
     /// Contents of target/etc/modules (autoload list), if present.
     pub etc_modules: Option<String>,
+    /// Contents of the target's os-release, if present. A freedesktop file
+    /// Buildroot generates, so it says who built this and from what without
+    /// anything here having to know the project.
+    pub os_release: Option<String>,
     /// Contents of target/lib/modules/<ver>/modules.builtin, if present.
     pub modules_builtin: Option<String>,
     /// Candidate text files that may carry a flash layout (mtdparts=...).
@@ -124,6 +128,7 @@ impl Snapshot {
             pfl: None,
             build_time_log: None,
             etc_modules: None,
+            os_release: None,
             modules_builtin: None,
             env_texts: Vec::new(),
             genimage_texts: Vec::new(),

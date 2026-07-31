@@ -24,6 +24,7 @@ const ru: Record<string, string> = {
   fleet_filter: "фильтр сборок",
   fleet_builds: "сборок: {n}",
   th_build: "сборка",
+  th_branch: "ветка",
   th_flash: "флеш",
   th_rootfs: "rootfs",
   fleet_entry_title: "Опубликованные сборки",

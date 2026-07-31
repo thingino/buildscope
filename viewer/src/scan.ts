@@ -70,6 +70,12 @@ export async function scanPickedTree(
     const etcModules = await readText("target/etc/modules");
     if (etcModules !== null) scan.setText(KIND.ETC_MODULES, "modules", etcModules);
 
+    // Current Buildroot writes usr/lib/os-release and leaves etc/os-release a
+    // symlink to it; older trees have only the latter.
+    const osRelease =
+      (await readText("target/usr/lib/os-release")) ?? (await readText("target/etc/os-release"));
+    if (osRelease !== null) scan.setText(KIND.OS_RELEASE, "os-release", osRelease);
+
     // modules.builtin from the first kernel version directory present.
     const builtinPath = [...byPath.keys()]
       .filter((p) => /^target\/(usr\/)?lib\/modules\/[^/]+\/modules\.builtin$/.test(p))

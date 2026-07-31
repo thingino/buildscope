@@ -25,6 +25,7 @@ const ja: Record<string, string> = {
   fleet_filter: "ビルドを絞り込む",
   fleet_builds: "{n} 件のビルド",
   th_build: "ビルド",
+  th_branch: "ブランチ",
   th_flash: "フラッシュ",
   th_rootfs: "ルートFS",
   fleet_entry_title: "公開済みビルド",

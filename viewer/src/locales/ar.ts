@@ -24,6 +24,7 @@ const ar: Record<string, string> = {
   fleet_filter: "تصفية عمليات البناء",
   fleet_builds: "{n} عملية بناء",
   th_build: "البناء",
+  th_branch: "الفرع",
   th_flash: "الفلاش",
   th_rootfs: "نظام الملفات",
   fleet_entry_title: "إصدارات منشورة",

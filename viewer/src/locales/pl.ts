@@ -25,6 +25,7 @@ const pl: Record<string, string> = {
   fleet_filter: "filtruj kompilacje",
   fleet_builds: "{n} kompilacji",
   th_build: "kompilacja",
+  th_branch: "gałąź",
   th_flash: "flash",
   th_rootfs: "rootfs",
   fleet_entry_title: "Opublikowane kompilacje",

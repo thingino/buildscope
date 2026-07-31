@@ -25,6 +25,7 @@ const uk: Record<string, string> = {
   fleet_filter: "фільтр збірок",
   fleet_builds: "збірок: {n}",
   th_build: "збірка",
+  th_branch: "гілка",
   th_flash: "флеш",
   th_rootfs: "rootfs",
   fleet_entry_title: "Опубліковані збірки",

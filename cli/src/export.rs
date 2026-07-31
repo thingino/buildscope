@@ -143,6 +143,23 @@ pub fn build_single_file(dist: &Path, report_json: &str) -> io::Result<String> {
 /// nearest their limits, without fetching a single report. Shared by the
 /// static site and the fleet snapshot so the two indexes cannot drift apart;
 /// each caller adds its own locator (`id` for the site, `file` for the tar).
+/// The branch and revision a build came from, as its own os-release recorded
+/// it. BUILD_ID conventionally reads "<branch>+<rev>, <date>", so the part
+/// before the comma is the useful half; the codename alone is the fallback.
+fn build_ref(r: &Report) -> Option<String> {
+    if let Some(id) = r.build.os_release.get("BUILD_ID") {
+        let head = id.split(',').next().unwrap_or(id).trim();
+        if !head.is_empty() {
+            return Some(head.to_string());
+        }
+    }
+    r.build
+        .os_release
+        .get("VERSION_CODENAME")
+        .filter(|v| !v.is_empty())
+        .cloned()
+}
+
 pub fn index_entry(r: &Report) -> serde_json::Map<String, serde_json::Value> {
     let fullest = r.flash.as_ref().and_then(|f| {
         f.partitions
@@ -157,6 +174,7 @@ pub fn index_entry(r: &Report) -> serde_json::Map<String, serde_json::Value> {
     });
     let mut entry = serde_json::Map::new();
     entry.insert("name".into(), serde_json::json!(r.build.name));
+    entry.insert("build_ref".into(), serde_json::json!(build_ref(r)));
     entry.insert(
         "flash_bytes".into(),
         serde_json::json!(r.flash.as_ref().and_then(|f| f.total_bytes)),

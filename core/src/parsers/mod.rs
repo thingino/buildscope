@@ -13,6 +13,7 @@ pub mod jffs2;
 pub mod mbr;
 pub mod mtdparts;
 pub mod nandoob;
+pub mod osrelease;
 pub mod padding;
 pub mod squashfs;
 pub mod squashfs_reader;

@@ -10,6 +10,7 @@ export const KIND = {
   MODULES_BUILTIN: 6,
   ENV_TEXT: 7,
   GENIMAGE: 8,
+  OS_RELEASE: 9,
 } as const;
 
 interface Exports {

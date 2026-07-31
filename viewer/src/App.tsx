@@ -70,6 +70,18 @@ function tabHasData(tab: Tab, r: Report, reportCount: number): boolean {
   }
 }
 
+/**
+ * The branch and revision a build came from, as its own os-release recorded
+ * it. BUILD_ID conventionally reads "<branch>+<rev>, <date>", so the part
+ * before the comma is the useful half; the codename alone is the fallback.
+ * Nothing here is project-specific: os-release is a Buildroot-generated file.
+ */
+function buildRef(r: Report): string | null {
+  const os = r.build.os_release ?? {};
+  const head = os.BUILD_ID?.split(",")[0]?.trim();
+  return head || os.VERSION_CODENAME || null;
+}
+
 function readHash(): { b: number; t: Tab } {
   const h = new URLSearchParams(window.location.hash.replace(/^#/, ""));
   const t = h.get("t") as Tab | null;
@@ -256,6 +268,11 @@ function Viewer() {
             )}
             {report.build.arch && <span className="readout-item">{report.build.arch}</span>}
             {report.build.libc && <span className="readout-item">{report.build.libc}</span>}
+            {buildRef(report) && (
+              <span className="readout-item" title={report.build.os_release?.BUILD_ID}>
+                {buildRef(report)}
+              </span>
+            )}
             {report.build.kernel_version && (
               <span className="readout-item">
                 {t("kernel_prefix")} {report.build.kernel_version}

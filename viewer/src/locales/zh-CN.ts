@@ -25,6 +25,7 @@ const zhCN: Record<string, string> = {
   fleet_filter: "筛选构建",
   fleet_builds: "{n} 个构建",
   th_build: "构建",
+  th_branch: "分支",
   th_flash: "闪存",
   th_rootfs: "根文件系统",
   fleet_entry_title: "已发布的构建",

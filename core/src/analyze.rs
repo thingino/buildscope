@@ -2,7 +2,7 @@
 
 use crate::inputs::{buildtime, config::BrConfig, pfl};
 use crate::parsers::{
-    cpio, dtb, ext, fat, fit, genimage, gpt, jffs2, mbr, mtdparts, padding, squashfs,
+    cpio, dtb, ext, fat, fit, genimage, gpt, jffs2, mbr, mtdparts, osrelease, padding, squashfs,
     squashfs_reader, ubi, ubifs, ubootenv, uimage,
 };
 use crate::report::*;
@@ -1318,6 +1318,11 @@ pub fn analyze(snap: &Snapshot) -> Report {
         rootfs_types: summary.rootfs_types,
         build_active_seconds: times.active_seconds,
         completed_at_unix: snap.images_mtime.or(times.finished_at.map(|f| f as i64)),
+        os_release: snap
+            .os_release
+            .as_deref()
+            .map(osrelease::parse)
+            .unwrap_or_default(),
     };
 
     let image_reports: Vec<ImageReport> = images

@@ -279,6 +279,11 @@ pub fn build_snapshot(
     if let Some(t) = &paths.target_dir {
         snap.target = walk_target(t)?;
         snap.etc_modules = fs::read_to_string(t.join("etc/modules")).ok();
+        // Current Buildroot writes usr/lib/os-release and leaves etc/os-release
+        // a symlink to it; older trees have only the latter.
+        snap.os_release = fs::read_to_string(t.join("usr/lib/os-release"))
+            .or_else(|_| fs::read_to_string(t.join("etc/os-release")))
+            .ok();
         // modules.builtin from the first kernel version dir found; check the
         // merged-usr location too (read_dir follows the /lib symlink anyway,
         // but a tree may lack the symlink entirely).

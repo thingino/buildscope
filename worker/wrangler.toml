@@ -1,0 +1,18 @@
+# Fleet-snapshot proxy for the viewer. Deliberately its own Worker: a bad deploy
+# here must not be able to take down firmware flashing or the image builder,
+# which are separate Workers for the same reason. The free request budget is
+# account-wide, so splitting them costs nothing.
+#
+#   deploy:  npx wrangler deploy          (from worker/)
+#   tail:    npx wrangler tail
+name = "buildscope-fleet"
+main = "src/index.js"
+compatibility_date = "2025-06-01"
+
+[vars]
+# Who may read the response. "*" is correct here: the Worker serves only public
+# release assets, carries no cookies or credentials, and the allow-list means a
+# caller can reach nothing else through it. Pinning it to one origin would buy
+# no security and would break the local dev server, plus any fork's own Pages
+# deploy.
+ALLOW_ORIGIN = "*"

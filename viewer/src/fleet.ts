@@ -14,7 +14,9 @@
 import { Loaded } from "./data";
 import { IndexEntry, Report } from "./types";
 
-const ASSET_PROXY = "https://thingino-dfu-fw.gtxent.workers.dev/fw";
+/** buildscope's own proxy (worker/), separate from the ones firmware flashing
+ *  and the image builder use so a bad deploy of one cannot take down another. */
+const ASSET_PROXY = "https://buildscope-fleet.gtxent.workers.dev/fleet";
 /** Short names the proxy also knows; `?repo=` picks one. Kept in step with
  *  its allow-list, which is what actually decides what can be read. */
 const REPOS: Record<string, string> = {

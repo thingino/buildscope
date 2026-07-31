@@ -31,6 +31,7 @@ const tr: Record<string, string> = {
   fleet_entry_latest: "En yenisini aç",
   fleet_entry_pick: "bir sürüm seçin",
   fleet_entry_sub: "Yayınlanan bir donanım yazılımı sürümündeki her kamera, boyut raporundan.",
+  back_to_fleet: "Tüm cihazlar",
 
   // tabs
   tab_flash: "Flash",

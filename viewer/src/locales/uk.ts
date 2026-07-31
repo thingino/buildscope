@@ -31,6 +31,7 @@ const uk: Record<string, string> = {
   fleet_entry_latest: "Відкрити найновішу",
   fleet_entry_pick: "виберіть випуск",
   fleet_entry_sub: "Кожна камера в опублікованому випуску прошивки, за її звітом про розмір.",
+  back_to_fleet: "Усі пристрої",
 
   // tabs
   tab_flash: "Флеш",

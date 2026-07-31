@@ -31,6 +31,7 @@ const nl: Record<string, string> = {
   fleet_entry_latest: "Open de nieuwste",
   fleet_entry_pick: "kies een release",
   fleet_entry_sub: "Elke camera in een gepubliceerde firmware-release, uit het grootterapport.",
+  back_to_fleet: "Alle apparaten",
 
   // tabs
   tab_flash: "Flash",

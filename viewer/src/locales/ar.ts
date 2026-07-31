@@ -30,6 +30,7 @@ const ar: Record<string, string> = {
   fleet_entry_latest: "افتح الأحدث",
   fleet_entry_pick: "اختر إصدارًا",
   fleet_entry_sub: "كل كاميرا في إصدار برنامج ثابت منشور، من تقرير حجمها.",
+  back_to_fleet: "كل الأجهزة",
 
   // tabs
   tab_flash: "الفلاش",

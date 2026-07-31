@@ -31,6 +31,7 @@ const de: Record<string, string> = {
   fleet_entry_latest: "Neuesten öffnen",
   fleet_entry_pick: "Release wählen",
   fleet_entry_sub: "Jede Kamera eines veröffentlichten Firmware-Release, aus ihrem Größenbericht.",
+  back_to_fleet: "Alle Geräte",
 
   // tabs
   tab_flash: "Flash",

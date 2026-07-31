@@ -30,6 +30,7 @@ const ru: Record<string, string> = {
   fleet_entry_latest: "Открыть последнюю",
   fleet_entry_pick: "выберите выпуск",
   fleet_entry_sub: "Каждая камера в опубликованном выпуске прошивки, по её отчёту о размере.",
+  back_to_fleet: "Все устройства",
 
   // tabs
   tab_flash: "Флеш",

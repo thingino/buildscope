@@ -273,6 +273,16 @@ function Viewer() {
           </div>
         )}
         <div className="top-right">
+          {/* The way back up. The brand link does this too, but nothing says
+              so, and with a single-build fleet there is no device picker
+              either -- leaving a reader who opened a build with no visible
+              route back to the listing. Text rather than another glyph beside
+              the gear, since being found is the whole point of it. */}
+          {fleetMode && !overview && entries.length > 0 && (
+            <button className="btn btn-sm" onClick={() => setOverview(true)}>
+              {t("back_to_fleet")}
+            </button>
+          )}
           {fleet && fleet.tags.length > 0 && (
             /* Switching snapshots reloads the page rather than swapping the
                data underneath: a different release is a different fleet, and

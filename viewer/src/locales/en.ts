@@ -36,6 +36,7 @@ const en: Record<string, string> = {
   fleet_entry_latest: "Open the latest",
   fleet_entry_pick: "pick a release",
   fleet_entry_sub: "Every camera in a published firmware release, from its size report.",
+  back_to_fleet: "All devices",
 
   // tabs
   tab_flash: "Flash",

@@ -31,6 +31,7 @@ const zhCN: Record<string, string> = {
   fleet_entry_latest: "打开最新版本",
   fleet_entry_pick: "选择一个发行版",
   fleet_entry_sub: "已发布固件版本中的每台相机，来自其体积报告。",
+  back_to_fleet: "所有设备",
 
   // tabs
   tab_flash: "闪存",

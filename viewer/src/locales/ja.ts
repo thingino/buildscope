@@ -31,6 +31,7 @@ const ja: Record<string, string> = {
   fleet_entry_latest: "最新を開く",
   fleet_entry_pick: "リリースを選択",
   fleet_entry_sub: "公開されたファームウェアリリースの全カメラを、サイズレポートから表示します。",
+  back_to_fleet: "すべてのデバイス",
 
   // tabs
   tab_flash: "フラッシュ",

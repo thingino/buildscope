@@ -167,6 +167,7 @@ const ja: Record<string, string> = {
   stat_builtin: "組み込み（カーネルイメージ内）",
   on_demand_only: "オンデマンドのみ（自動ロードなし）",
   th_module: "モジュール",
+  filter_modules: "モジュールを絞り込む",
   th_load: "ロード",
   load_auto: "自動",
   load_on_demand: "オンデマンド",

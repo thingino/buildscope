@@ -167,6 +167,7 @@ const it: Record<string, string> = {
   stat_builtin: "integrati (nell'immagine kernel)",
   on_demand_only: "solo su richiesta (senza autoload)",
   th_module: "modulo",
+  filter_modules: "filtra moduli",
   th_load: "caricamento",
   load_auto: "auto",
   load_on_demand: "su richiesta",

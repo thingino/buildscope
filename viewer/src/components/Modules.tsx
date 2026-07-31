@@ -6,6 +6,18 @@ import { Report } from "../types";
 export default function Modules({ report }: { report: Report }) {
   const t = useT();
   const [onDemandOnly, setOnDemandOnly] = useState(false);
+  // The built-in count is the only stat that has more behind it, so the tile
+  // is the control -- a tab would be a lot of furniture for one list.
+  const [showBuiltin, setShowBuiltin] = useState(false);
+  const [builtinQuery, setBuiltinQuery] = useState("");
+
+  // Memoised because the ?? would hand the filter below a fresh array on
+  // every render, defeating it.
+  const builtin = useMemo(() => report.modules_meta?.builtin ?? [], [report.modules_meta]);
+  const builtinShown = useMemo(() => {
+    const q = builtinQuery.trim().toLowerCase();
+    return q ? builtin.filter((n) => n.toLowerCase().includes(q)) : builtin;
+  }, [builtin, builtinQuery]);
 
   const modules = useMemo(
     () => (onDemandOnly ? report.modules.filter((m) => !m.autoloaded) : report.modules),
@@ -43,13 +55,48 @@ export default function Modules({ report }: { report: Report }) {
           <div className="stat-label">{t("stat_kernel")}</div>
           <div className="stat-value">{report.modules_meta?.kernel_version ?? "–"}</div>
         </div>
-        {report.modules_meta && report.modules_meta.builtin.length > 0 && (
-          <div className="stat">
-            <div className="stat-label">{t("stat_builtin")}</div>
-            <div className="stat-value">{report.modules_meta.builtin.length}</div>
-          </div>
+        {builtin.length > 0 && (
+          <button
+            className={`stat stat-btn ${showBuiltin ? "active" : ""}`}
+            onClick={() => setShowBuiltin(!showBuiltin)}
+            aria-expanded={showBuiltin}
+          >
+            <div className="stat-label">
+              {t("stat_builtin")}
+              <span className="stat-more">{showBuiltin ? "▾" : "▸"}</span>
+            </div>
+            <div className="stat-value">{builtin.length}</div>
+          </button>
         )}
       </div>
+
+      {showBuiltin && builtin.length > 0 && (
+        <div className="panel">
+          <div className="panel-head">
+            <span className="panel-title">{t("stat_builtin")}</span>
+            <input
+              className="search"
+              type="search"
+              placeholder={t("filter_modules")}
+              value={builtinQuery}
+              onChange={(e) => setBuiltinQuery(e.target.value)}
+            />
+          </div>
+          {/* Names only: modules.builtin records what was compiled in, not
+              where it came from or what it cost -- built-in code is part of
+              the kernel image, with no size of its own to report. */}
+          <div className="builtin-list">
+            {builtinShown.map((name) => (
+              <span key={name} className="builtin-item">
+                {name}
+              </span>
+            ))}
+          </div>
+          <div className="panel-foot muted">
+            {t("vars_matching", { n: builtinShown.length })}
+          </div>
+        </div>
+      )}
 
       <div className="controls">
         <label className="checkline">

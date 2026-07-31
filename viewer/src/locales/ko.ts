@@ -167,6 +167,7 @@ const ko: Record<string, string> = {
   stat_builtin: "내장(커널 이미지 내)",
   on_demand_only: "온디맨드만(자동 로드 아님)",
   th_module: "모듈",
+  filter_modules: "모듈 필터",
   th_load: "로드",
   load_auto: "자동",
   load_on_demand: "온디맨드",

@@ -167,6 +167,7 @@ const pl: Record<string, string> = {
   stat_builtin: "wbudowane (w obrazie jądra)",
   on_demand_only: "tylko na żądanie (nie automatycznie)",
   th_module: "moduł",
+  filter_modules: "filtruj moduły",
   th_load: "ładowanie",
   load_auto: "auto",
   load_on_demand: "na żądanie",

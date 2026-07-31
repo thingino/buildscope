@@ -167,6 +167,7 @@ const fr: Record<string, string> = {
   stat_builtin: "intégrés (dans l'image du noyau)",
   on_demand_only: "à la demande seulement (non auto-chargés)",
   th_module: "module",
+  filter_modules: "filtrer les modules",
   th_load: "chargement",
   load_auto: "auto",
   load_on_demand: "à la demande",

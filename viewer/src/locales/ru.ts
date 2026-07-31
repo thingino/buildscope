@@ -166,6 +166,7 @@ const ru: Record<string, string> = {
   stat_builtin: "встроено (в образ ядра)",
   on_demand_only: "только по запросу (без автозагрузки)",
   th_module: "модуль",
+  filter_modules: "фильтр модулей",
   th_load: "загрузка",
   load_auto: "авто",
   load_on_demand: "по запросу",

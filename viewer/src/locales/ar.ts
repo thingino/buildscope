@@ -166,6 +166,7 @@ const ar: Record<string, string> = {
   stat_builtin: "مدمجة (في صورة النواة)",
   on_demand_only: "عند الطلب فقط (بلا تحميل تلقائي)",
   th_module: "الوحدة",
+  filter_modules: "تصفية الوحدات",
   th_load: "التحميل",
   load_auto: "تلقائي",
   load_on_demand: "عند الطلب",

@@ -167,6 +167,7 @@ const uk: Record<string, string> = {
   stat_builtin: "вбудовані (в образі ядра)",
   on_demand_only: "лише на вимогу (не автозавантаження)",
   th_module: "модуль",
+  filter_modules: "фільтр модулів",
   th_load: "завантаження",
   load_auto: "авто",
   load_on_demand: "на вимогу",

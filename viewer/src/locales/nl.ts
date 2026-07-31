@@ -167,6 +167,7 @@ const nl: Record<string, string> = {
   stat_builtin: "ingebouwd (in kernel-image)",
   on_demand_only: "alleen op verzoek (geen autoload)",
   th_module: "module",
+  filter_modules: "modules filteren",
   th_load: "laden",
   load_auto: "auto",
   load_on_demand: "op verzoek",

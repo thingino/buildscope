@@ -167,6 +167,7 @@ const zhCN: Record<string, string> = {
   stat_builtin: "内置（在内核镜像中）",
   on_demand_only: "仅按需加载（非自动加载）",
   th_module: "模块",
+  filter_modules: "筛选模块",
   th_load: "加载",
   load_auto: "自动",
   load_on_demand: "按需",

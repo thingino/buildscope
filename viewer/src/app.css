@@ -362,6 +362,44 @@ body {
 /* Status as text, alongside the meter that already carries it as colour --
    the number is the direct label, so the state is never colour alone. The
    st-* twins of these set a background instead. */
+/* A stat tile that is also a control. Same box as the others, but it says so:
+   a marker, a pointer, and an active state. */
+.stat-btn {
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  border: 1px solid var(--line);
+}
+
+.stat-btn:hover {
+  border-color: var(--accent);
+}
+
+.stat-btn.active {
+  border-color: var(--accent);
+}
+
+.stat-more {
+  margin-inline-start: 6px;
+  font-size: 9px;
+  color: var(--accent);
+}
+
+/* Short names, many of them: columns beat a tall single file. */
+.builtin-list {
+  column-width: 190px;
+  column-gap: 18px;
+}
+
+.builtin-item {
+  display: block;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink);
+  padding: 2px 0;
+  break-inside: avoid;
+}
+
 .kc-y { color: var(--good); }
 .kc-m { color: var(--yellow); }
 

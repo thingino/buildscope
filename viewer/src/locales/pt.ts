@@ -167,6 +167,7 @@ const pt: Record<string, string> = {
   stat_builtin: "integrados (na imagem do kernel)",
   on_demand_only: "apenas a pedido (não autocarregados)",
   th_module: "módulo",
+  filter_modules: "filtrar módulos",
   th_load: "carga",
   load_auto: "auto",
   load_on_demand: "a pedido",

@@ -172,6 +172,7 @@ const en: Record<string, string> = {
   stat_builtin: "built-in (in kernel image)",
   on_demand_only: "on-demand only (not autoloaded)",
   th_module: "module",
+  filter_modules: "filter modules",
   th_load: "load",
   load_auto: "auto",
   load_on_demand: "on demand",

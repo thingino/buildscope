@@ -167,6 +167,7 @@ const tr: Record<string, string> = {
   stat_builtin: "gömülü (çekirdek imajında)",
   on_demand_only: "yalnızca istek üzerine (otomatik değil)",
   th_module: "modül",
+  filter_modules: "modülleri filtrele",
   th_load: "yükleme",
   load_auto: "otomatik",
   load_on_demand: "istek üzerine",

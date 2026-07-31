@@ -3,8 +3,10 @@
  * alone. Nothing here reads a report, so a fleet of any size paints from a few
  * hundred bytes each and the tarball is not touched until a build is opened.
  *
- * Sorted by fill rather than by name, because the question a fleet is opened
- * with is which builds are closest to overflowing.
+ * Sorted by name: at fleet scale the first thing asked of it is usually "where
+ * is this device", and a list that reorders itself between runs is hard to
+ * navigate. Sorting by fill -- which builds are closest to overflowing -- is
+ * one click on that column.
  */
 import { useMemo, useState } from "react";
 import { humanBytes, pct } from "../format";
@@ -29,8 +31,10 @@ export default function Fleet({
 }) {
   const t = useT();
   const [q, setQ] = useState("");
-  const [sort, setSort] = useState<Col>("fill");
-  const [asc, setAsc] = useState(false);
+  // By name, so a reader can find a known device without hunting. Fill is one
+  // click away, and its column header says which way it is sorted.
+  const [sort, setSort] = useState<Col>("name");
+  const [asc, setAsc] = useState(true);
 
   const rows = useMemo(() => {
     const needle = q.trim().toLowerCase();

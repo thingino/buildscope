@@ -191,6 +191,28 @@ pub fn index_entry(r: &Report) -> serde_json::Map<String, serde_json::Value> {
         "fullest_fill".into(),
         serde_json::json!(fullest.as_ref().map(|(_, f)| f)),
     );
+    // The layout itself, so a fleet can be compared partition by partition
+    // without opening a single report. Positional -- [name, offset, size,
+    // used] -- because this is read by the viewer beside it, and at fleet
+    // scale the key names would outweigh the values they label.
+    entry.insert(
+        "partitions".into(),
+        serde_json::json!(r
+            .flash
+            .as_ref()
+            .map(|f| f
+                .partitions
+                .iter()
+                .filter(|p| !p.overlaps)
+                .map(|p| serde_json::json!([
+                    p.name,
+                    p.offset,
+                    p.size,
+                    p.used_bytes.or(p.content_bytes).unwrap_or(0)
+                ]))
+                .collect::<Vec<_>>())
+            .unwrap_or_default()),
+    );
     entry
 }
 

@@ -170,6 +170,12 @@ export interface IndexEntry {
   rootfs_bytes?: number | null;
   fullest_partition?: string | null;
   fullest_fill?: number | null;
+  /**
+   * The flash layout, positionally: [name, offset, size, used]. Present so a
+   * fleet can be compared partition by partition without opening a report;
+   * absent on an index written before it was carried.
+   */
+  partitions?: [string, number, number | null, number][];
 }
 
 export const UNATTRIBUTED = "_unattributed";

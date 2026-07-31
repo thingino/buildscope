@@ -7,8 +7,7 @@ import Files from "./components/Files";
 import DeviceTree from "./components/DeviceTree";
 import Env from "./components/Env";
 import Flash from "./components/Flash";
-import KernelConfig from "./components/KernelConfig";
-import Modules from "./components/Modules";
+import Kernel, { kernelConfigOf } from "./components/Kernel";
 import Packages from "./components/Packages";
 import Settings, { GearIcon } from "./components/Settings";
 import Timings from "./components/Timings";
@@ -18,15 +17,14 @@ import { dateOf, humanBytes, seconds } from "./format";
 import { I18nContext, useI18nState, useT } from "./i18n";
 import { IndexEntry, Report } from "./types";
 
-type Tab = "flash" | "env" | "dtb" | "kconfig" | "packages" | "files" | "modules" | "time" | "drift";
+type Tab = "flash" | "env" | "dtb" | "packages" | "files" | "kernel" | "time" | "drift";
 const TABS: { id: Tab; key: string }[] = [
   { id: "flash", key: "tab_flash" },
   { id: "env", key: "tab_env" },
   { id: "dtb", key: "tab_dtb" },
-  { id: "kconfig", key: "tab_kconfig" },
   { id: "packages", key: "tab_packages" },
   { id: "files", key: "tab_files" },
-  { id: "modules", key: "tab_modules" },
+  { id: "kernel", key: "tab_kernel" },
   { id: "time", key: "tab_time" },
   { id: "drift", key: "tab_drift" },
 ];
@@ -54,12 +52,6 @@ function tabHasData(tab: Tab, r: Report, reportCount: number): boolean {
           Array.isArray((i.detail as { builtin_device_trees?: unknown[] }).builtin_device_trees) ||
           Array.isArray((i.detail as { device_trees?: unknown[] }).device_trees)
       );
-    case "kconfig":
-      // Only where the kernel actually carried its own config.
-      return r.images.some((i) => {
-        const c = (i.detail as { kernel_config?: unknown[] }).kernel_config;
-        return Array.isArray(c) && c.length > 0;
-      });
     case "packages":
       return r.packages.length > 0 || r.rootfs !== null;
     case "files":
@@ -69,8 +61,15 @@ function tabHasData(tab: Tab, r: Report, reportCount: number): boolean {
         r.packages.some((p) => (p.files ?? p.top_files ?? []).length > 0) ||
         r.images.some((i) => Array.isArray((i.detail as { entries?: unknown[] }).entries))
       );
-    case "modules":
-      return r.modules.length > 0;
+    case "kernel":
+      // Anything the report knows about the kernel: a build tree brings the
+      // modules and the built-in list, a bare image brings the config, and
+      // either alone is worth a tab.
+      return (
+        r.modules.length > 0 ||
+        (r.modules_meta?.builtin.length ?? 0) > 0 ||
+        kernelConfigOf(r).length > 0
+      );
     case "time":
       return r.timings.length > 0;
     case "drift":
@@ -90,9 +89,13 @@ function buildRef(r: Report): string | null {
   return head || os.VERSION_CODENAME || null;
 }
 
+/** Tab ids that have been renamed, so links made before still land. */
+const TAB_ALIASES: Record<string, Tab> = { modules: "kernel", kconfig: "kernel" };
+
 function readHash(): { b: number; t: Tab } {
   const h = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-  const t = h.get("t") as Tab | null;
+  const raw = h.get("t");
+  const t = (raw && TAB_ALIASES[raw]) ?? (raw as Tab | null);
   return {
     b: Number(h.get("b") ?? 0) || 0,
     t: t && TABS.some((x) => x.id === t) ? t : "flash",
@@ -464,10 +467,9 @@ function Viewer() {
             {effectiveTab === "flash" && <Flash report={report} />}
             {effectiveTab === "env" && <Env report={report} />}
             {effectiveTab === "dtb" && <DeviceTree report={report} />}
-            {effectiveTab === "kconfig" && <KernelConfig report={report} />}
             {effectiveTab === "packages" && <Packages report={report} />}
             {effectiveTab === "files" && <Files report={report} />}
-            {effectiveTab === "modules" && <Modules report={report} />}
+            {effectiveTab === "kernel" && <Kernel report={report} />}
             {effectiveTab === "time" && <Timings report={report} />}
             {effectiveTab === "drift" && entries.length > 1 && (
               <Drift entries={entries} currentIdx={current} current={report} getReport={getReport} />

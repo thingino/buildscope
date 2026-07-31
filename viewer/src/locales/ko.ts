@@ -9,6 +9,7 @@ const ko: Record<string, string> = {
   title_settings: "설정",
   title_home: "처음으로 돌아가기",
   title_close: "닫기",
+  title_expand: "전체 화면으로 확대",
   title_snapshot: "읽을 스냅샷",
   ctx_hook: "훅",
   ctx_inferred: "추론",

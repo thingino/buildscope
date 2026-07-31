@@ -9,6 +9,7 @@ const nl: Record<string, string> = {
   title_settings: "Instellingen",
   title_home: "Terug naar het begin",
   title_close: "Sluiten",
+  title_expand: "Naar volledig scherm",
   title_snapshot: "Welke momentopname te lezen",
   ctx_hook: "hook",
   ctx_inferred: "afgeleid",

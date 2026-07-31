@@ -769,6 +769,36 @@ body {
   height: 100%;
 }
 
+.treemap-box {
+  position: relative;
+}
+
+/* Expanded: the map takes the viewport. Below the tooltip's z-index, so
+   hovering a cell still explains it, and below the settings dialog. */
+.treemap-box.expanded {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: var(--bg);
+  padding: 46px 14px 14px;
+}
+
+.treemap-box.expanded .treemap {
+  height: 100%;
+}
+
+.tm-expand {
+  position: absolute;
+  top: 0;
+  inset-inline-end: 0;
+  z-index: 1;
+}
+
+.treemap-box.expanded .tm-expand {
+  top: 10px;
+  inset-inline-end: 12px;
+}
+
 .treemap {
   position: relative;
   width: 100%;

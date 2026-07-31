@@ -9,6 +9,7 @@ const uk: Record<string, string> = {
   title_settings: "Налаштування",
   title_home: "Повернутися на початок",
   title_close: "Закрити",
+  title_expand: "Розгорнути на весь екран",
   title_snapshot: "Який знімок відкрити",
   ctx_hook: "хук",
   ctx_inferred: "виведено",

@@ -9,6 +9,7 @@ const zhCN: Record<string, string> = {
   title_settings: "设置",
   title_home: "返回起始页",
   title_close: "关闭",
+  title_expand: "展开为全屏",
   title_snapshot: "读取哪个快照",
   ctx_hook: "钩子",
   ctx_inferred: "推断",

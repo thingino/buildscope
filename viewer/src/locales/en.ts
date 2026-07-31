@@ -14,6 +14,7 @@ const en: Record<string, string> = {
   title_settings: "Settings",
   title_home: "Back to the start",
   title_close: "Close",
+  title_expand: "Expand to full screen",
   title_snapshot: "Which snapshot to read",
   ctx_hook: "hook",
   ctx_inferred: "inferred",

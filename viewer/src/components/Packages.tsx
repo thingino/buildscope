@@ -16,6 +16,22 @@ const MAP_W = 900;
 const MAP_H = 560;
 const NARROW_PX = 760;
 
+function ExpandIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
+      <path d="M6 1.5H1.5V6M10 1.5H14.5V6M6 14.5H1.5V10M10 14.5H14.5V10" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function CollapseIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
+      <path d="M1.5 5.5H6V1M14.5 5.5H10V1M1.5 10.5H6V15M14.5 10.5H10V15" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function Treemap({ packages, total }: { packages: PackageReport[]; total: number }) {
   const { node, show, hide } = useTooltip();
   const t = useT();
@@ -25,6 +41,25 @@ function Treemap({ packages, total }: { packages: PackageReport[]; total: number
   const boxRef = useRef<HTMLDivElement | null>(null);
   const [box, setBox] = useState({ w: 0, h: 0 });
   const narrow = typeof window !== "undefined" && window.innerWidth < NARROW_PX;
+  // A treemap of 300 packages is unreadable at column width. Expanding it to
+  // the viewport costs no relayout work here: the box is measured, so the
+  // cells and their labels resize themselves.
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    if (!expanded) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setExpanded(false);
+    };
+    window.addEventListener("keydown", onKey);
+    // The page behind is covered, so it should not scroll under the map.
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previous;
+    };
+  }, [expanded]);
 
   useEffect(() => {
     const el = boxRef.current;
@@ -59,11 +94,21 @@ function Treemap({ packages, total }: { packages: PackageReport[]; total: number
   const scaleY = box.h > 0 ? box.h / MAP_H : 0;
 
   return (
-    <div className="treemap-box">
+    <div className={`treemap-box ${expanded ? "expanded" : ""}`}>
+      <button
+        className="iconbtn tm-expand"
+        onClick={() => setExpanded(!expanded)}
+        title={expanded ? t("title_close") : t("title_expand")}
+        aria-label={expanded ? t("title_close") : t("title_expand")}
+      >
+        {expanded ? <CollapseIcon /> : <ExpandIcon />}
+      </button>
       <div
         ref={boxRef}
         className="treemap"
-        style={{ aspectRatio: narrow ? "4 / 5" : `${MAP_W} / ${MAP_H}` }}
+        // Expanded it fills whatever the overlay gives it; inline it keeps a
+        // shape, taller than wide on a phone so cells stay tappable.
+        style={expanded ? undefined : { aspectRatio: narrow ? "4 / 5" : `${MAP_W} / ${MAP_H}` }}
       >
         {rects.map((r) => {
           const cat = categorize(r.data.name);

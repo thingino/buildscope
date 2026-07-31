@@ -8,6 +8,7 @@ const ar: Record<string, string> = {
   title_settings: "الإعدادات",
   title_home: "العودة إلى البداية",
   title_close: "إغلاق",
+  title_expand: "توسيع إلى ملء الشاشة",
   title_snapshot: "اللقطة المراد قراءتها",
   ctx_hook: "خطّاف",
   ctx_inferred: "مُستنتج",

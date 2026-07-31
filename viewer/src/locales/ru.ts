@@ -8,6 +8,7 @@ const ru: Record<string, string> = {
   title_settings: "Настройки",
   title_home: "Вернуться к началу",
   title_close: "Закрыть",
+  title_expand: "Развернуть во весь экран",
   title_snapshot: "Какой снимок открыть",
   ctx_hook: "хук",
   ctx_inferred: "выведено",

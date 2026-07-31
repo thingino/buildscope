@@ -9,6 +9,7 @@ const fr: Record<string, string> = {
   title_settings: "Paramètres",
   title_home: "Retour au début",
   title_close: "Fermer",
+  title_expand: "Afficher en plein écran",
   title_snapshot: "Quel instantané lire",
   ctx_hook: "hook",
   ctx_inferred: "déduit",

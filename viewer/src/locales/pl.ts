@@ -9,6 +9,7 @@ const pl: Record<string, string> = {
   title_settings: "Ustawienia",
   title_home: "Powrót na początek",
   title_close: "Zamknij",
+  title_expand: "Powiększ na pełny ekran",
   title_snapshot: "Którą migawkę odczytać",
   ctx_hook: "hook",
   ctx_inferred: "wywnioskowany",

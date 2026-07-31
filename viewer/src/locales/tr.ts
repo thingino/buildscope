@@ -9,6 +9,7 @@ const tr: Record<string, string> = {
   title_settings: "Ayarlar",
   title_home: "Başa dön",
   title_close: "Kapat",
+  title_expand: "Tam ekrana genişlet",
   title_snapshot: "Hangi anlık görüntü okunacak",
   ctx_hook: "hook",
   ctx_inferred: "çıkarsanan",

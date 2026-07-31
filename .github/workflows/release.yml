@@ -52,7 +52,12 @@ jobs:
             runs-on: ubuntu-26.04-arm
     runs-on: ${{ matrix.runs-on }}
     steps:
+      # The tag being released, not the ref this was dispatched from: a
+      # workflow_dispatch run would otherwise build whatever main happens to be
+      # and attach it to an older tag.
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref_name }}
 
       - name: Build ${{ matrix.target }}
         run: |

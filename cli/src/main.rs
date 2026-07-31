@@ -1,4 +1,5 @@
 mod export;
+mod fleet;
 mod summary;
 mod walker;
 
@@ -88,6 +89,11 @@ enum Cmd {
         /// every build would mean downloading all of them to read one.
         #[arg(long)]
         site: bool,
+        /// Write a fleet snapshot instead: fleet-index.json plus
+        /// fleet-reports.tar.gz, the pair a CI run publishes for a whole
+        /// matrix of builds. Data only, so no built viewer is needed.
+        #[arg(long)]
+        fleet: bool,
         /// Directory with the built viewer (index.html + assets)
         #[arg(long)]
         viewer_dir: Option<PathBuf>,
@@ -427,6 +433,7 @@ fn main() {
             inputs,
             out,
             site,
+            fleet,
             viewer_dir,
         } => {
             // Each input is a report, a build, or a directory of builds.
@@ -446,6 +453,25 @@ fn main() {
                     }
                 }
             }
+            // Before the viewer lookup: a fleet snapshot is data only, and the
+            // CI job that writes one has no built viewer to point at.
+            if fleet {
+                let dir = out.unwrap_or_else(|| PathBuf::from("."));
+                match fleet::build_fleet(&reports, &dir) {
+                    Ok(()) => println!(
+                        "wrote fleet-index.json and fleet-reports.tar.gz in {} ({} build{})",
+                        dir.display(),
+                        reports.len(),
+                        if reports.len() == 1 { "" } else { "s" }
+                    ),
+                    Err(e) => {
+                        eprintln!("buildscope: export --fleet: {e}");
+                        std::process::exit(1);
+                    }
+                }
+                return;
+            }
+
             let Some(dist) = viewer_dir.or_else(default_viewer_dir) else {
                 eprintln!("buildscope: no built viewer found; build viewer/ or pass --viewer-dir");
                 std::process::exit(1);

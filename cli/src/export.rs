@@ -139,6 +139,43 @@ pub fn build_single_file(dist: &Path, report_json: &str) -> io::Result<String> {
     Ok(html)
 }
 
+/// The cheap facts a picker needs: enough to name a build and say which are
+/// nearest their limits, without fetching a single report. Shared by the
+/// static site and the fleet snapshot so the two indexes cannot drift apart;
+/// each caller adds its own locator (`id` for the site, `file` for the tar).
+pub fn index_entry(r: &Report) -> serde_json::Map<String, serde_json::Value> {
+    let fullest = r.flash.as_ref().and_then(|f| {
+        f.partitions
+            .iter()
+            .filter(|p| !p.overlaps)
+            .filter_map(|p| {
+                let size = p.size?;
+                let used = p.used_bytes.or(p.content_bytes)?;
+                (size > 0).then(|| (p.name.clone(), used as f64 / size as f64))
+            })
+            .max_by(|a, b| a.1.total_cmp(&b.1))
+    });
+    let mut entry = serde_json::Map::new();
+    entry.insert("name".into(), serde_json::json!(r.build.name));
+    entry.insert(
+        "flash_bytes".into(),
+        serde_json::json!(r.flash.as_ref().and_then(|f| f.total_bytes)),
+    );
+    entry.insert(
+        "rootfs_bytes".into(),
+        serde_json::json!(r.rootfs.as_ref().and_then(|x| x.compressed_bytes)),
+    );
+    entry.insert(
+        "fullest_partition".into(),
+        serde_json::json!(fullest.as_ref().map(|(n, _)| n)),
+    );
+    entry.insert(
+        "fullest_fill".into(),
+        serde_json::json!(fullest.as_ref().map(|(_, f)| f)),
+    );
+    entry
+}
+
 /// Copy the built viewer and write one report per build beside it, in the
 /// layout the viewer already looks for.
 ///
@@ -151,36 +188,15 @@ pub fn build_site(dist: &Path, reports: &[Report], out: &Path) -> io::Result<()>
     fs::create_dir_all(out.join("api").join("report"))?;
     copy_tree(dist, out)?;
 
-    // The index the viewer asks for first. Cheap facts only: enough to fill a
-    // picker and to say which builds are nearest their limits, without
-    // fetching a single report.
+    // The index the viewer asks for first, one entry per build, located by
+    // the position its report is written at below.
     let entries: Vec<serde_json::Value> = reports
         .iter()
         .enumerate()
         .map(|(i, r)| {
-            let fullest = r
-                .flash
-                .as_ref()
-                .map(|f| {
-                    f.partitions
-                        .iter()
-                        .filter(|p| !p.overlaps)
-                        .filter_map(|p| {
-                            let size = p.size?;
-                            let used = p.used_bytes.or(p.content_bytes)?;
-                            (size > 0).then(|| (p.name.clone(), used as f64 / size as f64))
-                        })
-                        .max_by(|a, b| a.1.total_cmp(&b.1))
-                })
-                .unwrap_or(None);
-            serde_json::json!({
-                "id": i,
-                "name": r.build.name,
-                "flash_bytes": r.flash.as_ref().and_then(|f| f.total_bytes),
-                "rootfs_bytes": r.rootfs.as_ref().and_then(|x| x.compressed_bytes),
-                "fullest_partition": fullest.as_ref().map(|(n, _)| n),
-                "fullest_fill": fullest.as_ref().map(|(_, f)| f),
-            })
+            let mut entry = index_entry(r);
+            entry.insert("id".into(), serde_json::json!(i));
+            serde_json::Value::Object(entry)
         })
         .collect();
     fs::write(

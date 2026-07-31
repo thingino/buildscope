@@ -115,6 +115,7 @@ buildscope scan output/                  # one build, or a directory of builds
 buildscope diff output/old output/new    # what grew, what shrank, what appeared
 buildscope export output/my-build        # one self-contained HTML file
 buildscope export --site -o site/ output/  # a static site, one JSON per build
+buildscope export --fleet -o . reports/*.json  # index + tarball, for a release
 buildscope carve firmware.bin            # a released image, with no build tree
 ```
 
@@ -147,6 +148,22 @@ Those are plain files, so any static host serves them -- GitHub Pages, nginx,
 an object store -- with nothing of buildscope's running. Browsers block `fetch`
 over `file://`, so a site has to be served; a single exported file does not,
 and opens straight from disk.
+
+When the builds come out of CI and the viewer is already hosted somewhere,
+there is nothing left to publish but the data. `--fleet` writes just that pair:
+
+```
+buildscope export --fleet -o . reports/*.json
+```
+
+```
+fleet-index.json       one small entry per build, enough to fill a picker
+fleet-reports.tar.gz   every report, opened only when a build is opened
+```
+
+Both are ordinary artifacts to attach to a release. The archive is written
+without shelling out to `tar` and `gzip`, and with mtimes fixed, so the same
+reports always produce the same bytes.
 
 ## Analyzing firmware you did not build
 

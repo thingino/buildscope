@@ -241,11 +241,117 @@ BR2_ROOTFS_POST_IMAGE_SCRIPT="path/to/buildscope/hooks/post-image.sh"
 ```
 
 Buildroot then invokes buildscope after image assembly with exact context
-(`BINARIES_DIR`, `TARGET_DIR`, `BUILD_DIR`, `BR2_CONFIG`), and the report lands
-in `images/` on every build. Projects that assemble their final image after
+(`BINARIES_DIR`, `TARGET_DIR`, `BUILD_DIR`, `BR2_CONFIG`), and
+`buildscope-report.json` lands in the output directory on every build. Projects that assemble their final image after
 Buildroot's image step should instead call `buildscope scan "$OUTPUT_DIR"` at
 the end of that step. Both modes produce identical reports for the same tree;
 the report records which one produced it.
+
+## Integrating it into your build
+
+Nothing here is specific to any project: buildscope reads a Buildroot output
+tree, and the recipe below is the same whatever is built from it.
+
+### 1. Get the binary
+
+Each release carries a static musl binary per architecture, so it runs on any
+distribution and inside any build container regardless of its libc:
+
+```sh
+VER=v0.1.3
+T=$([ "$(uname -m)" = aarch64 ] && echo aarch64 || echo x86_64)-unknown-linux-musl
+BASE="https://github.com/thingino/buildscope/releases/download/$VER"
+curl -fsSL "$BASE/buildscope-$T" -o /tmp/buildscope
+curl -fsSL "$BASE/buildscope-$T.sha256sum" -o /tmp/buildscope.sha256sum
+sed "s|buildscope-$T|buildscope|" /tmp/buildscope.sha256sum > /tmp/bs.sum
+( cd /tmp && sha256sum -c bs.sum )
+install -m 0755 /tmp/buildscope /usr/local/bin/buildscope
+```
+
+Verify before installing, not after: a truncated download left on `PATH` is
+worse than none at all. Building from source works too (`cargo build --release
+-p buildscope`), and pins the exact revision if you would rather not trust a
+release asset.
+
+### 2. Report on every build
+
+Point Buildroot's post-image hook at the bundled script:
+
+```
+BR2_ROOTFS_POST_IMAGE_SCRIPT="path/to/buildscope/hooks/post-image.sh"
+```
+
+Buildroot passes `BINARIES_DIR` as the first argument and exports `TARGET_DIR`,
+`BUILD_DIR`, `BR2_CONFIG` and `BASE_DIR`; buildscope takes its context from
+those rather than guessing, and records `context_source: hook` in the report so
+you can tell later. The hook exits 0 when the binary is missing, so adding it
+cannot break a build for someone who has not installed buildscope.
+
+If your project assembles its final image *after* Buildroot's image step -- a
+flash layout stitched together by your own `make` target, say -- call it at the
+end of that step instead, so the report describes the artifact you actually
+ship:
+
+```make
+    @BUILDSCOPE="$(HOST_DIR)/bin/buildscope"; \
+        if [ ! -x "$$BUILDSCOPE" ]; then BUILDSCOPE=$$(command -v buildscope 2>/dev/null || true); fi; \
+        if [ -n "$$BUILDSCOPE" ]; then "$$BUILDSCOPE" scan -q "$(OUTPUT_DIR)" || true; fi
+```
+
+Both forms write `buildscope-report.json` into the output directory, beside
+`.config` and `images/`. It needs the build tree, so it has to run before
+`distclean` removes it.
+
+### 3. As a Buildroot package
+
+To build the tool as part of the build itself, add a host package. buildscope
+is a cargo workspace whose root is a virtual manifest, so the CLI is built from
+its own subdirectory:
+
+```make
+BUILDSCOPE_VERSION = v0.1.3
+BUILDSCOPE_SITE = $(call github,thingino,buildscope,$(BUILDSCOPE_VERSION))
+BUILDSCOPE_LICENSE = MIT
+BUILDSCOPE_LICENSE_FILES = LICENSE
+HOST_BUILDSCOPE_SUBDIR = cli
+
+$(eval $(host-cargo-package))
+```
+
+The hook above finds it at `$(HOST_DIR)/bin/buildscope` without further
+configuration. Be aware this costs a Rust toolchain download and a compile in
+every build; downloading a release binary is far cheaper across a matrix.
+
+### 4. In CI, across a matrix
+
+For one report per build and a snapshot of the whole set, three additions to a
+matrix workflow:
+
+- **each build job** installs the binary as above and uploads the resulting
+  `buildscope-report.json` as an artifact. Make that step non-fatal: a report
+  is an extra, and an unreachable release asset is no reason to fail a build.
+- **a collector job** with `needs:` on the matrix downloads them all and runs
+  `buildscope export --fleet -o . reports/*.json`, producing
+  `fleet-index.json` and `fleet-reports.tar.gz`.
+- **publish the pair** wherever the builds are published. As release assets
+  they version themselves with the release that produced them.
+
+Guard the collector with `!cancelled()` rather than `always()`, so a cancelled
+run stops instead of reporting an error for itself, and let it exit 0 when it
+finds no reports: a run where some builds failed should still publish a
+snapshot of the ones that succeeded.
+
+### 5. Read it
+
+A `buildscope-report.json` opens in any hosted copy of the viewer by dropping
+it on the page, no server and no upload. For a whole set, `export --site`
+writes the viewer plus one JSON per build for any static host, and `--fleet`
+writes the two assets described above.
+
+Both fleet assets are ordinary files. Serving them from the same origin as the
+viewer needs nothing; serving them from GitHub releases needs a proxy, because
+release asset bytes carry no CORS headers. [`worker/`](worker/) is a small
+Cloudflare Worker that does exactly that, if you want one.
 
 ## Languages
 
@@ -287,6 +393,7 @@ binary, or from `--viewer-dir`.
 | `wasm/` | the core compiled to WebAssembly behind a plain C ABI, plus parity harnesses |
 | `viewer/` | the web viewer (React + Vite) |
 | `hooks/` | the Buildroot post-image hook |
+| `worker/` | a Cloudflare Worker that serves fleet snapshots past GitHub's missing CORS |
 | `docs/` | roadmap |
 
 The core never touches the filesystem: it consumes a snapshot (a file list plus
@@ -302,7 +409,7 @@ MIT, see [LICENSE](LICENSE).
 ```
 cargo fmt --all --check                                   # formatting
 cargo clippy --workspace --all-targets -- -D warnings     # lints, no warnings allowed
-cargo test --workspace                                    # 103 tests
+cargo test --workspace                                    # 113 tests
 cd viewer && npm run build                                # locales, lint, types, bundle
 ```
 

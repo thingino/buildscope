@@ -1,5 +1,5 @@
 #!/bin/sh
-# Buildroot post-image hook: emit a buildscope report.json into BINARIES_DIR.
+# Buildroot post-image hook: write buildscope-report.json into the output dir.
 # Wire up with: BR2_ROOTFS_POST_IMAGE_SCRIPT="<this file>"
 # Buildroot passes BINARIES_DIR as $1 and exports TARGET_DIR, BUILD_DIR,
 # BR2_CONFIG, BASE_DIR. Never fails the build: a missing buildscope binary

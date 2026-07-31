@@ -353,6 +353,10 @@ body {
   padding: 2px 7px;
   color: var(--ink-2);
   background: var(--surface-2);
+  /* A hyphenated name is a break opportunity, so a narrow column would split
+     "flash-image" across two lines and leave one chip twice the height of
+     every other. The column scrolls with its table instead. */
+  white-space: nowrap;
 }
 
 .chip-warn {

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Drift from "./components/Drift";
 import Drop from "./components/Drop";
+import Fleet from "./components/Fleet";
 import Files from "./components/Files";
 import DeviceTree from "./components/DeviceTree";
 import Env from "./components/Env";
@@ -10,6 +11,7 @@ import Packages from "./components/Packages";
 import Settings, { GearIcon } from "./components/Settings";
 import Timings from "./components/Timings";
 import { inlineReports, Loaded, parseReportJson, tryApi } from "./data";
+import { fleetSpec, loadFleet } from "./fleet";
 import { dateOf, humanBytes, seconds } from "./format";
 import { I18nContext, useI18nState, useT } from "./i18n";
 import { IndexEntry, Report } from "./types";
@@ -94,12 +96,43 @@ function Viewer() {
   const [tab, setTab] = useState<Tab>(() => readHash().t);
   const [report, setReport] = useState<Report | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  // A fleet's own state: which snapshot is open, which others exist, and how
+  // far its tarball has got. Kept apart from loadError, which is cleared on
+  // every build change.
+  const [fleet, setFleet] = useState<{ tag: string | null; tags: string[] } | null>(null);
+  const [fleetMode] = useState(() => fleetSpec() !== null);
+  // A fleet opens on its overview, not on some arbitrary first build -- unless
+  // the URL already names a build, which is what a shared link does.
+  const [overview, setOverview] = useState(
+    () =>
+      fleetSpec() !== null &&
+      !new URLSearchParams(window.location.hash.replace(/^#/, "")).has("b")
+  );
+  const [initError, setInitError] = useState<string | null>(null);
+  const [progress, setProgress] = useState<string | null>(null);
 
   useEffect(() => {
     const inline = inlineReports();
     if (inline && inline.length > 0) {
       setStaticReports(inline);
       setApi(null);
+      return;
+    }
+    const spec = fleetSpec();
+    if (spec !== null) {
+      loadFleet(spec || "latest", (done, total) =>
+        setProgress(total ? `${Math.round((done / total) * 100)}%` : humanBytes(done))
+      )
+        .then((f) => {
+          setFleet({ tag: f.tag, tags: f.tags });
+          setProgress(null);
+          setApi(f);
+        })
+        .catch((e: unknown) => {
+          setProgress(null);
+          setInitError(String(e));
+          setApi(null);
+        });
       return;
     }
     void tryApi().then(setApi);
@@ -111,26 +144,31 @@ function Viewer() {
   }, [api, staticReports]);
 
   useEffect(() => {
+    // The overview is the fleet's own address: no build is open, so recording
+    // one would make a reload land somewhere the reader did not choose.
+    if (overview) {
+      history.replaceState(null, "", `${location.pathname}${location.search}`);
+      return;
+    }
     const h = new URLSearchParams();
     h.set("b", String(current));
     h.set("t", tab);
     history.replaceState(null, "", "#" + h.toString());
-  }, [current, tab]);
+  }, [current, tab, overview]);
 
   useEffect(() => {
     setLoadError(null);
-    if (api === "loading") return;
+    if (api === "loading" || overview) return;
     if (api !== null) {
-      const id = entries[current]?.id ?? entries[0]?.id;
-      if (id === undefined) return;
+      if (entries.length === 0) return;
       api
-        .fetchReport(id)
+        .fetchReport(current < entries.length ? current : 0)
         .then(setReport)
         .catch((e) => setLoadError(String(e)));
     } else {
       setReport(staticReports[current] ?? staticReports[0] ?? null);
     }
-  }, [api, current, entries, staticReports]);
+  }, [api, current, entries, staticReports, overview]);
 
   // Fetch-with-cache for secondary reports (drift baselines).
   const cacheRef = useRef<Map<number, Report>>(new Map());
@@ -139,9 +177,8 @@ function Viewer() {
       if (api !== "loading" && api !== null) {
         const cached = cacheRef.current.get(i);
         if (cached) return cached;
-        const id = entries[i]?.id;
-        if (id === undefined) throw new Error("no such report");
-        const r = await api.fetchReport(id);
+        if (!entries[i]) throw new Error("no such report");
+        const r = await api.fetchReport(i);
         cacheRef.current.set(i, r);
         return r;
       }
@@ -167,14 +204,18 @@ function Viewer() {
   const resetToHome = useCallback(() => {
     setCurrent(0);
     setTab("flash");
+    // For a fleet the start is its overview, not its first build.
+    if (fleetMode) setOverview(true);
     history.replaceState(null, "", goHome);
     // In the browser the start is the drop target, so let go of what was
     // dropped. Served or inlined, the reports are not ours to discard.
     if (api === null && inlineReports() === null) setStaticReports([]);
-  }, [api, goHome]);
+  }, [api, fleetMode, goHome]);
 
   const staticMode = api === null;
-  const showDrop = staticMode && staticReports.length === 0;
+  // A page opened on a fleet is not a drop target: if its snapshot failed to
+  // load, say so rather than silently offering something else.
+  const showDrop = staticMode && staticReports.length === 0 && !fleetMode;
   // Selected tab may not apply to the current report (switching builds, or
   // a carved artifact with no package data): fall back to Flash.
   const effectiveTab: Tab =
@@ -231,14 +272,39 @@ function Viewer() {
           </div>
         )}
         <div className="top-right">
+          {fleet && fleet.tags.length > 0 && (
+            /* Switching snapshots reloads the page rather than swapping the
+               data underneath: a different release is a different fleet, and
+               the URL should say which one is being read. */
+            <select
+              className="select"
+              value={fleet.tag ?? ""}
+              title={t("title_snapshot")}
+              onChange={(e) => {
+                const u = new URL(location.href);
+                u.searchParams.set("fleet", e.target.value);
+                u.hash = "";
+                location.assign(u.toString());
+              }}
+            >
+              {fleet.tags.map((tag) => (
+                <option key={tag} value={tag}>
+                  {tag}
+                </option>
+              ))}
+            </select>
+          )}
           {entries.length > 1 && (
             <select
               className="select"
               value={current}
-              onChange={(e) => setCurrent(Number(e.target.value))}
+              onChange={(e) => {
+                setCurrent(Number(e.target.value));
+                setOverview(false);
+              }}
             >
               {entries.map((b, i) => (
-                <option key={b.id} value={i}>
+                <option key={`${i}:${b.name}`} value={i}>
                   {b.name}
                 </option>
               ))}
@@ -281,7 +347,16 @@ function Viewer() {
         </div>
       </header>
 
-      {showDrop ? (
+      {overview && entries.length > 0 ? (
+        <Fleet
+          entries={entries}
+          onOpen={(i) => {
+            setCurrent(i);
+            setTab("flash");
+            setOverview(false);
+          }}
+        />
+      ) : showDrop ? (
         <Drop onReports={addReports} />
       ) : report ? (
         <>
@@ -320,7 +395,11 @@ function Viewer() {
           </main>
         </>
       ) : (
-        <div className="empty page-empty">{loadError ?? t("loading")}</div>
+        <div className="empty page-empty">
+          {initError ??
+            loadError ??
+            (progress ? t("loading_reports", { pct: progress }) : t("loading"))}
+        </div>
       )}
 
       {settingsOpen && <Settings onClose={() => setSettingsOpen(false)} />}

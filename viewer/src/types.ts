@@ -150,9 +150,21 @@ export interface RemovedReport {
   source_bytes: number;
 }
 
+/**
+ * One line of a build index, cheap enough that a whole fleet of them loads
+ * before anything is opened. How a report is located differs by source: a
+ * static site numbers them, a fleet snapshot names a member of its tarball.
+ */
 export interface IndexEntry {
-  id: number;
   name: string;
+  /** Static site: the report's number under api/report/. */
+  id?: number;
+  /** Fleet snapshot: the member holding this report inside the tarball. */
+  file?: string;
+  flash_bytes?: number | null;
+  rootfs_bytes?: number | null;
+  fullest_partition?: string | null;
+  fullest_fill?: number | null;
 }
 
 export const UNATTRIBUTED = "_unattributed";

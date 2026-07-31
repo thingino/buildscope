@@ -8,6 +8,7 @@ const ru: Record<string, string> = {
   title_settings: "Настройки",
   title_home: "Вернуться к началу",
   title_close: "Закрыть",
+  title_snapshot: "Какой снимок открыть",
   ctx_hook: "хук",
   ctx_inferred: "выведено",
   ctx_artifact: "артефакт",
@@ -16,6 +17,15 @@ const ru: Record<string, string> = {
   warning_many: "предупреждений: {n}",
   add_report: "добавить отчёт",
   loading: "загрузка",
+  loading_reports: "загрузка отчётов… {pct}",
+
+  // fleet overview
+  fleet_title: "Парк",
+  fleet_filter: "фильтр сборок",
+  fleet_builds: "сборок: {n}",
+  th_build: "сборка",
+  th_flash: "флеш",
+  th_rootfs: "rootfs",
 
   // tabs
   tab_flash: "Флеш",

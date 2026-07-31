@@ -9,6 +9,7 @@ const ja: Record<string, string> = {
   title_settings: "設定",
   title_home: "最初に戻る",
   title_close: "閉じる",
+  title_snapshot: "読み込むスナップショット",
   ctx_hook: "フック",
   ctx_inferred: "推定",
   ctx_artifact: "成果物",
@@ -17,6 +18,15 @@ const ja: Record<string, string> = {
   warning_many: "警告 {n} 件",
   add_report: "レポートを追加",
   loading: "読み込み中",
+  loading_reports: "レポートを読み込み中… {pct}",
+
+  // fleet overview
+  fleet_title: "フリート",
+  fleet_filter: "ビルドを絞り込む",
+  fleet_builds: "{n} 件のビルド",
+  th_build: "ビルド",
+  th_flash: "フラッシュ",
+  th_rootfs: "ルートFS",
 
   // tabs
   tab_flash: "フラッシュ",

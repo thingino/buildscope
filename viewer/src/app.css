@@ -300,6 +300,39 @@ body {
   cursor: pointer;
 }
 
+/* Sortable column heads (the fleet overview). The mark shows the direction,
+   so the header is never sorted by something the reader cannot see. */
+.tbl th.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.tbl th.sortable:hover {
+  color: var(--ink-2);
+}
+
+.tbl th.sorted {
+  color: var(--accent);
+}
+
+.sortmark {
+  font-size: 9px;
+}
+
+.panel-foot {
+  margin-top: 10px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+}
+
+/* Status as text, alongside the meter that already carries it as colour --
+   the number is the direct label, so the state is never colour alone. The
+   st-* twins of these set a background instead. */
+.tx-good { color: var(--good); }
+.tx-warn { color: var(--warn); }
+.tx-serious { color: var(--serious); }
+.tx-crit { color: var(--crit); }
+
 .subrow td {
   background: var(--surface-2);
   padding: 8px 14px;

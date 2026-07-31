@@ -9,6 +9,7 @@ const zhCN: Record<string, string> = {
   title_settings: "设置",
   title_home: "返回起始页",
   title_close: "关闭",
+  title_snapshot: "读取哪个快照",
   ctx_hook: "钩子",
   ctx_inferred: "推断",
   ctx_artifact: "产物",
@@ -17,6 +18,15 @@ const zhCN: Record<string, string> = {
   warning_many: "{n} 条警告",
   add_report: "添加报告",
   loading: "加载中",
+  loading_reports: "正在加载报告… {pct}",
+
+  // fleet overview
+  fleet_title: "固件群",
+  fleet_filter: "筛选构建",
+  fleet_builds: "{n} 个构建",
+  th_build: "构建",
+  th_flash: "闪存",
+  th_rootfs: "根文件系统",
 
   // tabs
   tab_flash: "闪存",

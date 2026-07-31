@@ -14,6 +14,7 @@ const en: Record<string, string> = {
   title_settings: "Settings",
   title_home: "Back to the start",
   title_close: "Close",
+  title_snapshot: "Which snapshot to read",
   ctx_hook: "hook",
   ctx_inferred: "inferred",
   ctx_artifact: "artifact",
@@ -22,6 +23,15 @@ const en: Record<string, string> = {
   warning_many: "{n} warnings",
   add_report: "add report",
   loading: "loading",
+  loading_reports: "loading reports… {pct}",
+
+  // fleet overview
+  fleet_title: "Fleet",
+  fleet_filter: "filter builds",
+  fleet_builds: "{n} builds",
+  th_build: "build",
+  th_flash: "flash",
+  th_rootfs: "rootfs",
 
   // tabs
   tab_flash: "Flash",

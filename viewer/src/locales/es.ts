@@ -9,6 +9,7 @@ const es: Record<string, string> = {
   title_settings: "Ajustes",
   title_home: "Volver al inicio",
   title_close: "Cerrar",
+  title_snapshot: "Qué instantánea leer",
   ctx_hook: "hook",
   ctx_inferred: "inferido",
   ctx_artifact: "artefacto",
@@ -17,6 +18,15 @@ const es: Record<string, string> = {
   warning_many: "{n} advertencias",
   add_report: "añadir informe",
   loading: "cargando",
+  loading_reports: "cargando informes… {pct}",
+
+  // fleet overview
+  fleet_title: "Flota",
+  fleet_filter: "filtrar compilaciones",
+  fleet_builds: "{n} compilaciones",
+  th_build: "compilación",
+  th_flash: "flash",
+  th_rootfs: "rootfs",
 
   // tabs
   tab_flash: "Flash",

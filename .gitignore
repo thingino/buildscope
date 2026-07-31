@@ -3,6 +3,8 @@ core/target
 cli/target
 viewer/node_modules
 viewer/dist
+# screenshots written by check:layout
+viewer/layout-shots
 *.log
 
 # editor scratch

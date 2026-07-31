@@ -9,6 +9,7 @@ const tr: Record<string, string> = {
   title_settings: "Ayarlar",
   title_home: "Başa dön",
   title_close: "Kapat",
+  title_snapshot: "Hangi anlık görüntü okunacak",
   ctx_hook: "hook",
   ctx_inferred: "çıkarsanan",
   ctx_artifact: "artefakt",
@@ -17,6 +18,15 @@ const tr: Record<string, string> = {
   warning_many: "{n} uyarı",
   add_report: "rapor ekle",
   loading: "yükleniyor",
+  loading_reports: "raporlar yükleniyor… {pct}",
+
+  // fleet overview
+  fleet_title: "Filo",
+  fleet_filter: "yapıları filtrele",
+  fleet_builds: "{n} yapı",
+  th_build: "yapı",
+  th_flash: "flash",
+  th_rootfs: "rootfs",
 
   // tabs
   tab_flash: "Flash",

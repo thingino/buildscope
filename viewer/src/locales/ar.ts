@@ -8,6 +8,7 @@ const ar: Record<string, string> = {
   title_settings: "الإعدادات",
   title_home: "العودة إلى البداية",
   title_close: "إغلاق",
+  title_snapshot: "اللقطة المراد قراءتها",
   ctx_hook: "خطّاف",
   ctx_inferred: "مُستنتج",
   ctx_artifact: "ناتج",
@@ -16,6 +17,15 @@ const ar: Record<string, string> = {
   warning_many: "تحذيرات: {n}",
   add_report: "إضافة تقرير",
   loading: "جارٍ التحميل",
+  loading_reports: "جارٍ تحميل التقارير… {pct}",
+
+  // fleet overview
+  fleet_title: "الأسطول",
+  fleet_filter: "تصفية عمليات البناء",
+  fleet_builds: "{n} عملية بناء",
+  th_build: "البناء",
+  th_flash: "الفلاش",
+  th_rootfs: "نظام الملفات",
 
   // tabs
   tab_flash: "الفلاش",

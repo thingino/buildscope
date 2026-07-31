@@ -9,6 +9,7 @@ const uk: Record<string, string> = {
   title_settings: "Налаштування",
   title_home: "Повернутися на початок",
   title_close: "Закрити",
+  title_snapshot: "Який знімок відкрити",
   ctx_hook: "хук",
   ctx_inferred: "виведено",
   ctx_artifact: "артефакт",
@@ -17,6 +18,15 @@ const uk: Record<string, string> = {
   warning_many: "попереджень: {n}",
   add_report: "додати звіт",
   loading: "завантаження",
+  loading_reports: "завантаження звітів… {pct}",
+
+  // fleet overview
+  fleet_title: "Парк",
+  fleet_filter: "фільтр збірок",
+  fleet_builds: "збірок: {n}",
+  th_build: "збірка",
+  th_flash: "флеш",
+  th_rootfs: "rootfs",
 
   // tabs
   tab_flash: "Флеш",

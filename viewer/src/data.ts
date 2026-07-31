@@ -2,10 +2,11 @@ import { IndexEntry, Report } from "./types";
 
 export interface Loaded {
   entries: IndexEntry[];
-  fetchReport: (id: number) => Promise<Report>;
+  /** By position in `entries`; each source knows how to locate its own. */
+  fetchReport: (i: number) => Promise<Report>;
 }
 
-/** Try the local API (buildscope serve). Null means static mode: file drop. */
+/** Try a served static site (export --site). Null means file-drop mode. */
 export async function tryApi(): Promise<Loaded | null> {
   try {
     const res = await fetch("./api/index");
@@ -14,7 +15,9 @@ export async function tryApi(): Promise<Loaded | null> {
     if (!Array.isArray(idx.reports)) return null;
     return {
       entries: idx.reports,
-      fetchReport: async (id: number) => {
+      fetchReport: async (i: number) => {
+        const id = idx.reports[i]?.id;
+        if (id === undefined) throw new Error("no such report");
         const r = await fetch(`./api/report/${id}`);
         if (!r.ok) throw new Error(`report ${id}: HTTP ${r.status}`);
         return (await r.json()) as Report;

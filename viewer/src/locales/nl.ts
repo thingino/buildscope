@@ -9,6 +9,7 @@ const nl: Record<string, string> = {
   title_settings: "Instellingen",
   title_home: "Terug naar het begin",
   title_close: "Sluiten",
+  title_snapshot: "Welke momentopname te lezen",
   ctx_hook: "hook",
   ctx_inferred: "afgeleid",
   ctx_artifact: "artefact",
@@ -17,6 +18,15 @@ const nl: Record<string, string> = {
   warning_many: "{n} waarschuwingen",
   add_report: "rapport toevoegen",
   loading: "laden",
+  loading_reports: "rapporten laden… {pct}",
+
+  // fleet overview
+  fleet_title: "Vloot",
+  fleet_filter: "builds filteren",
+  fleet_builds: "{n} builds",
+  th_build: "build",
+  th_flash: "flash",
+  th_rootfs: "rootfs",
 
   // tabs
   tab_flash: "Flash",

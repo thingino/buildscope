@@ -165,6 +165,20 @@ Both are ordinary artifacts to attach to a release. The archive is written
 without shelling out to `tar` and `gzip`, and with mtimes fixed, so the same
 reports always produce the same bytes.
 
+The viewer reads a snapshot from `?fleet=`, which takes either a URL to a
+directory holding the two files, or the tag of a release that carries them:
+
+```
+https://buildscope.thingino.com/?fleet=https://example.org/snapshots/2026-07-30/
+https://buildscope.thingino.com/?fleet=latest
+```
+
+It opens on the fleet itself -- every build, sorted by how close its fullest
+partition is to overflowing -- built from the index alone. The tarball is not
+fetched until a build is opened, and is then decompressed once and kept, so
+only the report being read costs anything to parse. Decompression is the
+browser's own `DecompressionStream`, so no library is involved.
+
 ## Analyzing firmware you did not build
 
 With no build tree at all, buildscope recovers what the image itself knows:

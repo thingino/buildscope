@@ -9,6 +9,7 @@ const ko: Record<string, string> = {
   title_settings: "설정",
   title_home: "처음으로 돌아가기",
   title_close: "닫기",
+  title_snapshot: "읽을 스냅샷",
   ctx_hook: "훅",
   ctx_inferred: "추론",
   ctx_artifact: "산출물",
@@ -17,6 +18,15 @@ const ko: Record<string, string> = {
   warning_many: "경고 {n}개",
   add_report: "보고서 추가",
   loading: "불러오는 중",
+  loading_reports: "보고서 로드 중… {pct}",
+
+  // fleet overview
+  fleet_title: "플릿",
+  fleet_filter: "빌드 필터",
+  fleet_builds: "빌드 {n}개",
+  th_build: "빌드",
+  th_flash: "플래시",
+  th_rootfs: "루트FS",
 
   // tabs
   tab_flash: "플래시",

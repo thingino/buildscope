@@ -27,6 +27,10 @@ const nl: Record<string, string> = {
   th_build: "build",
   th_flash: "flash",
   th_rootfs: "rootfs",
+  fleet_entry_title: "Gepubliceerde builds",
+  fleet_entry_latest: "Open de nieuwste",
+  fleet_entry_pick: "kies een release",
+  fleet_entry_sub: "Elke camera in een gepubliceerde firmware-release, uit het grootterapport.",
 
   // tabs
   tab_flash: "Flash",

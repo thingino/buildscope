@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Drift from "./components/Drift";
 import Drop from "./components/Drop";
 import Fleet from "./components/Fleet";
+import FleetEntry from "./components/FleetEntry";
 import Files from "./components/Files";
 import DeviceTree from "./components/DeviceTree";
 import Env from "./components/Env";
@@ -357,7 +358,10 @@ function Viewer() {
           }}
         />
       ) : showDrop ? (
-        <Drop onReports={addReports} />
+        <>
+          <Drop onReports={addReports} />
+          <FleetEntry />
+        </>
       ) : report ? (
         <>
           <div className="buildline">

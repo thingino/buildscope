@@ -27,6 +27,10 @@ const ja: Record<string, string> = {
   th_build: "ビルド",
   th_flash: "フラッシュ",
   th_rootfs: "ルートFS",
+  fleet_entry_title: "公開済みビルド",
+  fleet_entry_latest: "最新を開く",
+  fleet_entry_pick: "リリースを選択",
+  fleet_entry_sub: "公開されたファームウェアリリースの全カメラを、サイズレポートから表示します。",
 
   // tabs
   tab_flash: "フラッシュ",

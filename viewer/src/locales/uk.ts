@@ -27,6 +27,10 @@ const uk: Record<string, string> = {
   th_build: "збірка",
   th_flash: "флеш",
   th_rootfs: "rootfs",
+  fleet_entry_title: "Опубліковані збірки",
+  fleet_entry_latest: "Відкрити найновішу",
+  fleet_entry_pick: "виберіть випуск",
+  fleet_entry_sub: "Кожна камера в опублікованому випуску прошивки, за її звітом про розмір.",
 
   // tabs
   tab_flash: "Флеш",

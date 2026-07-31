@@ -27,6 +27,10 @@ const ko: Record<string, string> = {
   th_build: "빌드",
   th_flash: "플래시",
   th_rootfs: "루트FS",
+  fleet_entry_title: "게시된 빌드",
+  fleet_entry_latest: "최신 항목 열기",
+  fleet_entry_pick: "릴리스 선택",
+  fleet_entry_sub: "게시된 펌웨어 릴리스의 모든 카메라를 크기 보고서로 확인합니다.",
 
   // tabs
   tab_flash: "플래시",

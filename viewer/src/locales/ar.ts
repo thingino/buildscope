@@ -26,6 +26,10 @@ const ar: Record<string, string> = {
   th_build: "البناء",
   th_flash: "الفلاش",
   th_rootfs: "نظام الملفات",
+  fleet_entry_title: "إصدارات منشورة",
+  fleet_entry_latest: "افتح الأحدث",
+  fleet_entry_pick: "اختر إصدارًا",
+  fleet_entry_sub: "كل كاميرا في إصدار برنامج ثابت منشور، من تقرير حجمها.",
 
   // tabs
   tab_flash: "الفلاش",

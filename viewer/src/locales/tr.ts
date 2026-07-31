@@ -27,6 +27,10 @@ const tr: Record<string, string> = {
   th_build: "yapı",
   th_flash: "flash",
   th_rootfs: "rootfs",
+  fleet_entry_title: "Yayınlanan yapılar",
+  fleet_entry_latest: "En yenisini aç",
+  fleet_entry_pick: "bir sürüm seçin",
+  fleet_entry_sub: "Yayınlanan bir donanım yazılımı sürümündeki her kamera, boyut raporundan.",
 
   // tabs
   tab_flash: "Flash",

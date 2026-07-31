@@ -27,6 +27,10 @@ const pt: Record<string, string> = {
   th_build: "compilação",
   th_flash: "flash",
   th_rootfs: "rootfs",
+  fleet_entry_title: "Compilações publicadas",
+  fleet_entry_latest: "Abrir a mais recente",
+  fleet_entry_pick: "escolher uma versão",
+  fleet_entry_sub: "Cada câmara de uma versão de firmware publicada, a partir do relatório de tamanho.",
 
   // tabs
   tab_flash: "Flash",

@@ -64,15 +64,27 @@ export function resolveSource(spec: string, repo = DEFAULT_REPO): FleetSource {
   return { indexUrl: at(INDEX_ASSET), tarUrl: at(TAR_ASSET), tag: spec };
 }
 
-/** Newest first. Metadata only, so this is a plain cross-origin fetch. */
+/**
+ * Releases that actually carry a snapshot, newest first. Metadata only, so
+ * this is a plain cross-origin fetch with no proxy involved.
+ *
+ * The asset filter matters: every release from before this existed is still
+ * listed by the API, and offering one would be offering an error. The list
+ * response already names each release's assets, so it costs nothing.
+ */
 export async function listReleases(repo = DEFAULT_REPO): Promise<string[]> {
   const res = await fetch(
     `https://api.github.com/repos/${REPOS[repo] ?? REPOS[DEFAULT_REPO]}/releases?per_page=30`
   );
   if (!res.ok) throw new Error(`releases: HTTP ${res.status}`);
-  const rs = (await res.json()) as { tag_name: string; draft: boolean }[];
+  const rs = (await res.json()) as {
+    tag_name: string;
+    draft: boolean;
+    assets?: { name: string }[];
+  }[];
   return rs
     .filter((r) => !r.draft && r.tag_name.startsWith(RELEASE_PREFIX))
+    .filter((r) => (r.assets ?? []).some((a) => a.name === INDEX_ASSET))
     .map((r) => r.tag_name);
 }
 
@@ -151,7 +163,7 @@ export async function loadFleet(
   let resolved = spec;
   if (spec === "latest" || spec === "") {
     tags = await listReleases(repo);
-    if (tags.length === 0) throw new Error("no firmware releases found");
+    if (tags.length === 0) throw new Error("no published fleet snapshots yet");
     resolved = tags[0];
   }
   const src = resolveSource(resolved, repo);

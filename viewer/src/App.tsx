@@ -349,6 +349,35 @@ function Viewer() {
               ))}
             </select>
           )}
+          {/* Stepping, for reading several in a row without going back to the
+              list each time. Follows the order the index was published in,
+              which is by name -- the same order the list opens on. The ends
+              stop rather than wrap, so it is clear when you have run out. */}
+          {!overview && entries.length > 1 && (
+            <div className="stepper">
+              <button
+                className="stepbtn"
+                onClick={() => setCurrent(current - 1)}
+                disabled={current <= 0}
+                title={t("title_prev")}
+                aria-label={t("title_prev")}
+              >
+                ‹
+              </button>
+              <span className="stepper-at">
+                {current + 1}/{entries.length}
+              </span>
+              <button
+                className="stepbtn"
+                onClick={() => setCurrent(current + 1)}
+                disabled={current >= entries.length - 1}
+                title={t("title_next")}
+                aria-label={t("title_next")}
+              >
+                ›
+              </button>
+            </div>
+          )}
           <button
             className="iconbtn"
             onClick={() => setSettingsOpen(true)}

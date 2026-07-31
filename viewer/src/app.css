@@ -787,6 +787,240 @@ body {
   height: 100%;
 }
 
+/* Fleet: table vs flash-map */
+/* Prev / next through the builds in an index. */
+.stepper {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.stepbtn {
+  background: var(--bg);
+  border: 0;
+  color: var(--ink-2);
+  font-size: 16px;
+  line-height: 1;
+  padding: 5px 11px;
+  cursor: pointer;
+}
+
+.stepbtn:hover:not(:disabled) {
+  background: var(--surface-2);
+  color: var(--accent);
+}
+
+.stepbtn:disabled {
+  color: var(--line);
+  cursor: default;
+}
+
+.stepper-at {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-3);
+  padding: 0 4px;
+  white-space: nowrap;
+}
+
+.viewtoggle {
+  display: flex;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-inline-start: auto;
+}
+
+.viewtoggle-btn {
+  background: var(--bg);
+  border: 0;
+  color: var(--ink-3);
+  font-family: var(--sans);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 5px 12px;
+  cursor: pointer;
+}
+
+.viewtoggle-btn.active {
+  background: var(--surface-2);
+  color: var(--accent);
+}
+
+.fmap-legend {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--ink-2);
+}
+
+.fmap-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.fmap-key i {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.fmap-scale {
+  margin-inline-start: auto;
+}
+
+.fmap-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 2px 0;
+}
+
+.fmap-row:hover {
+  background: rgba(255, 140, 0, 0.04);
+}
+
+.fmap-name {
+  flex: 0 0 clamp(140px, 26%, 340px);
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--ink-2);
+}
+
+/* The track is the full scale; the bar inside it is this device's flash, so a
+   smaller chip is a shorter bar rather than a rescaled one. */
+.fmap-track {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.fmap-bar {
+  position: relative;
+  height: 14px;
+  background: var(--track);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+/* The partition's extent, faint. Alpha on the colour rather than opacity on
+   the element: opacity applies to children too, so the solid fill inside
+   could never have shown through it. */
+.fmap-seg {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  box-shadow: inset -1px 0 0 var(--surface-1);
+}
+
+/* How much of it is actually occupied, solid. */
+.fmap-used {
+  height: 100%;
+}
+
+/* With the numeric columns the row needs more width than a phone has. It
+   scrolls inside its own box rather than taking the page with it -- the same
+   bargain .tbl-wrap makes for wide tables. */
+.fmap {
+  overflow-x: auto;
+}
+
+.fmap.with-nums .fmap-row {
+  min-width: max-content;
+}
+
+.fmap.with-nums .fmap-track {
+  min-width: 160px;
+}
+
+/* Scrolled right to reach the far columns, the name has to come along, or the
+   numbers belong to nobody. */
+.fmap.with-nums .fmap-name {
+  position: sticky;
+  inset-inline-start: 0;
+  background: var(--surface-1);
+  z-index: 1;
+}
+
+/* Sizes as text, in fixed columns. Every device in a fleet tends to carry the
+   same partitions in the same order, so aligning them lets a reader compare
+   one partition straight down the list -- which is the thing a bar 0.4% wide
+   can never show. */
+.fmap-nums {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0;
+}
+
+.fmap-num {
+  width: 112px;
+  text-align: end;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  padding-inline-start: 8px;
+}
+
+.fmap-num i {
+  font-style: normal;
+  font-size: 10px;
+  margin-inline-start: 9px;
+}
+
+.fmap-num.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.fmap-num.sortable:hover {
+  color: var(--ink-bright);
+}
+
+.fmap-num.sorted {
+  color: var(--accent);
+}
+
+.fmap-head .fmap-num {
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+/* After the .fmap-head rule above, which is equally specific and would
+   otherwise win on order and leave the active column looking inactive. */
+.fmap-head .fmap-num.sorted {
+  color: var(--accent);
+}
+
+.fmap-head {
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 4px;
+  padding-bottom: 4px;
+}
+
+.fmap-head:hover {
+  background: none;
+}
+
+.viewtoggle-btn.standalone {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  margin-inline-start: 8px;
+}
+
 .tm-expand {
   position: absolute;
   top: 0;

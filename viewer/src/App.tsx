@@ -7,6 +7,7 @@ import Files from "./components/Files";
 import DeviceTree from "./components/DeviceTree";
 import Env from "./components/Env";
 import Flash from "./components/Flash";
+import KernelConfig from "./components/KernelConfig";
 import Modules from "./components/Modules";
 import Packages from "./components/Packages";
 import Settings, { GearIcon } from "./components/Settings";
@@ -17,11 +18,12 @@ import { dateOf, humanBytes, seconds } from "./format";
 import { I18nContext, useI18nState, useT } from "./i18n";
 import { IndexEntry, Report } from "./types";
 
-type Tab = "flash" | "env" | "dtb" | "packages" | "files" | "modules" | "time" | "drift";
+type Tab = "flash" | "env" | "dtb" | "kconfig" | "packages" | "files" | "modules" | "time" | "drift";
 const TABS: { id: Tab; key: string }[] = [
   { id: "flash", key: "tab_flash" },
   { id: "env", key: "tab_env" },
   { id: "dtb", key: "tab_dtb" },
+  { id: "kconfig", key: "tab_kconfig" },
   { id: "packages", key: "tab_packages" },
   { id: "files", key: "tab_files" },
   { id: "modules", key: "tab_modules" },
@@ -52,6 +54,12 @@ function tabHasData(tab: Tab, r: Report, reportCount: number): boolean {
           Array.isArray((i.detail as { builtin_device_trees?: unknown[] }).builtin_device_trees) ||
           Array.isArray((i.detail as { device_trees?: unknown[] }).device_trees)
       );
+    case "kconfig":
+      // Only where the kernel actually carried its own config.
+      return r.images.some((i) => {
+        const c = (i.detail as { kernel_config?: unknown[] }).kernel_config;
+        return Array.isArray(c) && c.length > 0;
+      });
     case "packages":
       return r.packages.length > 0 || r.rootfs !== null;
     case "files":
@@ -456,6 +464,7 @@ function Viewer() {
             {effectiveTab === "flash" && <Flash report={report} />}
             {effectiveTab === "env" && <Env report={report} />}
             {effectiveTab === "dtb" && <DeviceTree report={report} />}
+            {effectiveTab === "kconfig" && <KernelConfig report={report} />}
             {effectiveTab === "packages" && <Packages report={report} />}
             {effectiveTab === "files" && <Files report={report} />}
             {effectiveTab === "modules" && <Modules report={report} />}

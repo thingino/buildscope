@@ -2,8 +2,8 @@
 
 use crate::inputs::{buildtime, config::BrConfig, pfl};
 use crate::parsers::{
-    cpio, dtb, ext, fat, fit, genimage, gpt, jffs2, mbr, mtdparts, osrelease, padding, squashfs,
-    squashfs_reader, ubi, ubifs, ubootenv, uimage,
+    cpio, dtb, ext, fat, fit, genimage, gpt, ikconfig, jffs2, mbr, mtdparts, osrelease, padding,
+    squashfs, squashfs_reader, ubi, ubifs, ubootenv, uimage,
 };
 use crate::report::*;
 use crate::snapshot::Snapshot;
@@ -82,6 +82,13 @@ fn strip_gzip_header(d: &[u8]) -> Option<&[u8]> {
 /// Decompress a kernel payload far enough to look inside it. Ingenic parts
 /// also ship a hardware LZ77 variant that claims to be lzma and is not, so a
 /// failure here is expected and simply means nothing can be reported.
+/// Inflate a whole gzip stream. The header is variable-length, and
+/// miniz_oxide only speaks raw deflate and zlib, so it is stripped first.
+fn inflate_gzip(blob: &[u8]) -> Option<Vec<u8>> {
+    const MAX: usize = 8 << 20;
+    miniz_oxide::inflate::decompress_to_vec_with_limit(strip_gzip_header(blob)?, MAX).ok()
+}
+
 fn decompress_kernel(payload: &[u8], compression: &str) -> Option<Vec<u8>> {
     /// Kernels are a few megabytes; this only bounds a malformed stream.
     const MAX: usize = 64 << 20;
@@ -294,13 +301,33 @@ pub(crate) fn classify(name: &str, size: u64, bytes: Option<&[u8]>) -> Classifie
         // tree is invisible without decompressing first. Worth the work: it is
         // the only way to see which board's tree actually got built in, and it
         // is bytes that no file accounts for.
-        let payload = data.get(uimage::HEADER_LEN..);
+        // Bounded by the declared size, not "everything after the header":
+        // carved from flash, the region carries padding after the payload, and
+        // a decompressor handed trailing bytes discards what it had decoded.
+        let end = uimage::HEADER_LEN.saturating_add(info.declared_size as usize);
+        let payload = data.get(uimage::HEADER_LEN..end.min(data.len()));
         if let Some(kernel) = payload.and_then(|p| decompress_kernel(p, &info.compression_name)) {
             let found = dtb::find_embedded(&kernel, 4);
+            // CONFIG_IKCONFIG puts the kernel's own .config in the image, so
+            // the options this kernel was built with survive the build tree.
+            let config = ikconfig::find(&kernel)
+                .and_then(inflate_gzip)
+                .and_then(|raw| String::from_utf8(raw).ok())
+                .map(|text| ikconfig::parse(&text))
+                .filter(|entries| !entries.is_empty());
             if let Some(obj) = c.detail.as_object_mut() {
                 obj.insert("payload_uncompressed_bytes".into(), json!(kernel.len()));
                 if !found.is_empty() {
                     obj.insert("builtin_device_trees".into(), embedded_dtb_json(&found));
+                }
+                if let Some(entries) = config {
+                    obj.insert(
+                        "kernel_config".into(),
+                        json!(entries
+                            .iter()
+                            .map(|e| json!({ "key": e.key, "value": e.value }))
+                            .collect::<Vec<_>>()),
+                    );
                 }
             }
         }

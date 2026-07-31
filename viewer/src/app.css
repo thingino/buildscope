@@ -362,6 +362,9 @@ body {
 /* Status as text, alongside the meter that already carries it as colour --
    the number is the direct label, so the state is never colour alone. The
    st-* twins of these set a background instead. */
+.kc-y { color: var(--good); }
+.kc-m { color: var(--yellow); }
+
 .tx-good { color: var(--good); }
 .tx-warn { color: var(--warn); }
 .tx-serious { color: var(--serious); }

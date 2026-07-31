@@ -15,6 +15,7 @@ import { useT } from "../i18n";
 export default function FleetEntry() {
   const t = useT();
   const [tags, setTags] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let live = true;
@@ -24,12 +25,26 @@ export default function FleetEntry() {
       })
       .catch(() => {
         /* No menu, rather than an error a reader here cannot act on. */
+      })
+      .finally(() => {
+        if (live) setLoading(false);
       });
     return () => {
       live = false;
     };
   }, []);
 
+  // Say it is looking rather than rendering nothing: an empty space reads as
+  // "this page has no such feature", which is the wrong answer while the
+  // question is still outstanding.
+  if (loading) {
+    return (
+      <div className="fleet-entry">
+        <div className="fleet-entry-title">{t("fleet_entry_title")}</div>
+        <div className="fleet-entry-sub">{t("loading")}</div>
+      </div>
+    );
+  }
   if (tags.length === 0) return null;
 
   // A full page load, not a state swap: the snapshot being read belongs in the

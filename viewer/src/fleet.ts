@@ -3,9 +3,10 @@
  * fleet-index.json and fleet-reports.tar.gz -- instead of as a hosted site.
  *
  * GitHub omits CORS headers on release asset *bytes*, so a browser cannot read
- * them from github.com directly and they come through a proxy. Release
- * metadata on api.github.com does send them, so listing what snapshots exist
- * needs no proxy at all.
+ * them from github.com directly and they come through a proxy. Discovering
+ * which snapshots exist goes through it too -- not for CORS, but because the
+ * REST releases endpoint answers that question in ~18 MB and out of the
+ * reader's own rate limit.
  *
  * The index is small and is loaded up front; the tarball is not touched until
  * a build is actually opened, and is then held decompressed but unparsed, so
@@ -24,7 +25,6 @@ const REPOS: Record<string, string> = {
   gtxaspec: "gtxaspec/thingino-firmware",
 };
 const DEFAULT_REPO = "thingino";
-const RELEASE_PREFIX = "firmware-";
 const INDEX_ASSET = "fleet-index.json";
 const TAR_ASSET = "fleet-reports.tar.gz";
 const BLOCK = 512;
@@ -65,27 +65,19 @@ export function resolveSource(spec: string, repo = DEFAULT_REPO): FleetSource {
 }
 
 /**
- * Releases that actually carry a snapshot, newest first. Metadata only, so
- * this is a plain cross-origin fetch with no proxy involved.
+ * Releases that carry a snapshot.
  *
- * The asset filter matters: every release from before this existed is still
- * listed by the API, and offering one would be offering an error. The list
- * response already names each release's assets, so it costs nothing.
+ * Answered by the proxy, not by api.github.com directly. That endpoint embeds
+ * every release's full asset list -- ~18 MB of JSON for a firmware repo, to
+ * learn a handful of tag names -- and spends the reader's 60-per-hour
+ * unauthenticated quota, so a shared address exhausts it and sees nothing at
+ * all. The proxy answers the same question in tens of bytes, cached.
  */
 export async function listReleases(repo = DEFAULT_REPO): Promise<string[]> {
-  const res = await fetch(
-    `https://api.github.com/repos/${REPOS[repo] ?? REPOS[DEFAULT_REPO]}/releases?per_page=30`
-  );
+  const res = await fetch(`${ASSET_PROXY}/releases?repo=${encodeURIComponent(repo)}`);
   if (!res.ok) throw new Error(`releases: HTTP ${res.status}`);
-  const rs = (await res.json()) as {
-    tag_name: string;
-    draft: boolean;
-    assets?: { name: string }[];
-  }[];
-  return rs
-    .filter((r) => !r.draft && r.tag_name.startsWith(RELEASE_PREFIX))
-    .filter((r) => (r.assets ?? []).some((a) => a.name === INDEX_ASSET))
-    .map((r) => r.tag_name);
+  const body = (await res.json()) as { tags?: unknown };
+  return Array.isArray(body.tags) ? (body.tags as string[]) : [];
 }
 
 async function fetchBytes(

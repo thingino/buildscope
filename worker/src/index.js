@@ -16,6 +16,7 @@
  *
  *   GET /fleet?tag=firmware-2026-07-30&name=fleet-index.json
  *   GET /fleet?repo=gtxaspec&tag=...&name=fleet-reports.tar.gz
+ *   GET /fleet/releases?repo=gtxaspec   -> which releases carry a snapshot
  */
 
 /* Which repos may be read, by short name. An allow-list rather than a free
@@ -27,6 +28,11 @@ const REPOS = {
     gtxaspec: 'gtxaspec/thingino-firmware',
 };
 const DEFAULT_REPO = 'thingino';
+
+/* How many recent tags to check for a snapshot. Each is one HEAD, and the
+ * answer is cached, so this is cheap; it only has to be deep enough to cover
+ * the releases anyone would still want to look at. */
+const PROBE_LIMIT = 8;
 
 /* The allow-list IS the security model, same as the repo one above. Only
  * firmware-* release tags, and only the two assets a snapshot publishes. */
@@ -70,6 +76,57 @@ function cors(origin) {
     };
 }
 
+function assetUrl(repo, tag, name) {
+    return `https://github.com/${repo}/releases/download/${encodeURIComponent(tag)}/${encodeURIComponent(name)}`;
+}
+
+/**
+ * Which recent releases carry a fleet snapshot.
+ *
+ * Deliberately not `/releases`: that endpoint embeds every release's full
+ * asset list, which for a firmware repo is ~18 MB of JSON to discover a
+ * handful of tags -- and it spends the caller's 60-per-hour unauthenticated
+ * quota, so a shared address runs out and sees nothing at all. Here it costs
+ * a redirect, ~16 KB of tag names, and one HEAD per candidate, once per cache
+ * period rather than once per reader.
+ */
+async function snapshotTags(repo) {
+    /* Newest release, from a redirect: no quota, nothing to parse. */
+    let newest = '';
+    try {
+        const res = await fetch(`https://github.com/${repo}/releases/latest`, { redirect: 'manual' });
+        newest = (res.headers.get('Location') || '').split('/releases/tag/')[1] || '';
+    } catch { /* fall back to the tag list alone */ }
+
+    /* Candidates. This endpoint carries no asset lists, so it is kilobytes. */
+    let candidates = [];
+    try {
+        const res = await fetch(`https://api.github.com/repos/${repo}/tags?per_page=30`, {
+            headers: { 'User-Agent': 'buildscope-fleet' },
+        });
+        if (res.ok) {
+            candidates = (await res.json())
+                .map((t) => t && t.name)
+                .filter((t) => typeof t === 'string' && TAG_RE.test(t));
+        }
+    } catch { /* the redirect may still have given us one */ }
+
+    /* Date-stamped names, so lexical order is chronological. */
+    candidates.sort().reverse();
+    if (newest && TAG_RE.test(newest) && !candidates.includes(newest)) candidates.unshift(newest);
+    candidates = candidates.slice(0, PROBE_LIMIT);
+
+    const checked = await Promise.all(candidates.map(async (tag) => {
+        try {
+            const r = await fetch(assetUrl(repo, tag, 'fleet-index.json'), { method: 'HEAD', redirect: 'follow' });
+            return r.ok ? tag : null;
+        } catch {
+            return null;
+        }
+    }));
+    return checked.filter(Boolean);
+}
+
 export default {
     async fetch(request, env, ctx) {
         const origin = env.ALLOW_ORIGIN || '*';
@@ -79,7 +136,7 @@ export default {
             return new Response(null, { status: 204, headers: cors(origin) });
         if (request.method !== 'GET' && request.method !== 'HEAD')
             return new Response('method not allowed\n', { status: 405, headers: cors(origin) });
-        if (url.pathname !== '/fleet')
+        if (url.pathname !== '/fleet' && url.pathname !== '/fleet/releases')
             return new Response('not found\n', { status: 404, headers: cors(origin) });
 
         const tag = url.searchParams.get('tag') || '';
@@ -88,6 +145,29 @@ export default {
         const repo = REPOS[which];
         if (!repo)
             return new Response('bad repo\n', { status: 400, headers: cors(origin) });
+
+        /* Which releases have a snapshot. Small enough to hold in memory and
+         * cache whole, unlike the assets below, which stream. */
+        if (url.pathname === '/fleet/releases') {
+            const listKey = new Request(`${url.origin}/fleet/releases?repo=${which}`, { method: 'GET' });
+            const cache = caches.default;
+            const hit = await cache.match(listKey);
+            if (hit) {
+                const h = new Headers(hit.headers);
+                for (const [k, v] of Object.entries(cors(origin))) h.set(k, v);
+                h.set('X-Fleet-Cache', 'HIT');
+                return new Response(hit.body, { status: hit.status, headers: h });
+            }
+            const tags = await snapshotTags(repo);
+            const h = new Headers(cors(origin));
+            h.set('Content-Type', 'application/json');
+            h.set('Cache-Control', CACHE_CONTROL);
+            const res = new Response(JSON.stringify({ tags }), { status: 200, headers: h });
+            if (request.method === 'GET') ctx.waitUntil(cache.put(listKey, res.clone()));
+            res.headers.set('X-Fleet-Cache', 'MISS');
+            return res;
+        }
+
         if (!allowed(tag, name))
             return new Response('bad tag/name\n', { status: 400, headers: cors(origin) });
 

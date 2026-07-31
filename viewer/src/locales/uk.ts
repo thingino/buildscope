@@ -34,10 +34,10 @@ const uk: Record<string, string> = {
   th_branch: "гілка",
   th_flash: "флеш",
   th_rootfs: "rootfs",
-  fleet_entry_title: "Опубліковані збірки",
+  fleet_entry_title: "Випуски Thingino",
   fleet_entry_latest: "Відкрити найновішу",
   fleet_entry_pick: "виберіть випуск",
-  fleet_entry_sub: "Кожна камера в опублікованому випуску прошивки, за її звітом про розмір.",
+  fleet_entry_sub: "Докладний аналіз розділів, пакунків і ядра для кожної камери у випуску.",
   back_to_fleet: "Усі пристрої",
 
   // tabs

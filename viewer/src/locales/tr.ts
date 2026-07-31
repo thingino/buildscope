@@ -34,10 +34,10 @@ const tr: Record<string, string> = {
   th_branch: "dal",
   th_flash: "flash",
   th_rootfs: "rootfs",
-  fleet_entry_title: "Yayınlanan yapılar",
+  fleet_entry_title: "Thingino sürümleri",
   fleet_entry_latest: "En yenisini aç",
   fleet_entry_pick: "bir sürüm seçin",
-  fleet_entry_sub: "Yayınlanan bir donanım yazılımı sürümündeki her kamera, boyut raporundan.",
+  fleet_entry_sub: "Bir sürümdeki her kamera için ayrıntılı bölüm, paket ve çekirdek analizi.",
   back_to_fleet: "Tüm cihazlar",
 
   // tabs

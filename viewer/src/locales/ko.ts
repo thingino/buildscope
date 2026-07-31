@@ -34,10 +34,10 @@ const ko: Record<string, string> = {
   th_branch: "브랜치",
   th_flash: "플래시",
   th_rootfs: "루트FS",
-  fleet_entry_title: "게시된 빌드",
+  fleet_entry_title: "Thingino 릴리스",
   fleet_entry_latest: "최신 항목 열기",
   fleet_entry_pick: "릴리스 선택",
-  fleet_entry_sub: "게시된 펌웨어 릴리스의 모든 카메라를 크기 보고서로 확인합니다.",
+  fleet_entry_sub: "릴리스의 모든 카메라에 대한 파티션, 패키지, 커널 상세 분석.",
   back_to_fleet: "모든 장치",
 
   // tabs

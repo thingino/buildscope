@@ -34,10 +34,10 @@ const nl: Record<string, string> = {
   th_branch: "branch",
   th_flash: "flash",
   th_rootfs: "rootfs",
-  fleet_entry_title: "Gepubliceerde builds",
+  fleet_entry_title: "Thingino-releases",
   fleet_entry_latest: "Open de nieuwste",
   fleet_entry_pick: "kies een release",
-  fleet_entry_sub: "Elke camera in een gepubliceerde firmware-release, uit het grootterapport.",
+  fleet_entry_sub: "Gedetailleerde analyse van partities, pakketten en kernel voor elke camera in een release.",
   back_to_fleet: "Alle apparaten",
 
   // tabs

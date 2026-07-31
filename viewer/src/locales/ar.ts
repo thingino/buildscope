@@ -33,10 +33,10 @@ const ar: Record<string, string> = {
   th_branch: "الفرع",
   th_flash: "الفلاش",
   th_rootfs: "نظام الملفات",
-  fleet_entry_title: "إصدارات منشورة",
+  fleet_entry_title: "إصدارات Thingino",
   fleet_entry_latest: "افتح الأحدث",
   fleet_entry_pick: "اختر إصدارًا",
-  fleet_entry_sub: "كل كاميرا في إصدار برنامج ثابت منشور، من تقرير حجمها.",
+  fleet_entry_sub: "تحليل مفصل للأقسام والحزم والنواة لكل كاميرا في الإصدار.",
   back_to_fleet: "كل الأجهزة",
 
   // tabs

@@ -34,10 +34,10 @@ const ja: Record<string, string> = {
   th_branch: "ブランチ",
   th_flash: "フラッシュ",
   th_rootfs: "ルートFS",
-  fleet_entry_title: "公開済みビルド",
+  fleet_entry_title: "Thingino リリース",
   fleet_entry_latest: "最新を開く",
   fleet_entry_pick: "リリースを選択",
-  fleet_entry_sub: "公開されたファームウェアリリースの全カメラを、サイズレポートから表示します。",
+  fleet_entry_sub: "リリース内の全カメラについて、パーティション・パッケージ・カーネルを詳細に分析します。",
   back_to_fleet: "すべてのデバイス",
 
   // tabs

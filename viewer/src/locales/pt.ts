@@ -34,10 +34,10 @@ const pt: Record<string, string> = {
   th_branch: "ramo",
   th_flash: "flash",
   th_rootfs: "rootfs",
-  fleet_entry_title: "Compilações publicadas",
+  fleet_entry_title: "Versões Thingino",
   fleet_entry_latest: "Abrir a mais recente",
   fleet_entry_pick: "escolher uma versão",
-  fleet_entry_sub: "Cada câmara de uma versão de firmware publicada, a partir do relatório de tamanho.",
+  fleet_entry_sub: "Análise detalhada de partições, pacotes e kernel para cada câmara de uma versão.",
   back_to_fleet: "Todos os dispositivos",
 
   // tabs

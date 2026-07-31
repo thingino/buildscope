@@ -34,10 +34,10 @@ const zhCN: Record<string, string> = {
   th_branch: "分支",
   th_flash: "闪存",
   th_rootfs: "根文件系统",
-  fleet_entry_title: "已发布的构建",
+  fleet_entry_title: "Thingino 版本",
   fleet_entry_latest: "打开最新版本",
   fleet_entry_pick: "选择一个发行版",
-  fleet_entry_sub: "已发布固件版本中的每台相机，来自其体积报告。",
+  fleet_entry_sub: "对版本中每台相机的分区、软件包与内核进行详细分析。",
   back_to_fleet: "所有设备",
 
   // tabs

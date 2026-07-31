@@ -33,10 +33,10 @@ const ru: Record<string, string> = {
   th_branch: "ветка",
   th_flash: "флеш",
   th_rootfs: "rootfs",
-  fleet_entry_title: "Опубликованные сборки",
+  fleet_entry_title: "Выпуски Thingino",
   fleet_entry_latest: "Открыть последнюю",
   fleet_entry_pick: "выберите выпуск",
-  fleet_entry_sub: "Каждая камера в опубликованном выпуске прошивки, по её отчёту о размере.",
+  fleet_entry_sub: "Подробный анализ разделов, пакетов и ядра для каждой камеры в выпуске.",
   back_to_fleet: "Все устройства",
 
   // tabs

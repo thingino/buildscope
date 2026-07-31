@@ -34,10 +34,10 @@ const it: Record<string, string> = {
   th_branch: "branch",
   th_flash: "flash",
   th_rootfs: "rootfs",
-  fleet_entry_title: "Build pubblicate",
+  fleet_entry_title: "Release Thingino",
   fleet_entry_latest: "Apri la più recente",
   fleet_entry_pick: "scegli una release",
-  fleet_entry_sub: "Ogni camera di una release firmware pubblicata, dal suo report di dimensione.",
+  fleet_entry_sub: "Analisi dettagliata di partizioni, pacchetti e kernel per ogni camera di una release.",
   back_to_fleet: "Tutti i dispositivi",
 
   // tabs

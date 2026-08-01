@@ -89,7 +89,7 @@ fn inflate_gzip(blob: &[u8]) -> Option<Vec<u8>> {
     miniz_oxide::inflate::decompress_to_vec_with_limit(strip_gzip_header(blob)?, MAX).ok()
 }
 
-fn decompress_kernel(payload: &[u8], compression: &str) -> Option<Vec<u8>> {
+pub(crate) fn decompress_kernel(payload: &[u8], compression: &str) -> Option<Vec<u8>> {
     /// Kernels are a few megabytes; this only bounds a malformed stream.
     const MAX: usize = 64 << 20;
     match compression {

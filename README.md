@@ -206,6 +206,17 @@ describes itself and needs no help. Each partition is then carved and identified
 with the same parsers used on build trees, so you get real per-partition usage,
 filesystem facts, and kernel image details.
 
+Some vendors keep no environment a reader can check -- the bootloader is
+proprietary and stores its settings somewhere private -- and for those the
+layout is read out of a kernel command line instead, by finding the uImage,
+decompressing it and taking the `mtdparts` it was booted with. Last of all
+comes the same string sitting loose in the bootloader binary. Both are reported
+as what they are, and warned about, because neither is checkable the way an
+environment's CRC is: one image here carries a four-partition map in its
+bootloader and really has six, which is why the kernel's is preferred and why
+the partition-by-partition checks matter. Between them these two recover the
+layout of images that otherwise carve as one opaque blob.
+
 A NAND image is a raw boot region followed by one UBI area, and the volumes
 inside it are what the flash really holds, so they take the place of the area in
 the layout: `uboot-env`, `kernel`, `rootfs` and `overlay` appear as partitions

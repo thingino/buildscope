@@ -8,8 +8,10 @@
 //! de-interleaved first, since nothing can be read past its spare areas.
 //! Package attribution is impossible in this mode and is reported as such.
 
-use crate::analyze::{classify, env_vars_json, partition_role, ubi_detail, used_bytes_of, Role};
-use crate::parsers::{gpt, mbr, mtdparts, nandoob, padding, ubi, ubootenv};
+use crate::analyze::{
+    classify, decompress_kernel, env_vars_json, partition_role, ubi_detail, used_bytes_of, Role,
+};
+use crate::parsers::{gpt, mbr, mtdparts, nandoob, padding, ubi, ubootenv, uimage};
 use crate::report::*;
 use crate::snapshot::{ContextSource, ScanMode};
 use serde_json::{json, Map, Value};
@@ -202,6 +204,102 @@ fn ubi_regions(info: &ubi::UbiInfo, base: u64, container: &str) -> Vec<Region> {
     out
 }
 
+/// A flash layout taken from the kernel's own command line.
+///
+/// Some vendors keep no U-Boot environment a reader can verify -- the
+/// bootloader is proprietary and stores its settings somewhere private -- so
+/// nothing in the image is trustworthy enough to slice by. The kernel is,
+/// because whatever booted the device is compiled into it.
+///
+/// Preferred over the same string scraped out of the bootloader binary, which
+/// is a different claim and not always a true one: a compiled-in default there
+/// can describe a flash the product no longer has. One image here carries a
+/// four-partition map in its bootloader and the real six-partition map in its
+/// kernel, and the shorter one appears first.
+///
+/// Reachable only because the kernel can be decompressed, which for these
+/// vendors means a codec their own header misdeclares.
+fn kernel_cmdline_spec(data: &[u8]) -> Option<(String, usize)> {
+    /// Enough to reach a kernel and a recovery kernel; scanning every match in
+    /// a 16 MiB image would mean decompressing whatever else happens to carry
+    /// the magic.
+    const MAX_TRIED: usize = 4;
+
+    let mut at = 0usize;
+    let mut tried = 0usize;
+    while tried < MAX_TRIED {
+        let found = data
+            .get(at..)?
+            .windows(4)
+            .position(|w| w == uimage::MAGIC.to_be_bytes())?
+            + at;
+        at = found + 4;
+        let Some(info) = uimage::parse(data.get(found..)?) else {
+            continue;
+        };
+        tried += 1;
+        let start = found + uimage::HEADER_LEN;
+        let end = start
+            .saturating_add(info.declared_size as usize)
+            .min(data.len());
+        let Some(payload) = data.get(start..end) else {
+            continue;
+        };
+        let Some(kernel) = decompress_kernel(payload, &info.compression_name) else {
+            continue;
+        };
+        if let Some(spec) = find_mtdparts(&kernel) {
+            return Some((spec, found));
+        }
+    }
+    None
+}
+
+/// Every `mtdparts=` string in the image, in order, wherever it sits.
+///
+/// The weakest source there is, and last for that reason. A bootloader carries
+/// its compiled-in default whether or not the product still matches it: one
+/// image here declares four partitions in its bootloader and really has six.
+/// Where the kernel states a layout it has already won by the time this runs;
+/// this is for the images whose kernel states none, and whose bootloader is
+/// then the only description of the flash in existence.
+fn embedded_mtdparts_strings(data: &[u8]) -> Vec<(String, usize)> {
+    const KEY: &[u8] = b"mtdparts=";
+    let mut out = Vec::new();
+    let mut at = 0usize;
+    while let Some(found) = data
+        .get(at..)
+        .and_then(|d| d.windows(KEY.len()).position(|w| w == KEY))
+    {
+        let start = at + found;
+        if let Some(spec) = find_mtdparts(&data[start..]) {
+            if !out.iter().any(|(s, _): &(String, usize)| *s == spec) {
+                out.push((spec, start));
+            }
+        }
+        at = start + KEY.len();
+        if out.len() >= 8 {
+            break;
+        }
+    }
+    out
+}
+
+/// The `mtdparts=` argument out of a command line embedded in a binary.
+fn find_mtdparts(blob: &[u8]) -> Option<String> {
+    const KEY: &[u8] = b"mtdparts=";
+    let at = blob.windows(KEY.len()).position(|w| w == KEY)?;
+    let rest = &blob[at..];
+    // Runs to the next separator: a cmdline holds other arguments after it,
+    // and a binary holds arbitrary bytes.
+    let end = rest
+        .iter()
+        .position(|&b| b == b' ' || b == 0 || b == b'\n' || b == b'\r')
+        .unwrap_or(rest.len());
+    let spec = std::str::from_utf8(&rest[..end]).ok()?;
+    (spec.len() > KEY.len()).then(|| spec.to_string())
+}
+
 pub fn carve_flash_image(file_name: &str, data: &[u8], root: &str, scan_mode: ScanMode) -> Report {
     // A dump taken off a NAND chip still carries the spare area after every
     // page, which nothing downstream can read past. De-interleave first and
@@ -337,6 +435,63 @@ pub fn carve_flash_image(file_name: &str, data: &[u8], root: &str, scan_mode: Sc
         // only thing left to infer is the raw region ahead of it.
         if let Some(start) = ubi::find_start(data) {
             layout = Some(ubi_layout(start as u64, total));
+        }
+    }
+
+    // Last, because it is the only source here that nothing verifies: an
+    // environment carries a CRC and a partition table has a signature, while
+    // this is a string compiled into a kernel. It is still the layout the
+    // device actually booted with, which is more than a bootloader's
+    // compiled-in default can claim, and for a vendor that keeps no readable
+    // environment it is the only description of the flash that exists.
+    if layout.is_none() {
+        if let Some((spec, at)) = kernel_cmdline_spec(data) {
+            if let Some(mut p) = mtdparts::parse(&spec) {
+                let device = p.declared_end.max(total);
+                p.resolve_remainders(device);
+                layout = Some(CarvedLayout {
+                    source: format!("mtdparts (kernel cmdline, uImage @ 0x{at:X})"),
+                    mtd_id: Some(p.mtd_id.clone()),
+                    partitions: p.partitions,
+                    device_bytes: device,
+                });
+                warnings.push(format!(
+                    "flash layout taken from the kernel command line in the uImage at 0x{at:X}: \
+                     no environment, partition table or volume table to check it against"
+                ));
+            }
+        }
+    }
+
+    // Weaker still than the kernel's, and only for an image that has no kernel
+    // saying otherwise: a string sitting in a bootloader is a claim about a
+    // flash, not a reading of one. Offered because the alternative for these
+    // vendors is no layout at all, and because the per-partition checks below
+    // show plainly whether it resolved to anything real.
+    if layout.is_none() {
+        for (spec, at) in embedded_mtdparts_strings(data) {
+            let Some(mut p) = mtdparts::parse(&spec) else {
+                continue;
+            };
+            // A map describing a different chip is not this image's map.
+            if p.declared_end > total.saturating_mul(2) {
+                continue;
+            }
+            let device = p.declared_end.max(total);
+            p.resolve_remainders(device);
+            layout = Some(CarvedLayout {
+                source: format!("mtdparts (bootloader string @ 0x{at:X})"),
+                mtd_id: Some(p.mtd_id.clone()),
+                partitions: p.partitions,
+                device_bytes: device,
+            });
+            warnings.push(format!(
+                "flash layout taken from an mtdparts string at 0x{at:X}, with no environment, \
+                 partition table or kernel command line to prefer: a bootloader's compiled-in \
+                 default can describe a flash the product no longer has, so check the partition \
+                 contents below agree with their names"
+            ));
+            break;
         }
     }
 
@@ -580,7 +735,15 @@ pub fn carve_flash_image(file_name: &str, data: &[u8], root: &str, scan_mode: Sc
             let verified = match role {
                 Role::Kernel => Some(c.uimage.is_some()),
                 // Raw flash ships squashfs; a card image ships ext or cpio.
-                Role::Rootfs => Some(c.squash.is_some() || c.ext.is_some() || c.cpio.is_some()),
+                // An Ingenic part ships the filesystem inside a JZLZMA stream
+                // that its bootloader expands into RAM, which is still a
+                // rootfs and should not be reported as the wrong contents.
+                Role::Rootfs => Some(
+                    c.squash.is_some()
+                        || c.ext.is_some()
+                        || c.cpio.is_some()
+                        || c.format == "jzlzma",
+                ),
                 // NOR keeps the writable area in jffs2, NAND in a UBIFS
                 // volume, a card image in an ext filesystem.
                 Role::Data => Some(

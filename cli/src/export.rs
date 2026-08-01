@@ -89,10 +89,26 @@ fn extract_attr<'a>(tag: &'a str, attr: &str) -> Option<&'a str> {
     Some(&tag[start..end])
 }
 
-/// Guard against a literal `</script>` (or `</`) terminating the inline
-/// script early. Inside JS/JSON strings `<\/` is identical to `</`.
+/// Guard the viewer bundle against a literal `</script>` terminating the
+/// inline script early. Inside a JS string `<\/` is identical to `</`.
+///
+/// The bundle is our own build, so this only has to survive its own string
+/// literals; report data goes through `json_safe` instead, which is stricter.
 fn script_safe(s: &str) -> String {
     s.replace("</", "<\\/")
+}
+
+/// Escape every `<` in a JSON payload before it is inlined into a `<script>`.
+///
+/// `</` alone is not enough. `<!--` puts the HTML tokenizer into script-data
+/// escaped state, where the closing `</script>` no longer closes anything, so
+/// a crafted string in an image swallows the rest of the document and the page
+/// renders nothing at all. Escaping the `<` itself removes the whole class:
+/// JSON has no `<` outside a string literal, and `\u003C` is that character in
+/// every one of them, so the payload is unchanged and no `<` reaches the
+/// tokenizer.
+fn json_safe(s: &str) -> String {
+    s.replace('<', "\\u003C")
 }
 
 pub fn build_single_file(dist: &Path, report_json: &str) -> io::Result<String> {
@@ -131,7 +147,7 @@ pub fn build_single_file(dist: &Path, report_json: &str) -> io::Result<String> {
     let js = fs::read_to_string(dist.join(src.trim_start_matches("./")))?;
     let replacement = format!(
         "<script>window.__BUILDSCOPE_REPORT__={};</script>\n<script type=\"module\">{}</script>",
-        script_safe(report_json),
+        json_safe(report_json),
         script_safe(&js),
     );
     html.replace_range(pos..tag_end, &replacement);

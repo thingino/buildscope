@@ -2,8 +2,8 @@
 
 use crate::inputs::{buildtime, config::BrConfig, pfl};
 use crate::parsers::{
-    cpio, dtb, ext, fat, fit, genimage, gpt, ikconfig, jffs2, mbr, mtdparts, osrelease, padding,
-    squashfs, squashfs_reader, ubi, ubifs, ubootenv, uimage,
+    cpio, dtb, ext, fat, fit, genimage, gpt, ikconfig, jffs2, jzlzma, mbr, mtdparts, osrelease,
+    padding, squashfs, squashfs_reader, ubi, ubifs, ubootenv, uimage,
 };
 use crate::report::*;
 use crate::snapshot::Snapshot;
@@ -128,6 +128,11 @@ fn decompress_kernel(payload: &[u8], compression: &str) -> Option<Vec<u8>> {
         }
         _ => None,
     }
+    // Ingenic uImages routinely declare lz4 for a payload that is really their
+    // hardware LZ77, so the header cannot decide this on its own. Tried after
+    // the declared codec rather than instead of it: the container is checked
+    // before any decoding, so a genuine lz4 or lzma payload never reaches it.
+    .or_else(|| jzlzma::decompress(payload))
 }
 
 pub(crate) fn classify(name: &str, size: u64, bytes: Option<&[u8]>) -> Classified {
@@ -520,6 +525,32 @@ pub(crate) fn classify(name: &str, size: u64, bytes: Option<&[u8]>) -> Classifie
     if is_texty(name, Some(data)) {
         c.format = "text".into();
         return c;
+    }
+    // A whole partition can be one of these -- an Ingenic bootloader
+    // decompresses it into RAM and boots it -- and nothing else identifies
+    // them, so the region would otherwise read as unattributed padding.
+    if let Some(h) = jzlzma::parse(data) {
+        if let Some(out) = jzlzma::decompress(data) {
+            c.format = "jzlzma".into();
+            // One level only. Classifying the output is what names a rootfs
+            // inside one of these, but a stream that decodes to another
+            // container would otherwise recurse as deep as the input says.
+            let inner = if jzlzma::parse(&out).is_some() {
+                "jzlzma".to_string()
+            } else {
+                classify("(contents)", out.len() as u64, Some(&out)).format
+            };
+            c.detail = json!({
+                "container": h.container,
+                "dict_size": h.dict_size,
+                "uncompressed_bytes": out.len(),
+                "compression_ratio": out.len() as f64 / size.max(1) as f64,
+                // What it decompresses to, so a rootfs inside one is named
+                // rather than left as a size.
+                "contains": inner,
+            });
+            return c;
+        }
     }
     let pad = padding::analyze(data);
     c.content_end = pad.content_end;

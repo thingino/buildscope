@@ -123,6 +123,10 @@
 - Prebuilt release binaries, static musl per architecture, so a consumer
   downloads the tool instead of building it in every matrix job.
 
+- JZLZMA, Ingenic's hardware LZ77. Validated byte for byte against a known
+  good decode of four real streams across two SoCs and both container shapes,
+  including a rootfs partition that `binwalk` finds nothing in at all.
+
 ## Still open
 
 - Trends over time. The release history holds every snapshot, so the data is

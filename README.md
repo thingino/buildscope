@@ -43,6 +43,15 @@ buildscope scan output/
     than assumed from the partition size, plus cluster size and volume label
   - cpio (`newc`/`crc`): the whole archive listing with names, sizes and kinds,
     so an initramfs rootfs is as browsable as a build tree
+  - JZLZMA: Ingenic's hardware LZ77, which their bootloaders decompress with an
+    engine in the SoC. It borrows LZMA's distance model but packs the bits
+    plainly instead of range-coding them, so it is neither lzma nor any lz4
+    shape and no standard tool reads it -- a partition holding one is opaque to
+    `binwalk` and `file` alike. Their uImages routinely declare `comp=5` (lz4)
+    for one anyway, so the header is not evidence; the container is checked
+    instead. Decoded, it reports what the stream expands to and identifies the
+    contents, so a vendor rootfs inside one is named rather than left as a
+    number.
   - FIT (`.itb`): each payload itemised -- kernel, ramdisk, device tree -- with
     type, load address, compression and hashes, plus the configurations. A
     device tree payload is read in turn, so `fdt-1` is reported as the board it

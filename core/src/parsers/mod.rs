@@ -11,6 +11,7 @@ pub mod genimage;
 pub mod gpt;
 pub mod ikconfig;
 pub mod jffs2;
+pub mod jzlzma;
 pub mod mbr;
 pub mod mtdparts;
 pub mod nandoob;

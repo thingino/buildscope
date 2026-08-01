@@ -61,6 +61,32 @@ fn tar_entry(out: &mut Vec<u8>, name: &str, data: &[u8]) -> io::Result<()> {
     Ok(())
 }
 
+/// A build name reduced to something that cannot be a path.
+///
+/// Separators and traversal are the point, but control characters go too: the
+/// name is printed to a terminal elsewhere, and an archive listing is a
+/// terminal too.
+fn safe_member(name: &str) -> String {
+    let cleaned: String = name
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-' | '+') {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect();
+    // A leading dot would still hide the file, and "." or ".." are paths even
+    // with no separator left in them.
+    let trimmed = cleaned.trim_matches('.');
+    if trimmed.is_empty() {
+        "build".to_string()
+    } else {
+        trimmed.chars().take(80).collect()
+    }
+}
+
 /// Write `fleet-index.json` and `fleet-reports.tar.gz` into `out_dir`.
 pub fn build_fleet(reports: &[Report], out_dir: &Path) -> io::Result<()> {
     fs::create_dir_all(out_dir)?;
@@ -82,10 +108,15 @@ pub fn build_fleet(reports: &[Report], out_dir: &Path) -> io::Result<()> {
             *n += 1;
             *n
         };
+        // The build name reaches a tar member name, and a report is an input
+        // like any other: one naming itself ../../etc/something would write
+        // outside whatever directory the archive is unpacked into. Reduced to
+        // a leaf with a known-safe alphabet, so nothing in it can be a path.
+        let safe = safe_member(base);
         let file = if nth == 1 {
-            format!("{base}.json")
+            format!("{safe}.json")
         } else {
-            format!("{base}-{nth}.json")
+            format!("{safe}-{nth}.json")
         };
 
         let body = serde_json::to_string(r).expect("serialize report");
@@ -160,6 +191,39 @@ mod tests {
         blanked[148..156].fill(b' ');
         let sum: u32 = blanked.iter().map(|&b| b as u32).sum();
         assert_eq!(stored, sum);
+    }
+
+    #[test]
+    fn member_names_cannot_be_paths() {
+        // The property that matters: whatever a report calls itself, the
+        // member is one path component and not a relative one.
+        for name in [
+            "../../../etc/cron.d/evil",
+            "/absolute/path",
+            "..",
+            "...",
+            "",
+            ".hidden",
+            "a\u{1b}]0;x\u{7}b",
+            "C:\\windows\\system32",
+            "with spaces and \u{0}nul",
+        ] {
+            let m = safe_member(name);
+            assert!(!m.is_empty(), "{name:?} produced an empty member");
+            assert!(!m.contains('/'), "{name:?} kept a separator: {m}");
+            assert!(!m.contains('\\'), "{name:?} kept a separator: {m}");
+            assert!(m != "." && m != "..", "{name:?} is still a path: {m}");
+            assert!(!m.starts_with('.'), "{name:?} still hides the file: {m}");
+            assert!(
+                m.chars().all(|c| !c.is_control()),
+                "{name:?} kept a control character: {m:?}"
+            );
+        }
+        // An ordinary name is left alone.
+        assert_eq!(
+            safe_member("teacup_t31x-3.10.14-uclibc"),
+            "teacup_t31x-3.10.14-uclibc"
+        );
     }
 
     #[test]

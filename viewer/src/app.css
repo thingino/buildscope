@@ -836,11 +836,14 @@ body.help-on [data-help] {
   cursor: help;
 }
 
-/* The ? reads as pressed while help is on, the way its siblings do. */
-.iconbtn.help-active {
-  background: var(--surface-2);
+/* Filled while help is on, against the outline that hover gives every icon
+   button. Tinting the outline instead made on and off identical under the
+   cursor, which is exactly where a reader looks right after clicking it. */
+.iconbtn.help-active,
+.iconbtn.help-active:hover {
+  background: var(--accent);
   border-color: var(--accent);
-  color: var(--accent);
+  color: var(--bg);
 }
 
 .help-balloon {

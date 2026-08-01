@@ -1,6 +1,7 @@
 //! Terminal summary of a report: partition bars, image table, top packages.
 //! Also the drift printer for `buildscope diff`.
 
+use crate::tty::outln;
 use buildscope_core::diff::Drift;
 use buildscope_core::report::{Report, UNATTRIBUTED};
 
@@ -45,7 +46,7 @@ fn dtb_who(t: &serde_json::Value) -> String {
 }
 
 pub fn print_report(r: &Report) {
-    println!("== {} ==", r.build.name);
+    outln!("== {} ==", r.build.name);
     let mut facts: Vec<String> = Vec::new();
     for v in [
         r.build.arch.as_deref(),
@@ -65,7 +66,7 @@ pub fn print_report(r: &Report) {
         ));
     }
     if !facts.is_empty() {
-        println!("   {}", facts.join(" | "));
+        outln!("   {}", facts.join(" | "));
     }
 
     if let Some(flash) = &r.flash {
@@ -73,7 +74,7 @@ pub fn print_report(r: &Report) {
             .total_bytes
             .map(human)
             .unwrap_or_else(|| "?".to_string());
-        println!(
+        outln!(
             "   flash {} {} via {}",
             flash.mtd_id.as_deref().unwrap_or("-"),
             total,
@@ -95,7 +96,7 @@ pub fn print_report(r: &Report) {
                 Some(false) => " MISMATCH",
                 None => "",
             };
-            println!(
+            outln!(
                 "   {:<10} {:>9} {} {:>9} used ({:>5.1}%){}{}",
                 p.name,
                 human(size),
@@ -112,7 +113,7 @@ pub fn print_report(r: &Report) {
     }
 
     if !r.images.is_empty() {
-        println!("   images:");
+        outln!("   images:");
         for i in &r.images {
             let extra = match i.format.as_str() {
                 "squashfs" => i
@@ -383,7 +384,7 @@ pub fn print_report(r: &Report) {
                     .map(|c| format!("content to {}", human(c))),
                 _ => None,
             };
-            println!(
+            outln!(
                 "     {:<44} {:>10}  {:<12} {}",
                 i.name,
                 human(i.bytes),
@@ -395,7 +396,7 @@ pub fn print_report(r: &Report) {
 
     if !r.packages.is_empty() {
         let total: u64 = r.packages.iter().map(|p| p.bytes).sum();
-        println!(
+        outln!(
             "   top packages (of {} in {} packages):",
             human(total),
             r.packages.len()
@@ -406,7 +407,7 @@ pub fn print_report(r: &Report) {
             } else {
                 &p.name
             };
-            println!(
+            outln!(
                 "     {:<32} {:>10}  {:>4} files",
                 label,
                 human(p.bytes),
@@ -417,7 +418,7 @@ pub fn print_report(r: &Report) {
 
     if !r.removed_not_shipped.is_empty() {
         let total: u64 = r.removed_not_shipped.iter().map(|x| x.source_bytes).sum();
-        println!(
+        outln!(
             "   not shipped: {} installed files removed before imaging ({} at install time)",
             r.removed_not_shipped.len(),
             human(total)
@@ -425,9 +426,9 @@ pub fn print_report(r: &Report) {
     }
 
     for w in &r.scan.warnings {
-        println!("   warning: {w}");
+        outln!("   warning: {w}");
     }
-    println!();
+    outln!();
 }
 
 fn sdelta(d: i64) -> String {
@@ -443,9 +444,9 @@ fn opt_h(v: Option<u64>) -> String {
 }
 
 pub fn print_drift(d: &Drift) {
-    println!("== drift: {}  ->  {} ==", d.a.name, d.b.name);
+    outln!("== drift: {}  ->  {} ==", d.a.name, d.b.name);
     if let Some(t) = &d.rootfs_uncompressed {
-        println!(
+        outln!(
             "   rootfs uncompressed {:>10} -> {:>10}   {}",
             human(t.before),
             human(t.after),
@@ -453,7 +454,7 @@ pub fn print_drift(d: &Drift) {
         );
     }
     if let Some(t) = &d.rootfs_compressed {
-        println!(
+        outln!(
             "   rootfs compressed   {:>10} -> {:>10}   {}",
             human(t.before),
             human(t.after),
@@ -461,9 +462,9 @@ pub fn print_drift(d: &Drift) {
         );
     }
     if !d.partitions.is_empty() {
-        println!("   partitions (used bytes):");
+        outln!("   partitions (used bytes):");
         for p in &d.partitions {
-            println!(
+            outln!(
                 "     {:<10} {:>10} -> {:>10}   {}",
                 p.name,
                 opt_h(p.used_before),
@@ -480,14 +481,14 @@ pub fn print_drift(d: &Drift) {
         if list.is_empty() {
             continue;
         }
-        println!("   {label}:");
+        outln!("   {label}:");
         for n in list.iter().take(25) {
             let marker = match (n.before, n.after) {
                 (None, Some(_)) => " [new]",
                 (Some(_), None) => " [removed]",
                 _ => "",
             };
-            println!(
+            outln!(
                 "     {:<34} {:>10} -> {:>10}   {}{}",
                 n.name,
                 opt_h(n.before),
@@ -497,7 +498,7 @@ pub fn print_drift(d: &Drift) {
             );
         }
         if list.len() > 25 {
-            println!("     ... {} more (use --json for all)", list.len() - 25);
+            outln!("     ... {} more (use --json for all)", list.len() - 25);
         }
     }
     if d.partitions.is_empty()
@@ -505,7 +506,7 @@ pub fn print_drift(d: &Drift) {
         && d.packages.is_empty()
         && d.modules.is_empty()
     {
-        println!("   no differences");
+        outln!("   no differences");
     }
-    println!();
+    outln!();
 }

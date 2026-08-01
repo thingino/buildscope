@@ -1,8 +1,10 @@
 mod export;
 mod fleet;
 mod summary;
+mod tty;
 mod walker;
 
+use crate::tty::{errln, outln};
 use buildscope_core::analyze::analyze;
 use buildscope_core::carve::carve_flash_image;
 use buildscope_core::diff::diff;
@@ -227,13 +229,13 @@ fn scan_dirs(
     let mut out = Vec::new();
     if hook {
         if dirs.len() != 1 {
-            eprintln!("buildscope: --hook takes exactly one directory (BINARIES_DIR)");
+            errln!("buildscope: --hook takes exactly one directory (BINARIES_DIR)");
             std::process::exit(2);
         }
         let paths = walker::from_hook(&dirs[0]);
         match walker::build_snapshot(&paths, flash_map, genimage) {
             Ok(snap) => out.push((Some(paths), analyze(&snap))),
-            Err(e) => eprintln!("buildscope: {}: {e}", dirs[0].display()),
+            Err(e) => errln!("buildscope: {}: {e}", dirs[0].display()),
         }
         return out;
     }
@@ -242,7 +244,7 @@ fn scan_dirs(
         if dir.is_file() {
             match carve_file(dir) {
                 Ok(r) => out.push((None, r)),
-                Err(e) => eprintln!("buildscope: {e}"),
+                Err(e) => errln!("buildscope: {e}"),
             }
             continue;
         }
@@ -259,7 +261,7 @@ fn scan_dirs(
                 .collect();
             candidates.sort();
             if candidates.is_empty() {
-                eprintln!(
+                errln!(
                     "buildscope: {}: no Buildroot output tree and no firmware artifacts found",
                     dir.display()
                 );
@@ -268,7 +270,7 @@ fn scan_dirs(
             for c in candidates {
                 match carve_file(&c) {
                     Ok(r) => out.push((None, r)),
-                    Err(e) => eprintln!("buildscope: {e}"),
+                    Err(e) => errln!("buildscope: {e}"),
                 }
             }
             continue;
@@ -276,7 +278,7 @@ fn scan_dirs(
         for paths in builds {
             match walker::build_snapshot(&paths, flash_map, genimage) {
                 Ok(snap) => out.push((Some(paths.clone()), analyze(&snap))),
-                Err(e) => eprintln!("buildscope: {}: {e}", paths.root.display()),
+                Err(e) => errln!("buildscope: {}: {e}", paths.root.display()),
             }
         }
     }
@@ -309,10 +311,10 @@ fn main() {
                         match std::fs::write(&dest, format!("{json}\n")) {
                             Ok(()) => {
                                 if !quiet {
-                                    println!("wrote {}", dest.display());
+                                    outln!("wrote {}", dest.display());
                                 }
                             }
-                            Err(e) => eprintln!("buildscope: write {}: {e}", dest.display()),
+                            Err(e) => errln!("buildscope: write {}: {e}", dest.display()),
                         }
                     }
                 }
@@ -322,14 +324,17 @@ fn main() {
             }
             if let Some(out) = out {
                 if results.len() != 1 {
-                    eprintln!("buildscope: --out requires exactly one scanned build");
+                    errln!("buildscope: --out requires exactly one scanned build");
                     std::process::exit(2);
                 }
                 let json = serde_json::to_string_pretty(&results[0].1).expect("serialize report");
                 if out == "-" {
-                    println!("{json}");
+                    // Machine output, so it is not filtered; the C1 escape keeps it
+                    // byte-for-byte the same JSON while keeping a raw
+                    // CSI off a terminal reading it directly.
+                    println!("{}", tty::json_escape_c1(&json));
                 } else if let Err(e) = std::fs::write(&out, format!("{json}\n")) {
-                    eprintln!("buildscope: write {out}: {e}");
+                    errln!("buildscope: write {out}: {e}");
                     std::process::exit(1);
                 }
             }
@@ -353,7 +358,7 @@ fn main() {
                         .collect();
                     entries.sort();
                     if entries.is_empty() {
-                        eprintln!("buildscope: {}: no firmware artifacts found", p.display());
+                        errln!("buildscope: {}: no firmware artifacts found", p.display());
                     }
                     targets.extend(entries);
                 } else {
@@ -365,7 +370,7 @@ fn main() {
             for t in &targets {
                 match carve_file(t) {
                     Ok(r) => reports.push((t.clone(), r)),
-                    Err(e) => eprintln!("buildscope: {e}"),
+                    Err(e) => errln!("buildscope: {e}"),
                 }
             }
             if reports.is_empty() {
@@ -378,10 +383,10 @@ fn main() {
                     match std::fs::write(&dest, format!("{json}\n")) {
                         Ok(()) => {
                             if !quiet {
-                                println!("wrote {}", dest.display());
+                                outln!("wrote {}", dest.display());
                             }
                         }
-                        Err(e) => eprintln!("buildscope: write {}: {e}", dest.display()),
+                        Err(e) => errln!("buildscope: write {}: {e}", dest.display()),
                     }
                 }
                 if !quiet {
@@ -393,9 +398,12 @@ fn main() {
                     let json =
                         serde_json::to_string_pretty(&reports[0].1).expect("serialize report");
                     if out == "-" {
-                        println!("{json}");
+                        // Machine output, so it is not filtered; the C1 escape keeps it
+                        // byte-for-byte the same JSON while keeping a raw
+                        // CSI off a terminal reading it directly.
+                        println!("{}", tty::json_escape_c1(&json));
                     } else if let Err(e) = std::fs::write(&out, format!("{json}\n")) {
-                        eprintln!("buildscope: write {out}: {e}");
+                        errln!("buildscope: write {out}: {e}");
                         std::process::exit(1);
                     }
                 } else {
@@ -403,9 +411,12 @@ fn main() {
                     let all: Vec<&Report> = reports.iter().map(|(_, r)| r).collect();
                     let json = serde_json::to_string_pretty(&all).expect("serialize reports");
                     if out == "-" {
-                        println!("{json}");
+                        // Machine output, so it is not filtered; the C1 escape keeps it
+                        // byte-for-byte the same JSON while keeping a raw
+                        // CSI off a terminal reading it directly.
+                        println!("{}", tty::json_escape_c1(&json));
                     } else if let Err(e) = std::fs::write(&out, format!("{json}\n")) {
-                        eprintln!("buildscope: write {out}: {e}");
+                        errln!("buildscope: write {out}: {e}");
                         std::process::exit(1);
                     }
                 }
@@ -415,13 +426,13 @@ fn main() {
             let (ra, rb) = match (load_report(&a), load_report(&b)) {
                 (Ok(ra), Ok(rb)) => (ra, rb),
                 (Err(e), _) | (_, Err(e)) => {
-                    eprintln!("buildscope: {e}");
+                    errln!("buildscope: {e}");
                     std::process::exit(1);
                 }
             };
             let d = diff(&ra, &rb);
             if json {
-                println!(
+                outln!(
                     "{}",
                     serde_json::to_string_pretty(&d).expect("serialize drift")
                 );
@@ -446,7 +457,7 @@ fn main() {
                         // one holding several builds yields all of them.
                         let found = scan_dirs(std::slice::from_ref(input), false, None, None);
                         if found.is_empty() {
-                            eprintln!("buildscope: {single}");
+                            errln!("buildscope: {single}");
                             std::process::exit(1);
                         }
                         reports.extend(found.into_iter().map(|(_, r)| r));
@@ -458,14 +469,14 @@ fn main() {
             if fleet {
                 let dir = out.unwrap_or_else(|| PathBuf::from("."));
                 match fleet::build_fleet(&reports, &dir) {
-                    Ok(()) => println!(
+                    Ok(()) => outln!(
                         "wrote fleet-index.json and fleet-reports.tar.gz in {} ({} build{})",
                         dir.display(),
                         reports.len(),
                         if reports.len() == 1 { "" } else { "s" }
                     ),
                     Err(e) => {
-                        eprintln!("buildscope: export --fleet: {e}");
+                        errln!("buildscope: export --fleet: {e}");
                         std::process::exit(1);
                     }
                 }
@@ -473,21 +484,21 @@ fn main() {
             }
 
             let Some(dist) = viewer_dir.or_else(default_viewer_dir) else {
-                eprintln!("buildscope: no built viewer found; build viewer/ or pass --viewer-dir");
+                errln!("buildscope: no built viewer found; build viewer/ or pass --viewer-dir");
                 std::process::exit(1);
             };
 
             if site {
                 let dir = out.unwrap_or_else(|| PathBuf::from("buildscope-site"));
                 match export::build_site(&dist, &reports, &dir) {
-                    Ok(()) => println!(
+                    Ok(()) => outln!(
                         "wrote {} ({} build{}); serve it with any web host",
                         dir.display(),
                         reports.len(),
                         if reports.len() == 1 { "" } else { "s" }
                     ),
                     Err(e) => {
-                        eprintln!("buildscope: export --site: {e}");
+                        errln!("buildscope: export --site: {e}");
                         std::process::exit(1);
                     }
                 }
@@ -504,7 +515,7 @@ fn main() {
             let html = match export::build_single_file(&dist, &json) {
                 Ok(h) => h,
                 Err(e) => {
-                    eprintln!("buildscope: export: {e}");
+                    errln!("buildscope: export: {e}");
                     std::process::exit(1);
                 }
             };
@@ -516,9 +527,9 @@ fn main() {
                 })
             });
             match std::fs::write(&dest, html) {
-                Ok(()) => println!("wrote {} ({} builds)", dest.display(), reports.len()),
+                Ok(()) => outln!("wrote {} ({} builds)", dest.display(), reports.len()),
                 Err(e) => {
-                    eprintln!("buildscope: write {}: {e}", dest.display());
+                    errln!("buildscope: write {}: {e}", dest.display());
                     std::process::exit(1);
                 }
             }

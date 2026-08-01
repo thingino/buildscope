@@ -328,7 +328,10 @@ body {
 /* Landing-page route into a published fleet. Sits under the drop target and
    stays quieter than it: analyzing your own build is the primary action. */
 .fleet-entry {
-  margin-top: 18px;
+  /* Same width and centring as the drop target it sits under: they are two
+     ways into the same page and reading as one column says so. */
+  max-width: 560px;
+  margin: 18px auto 0;
   padding: 16px;
   border: 1px solid var(--line);
   border-radius: 8px;

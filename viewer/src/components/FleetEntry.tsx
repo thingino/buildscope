@@ -60,7 +60,7 @@ export default function FleetEntry() {
     <div className="fleet-entry">
       <div className="fleet-entry-title">{t("fleet_entry_title")}</div>
       <div className="fleet-entry-row">
-        <button className="btn" onClick={() => open(tags[0])}>
+        <button className="btn" data-help="help_open_latest" onClick={() => open(tags[0])}>
           {t("fleet_entry_latest")}
         </button>
         {tags.length > 1 && (

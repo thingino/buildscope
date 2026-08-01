@@ -113,6 +113,7 @@ export default function Kernel({ report }: { report: Report }) {
         {builtin.length > 0 && (
           <button
             className={`stat stat-btn ${showBuiltin ? "active" : ""}`}
+            data-help="help_builtin"
             onClick={() => setShowBuiltin(!showBuiltin)}
             aria-expanded={showBuiltin}
           >
@@ -126,6 +127,7 @@ export default function Kernel({ report }: { report: Report }) {
         {config.length > 0 && (
           <button
             className={`stat stat-btn ${showConfig ? "active" : ""}`}
+            data-help="help_kconfig"
             onClick={() => setShowConfig(!showConfig)}
             aria-expanded={showConfig}
           >
@@ -182,6 +184,7 @@ export default function Kernel({ report }: { report: Report }) {
             />
             <button
               className={`viewtoggle-btn standalone ${showUnset ? "active" : ""}`}
+              data-help="help_show_unset"
               onClick={() => setShowUnset(!showUnset)}
             >
               {t("kconfig_show_unset")}

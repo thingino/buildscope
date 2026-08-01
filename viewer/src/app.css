@@ -829,6 +829,79 @@ body {
 }
 
 /* Fleet: table vs flash-map */
+/* Opt-in help balloons, matching the other thingino web apps. Parchment on a
+   dark app on purpose: it reads as an annotation over the page rather than
+   another panel of it. */
+body.help-on [data-help] {
+  cursor: help;
+}
+
+/* The ? reads as pressed while help is on, the way its siblings do. */
+.iconbtn.help-active {
+  background: var(--surface-2);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.help-balloon {
+  position: fixed;
+  z-index: 1100;
+  background: #fffdf0;
+  color: #1a1a1a;
+  border: 1px solid #c9bfa0;
+  border-radius: 12px;
+  padding: 8px 11px;
+  font-family: var(--sans);
+  font-size: 12.5px;
+  line-height: 1.35;
+  box-shadow: 0 5px 16px rgba(0, 0, 0, 0.28);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+
+.help-balloon.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.help-balloon::before {
+  content: "";
+  position: absolute;
+  top: -7px;
+  inset-inline-start: 18px;
+  width: 12px;
+  height: 12px;
+  background: #fffdf0;
+  border-inline-start: 1px solid #c9bfa0;
+  border-top: 1px solid #c9bfa0;
+  transform: rotate(45deg);
+}
+
+.help-balloon.above::before {
+  top: auto;
+  bottom: -7px;
+  border-inline-start: 0;
+  border-top: 0;
+  border-inline-end: 1px solid #c9bfa0;
+  border-bottom: 1px solid #c9bfa0;
+}
+
+.setting-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-top: 14px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.setting-check input {
+  margin-top: 2px;
+}
+
 /* Prev / next through the builds in an index. */
 .stepper {
   display: flex;

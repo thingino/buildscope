@@ -222,6 +222,21 @@ const ar: Record<string, string> = {
   // footer
   scan_mode: "فحص {mode}",
   report_by: "تقرير من {name} {version}",
+  // help balloons
+  title_help: "تعليمات",
+  help_help: "Turns the hints on and off. With them on, hovering a control explains it.",
+  help_settings: "Language, and whether these hints are shown.",
+  setting_help_label: "إظهار التلميحات: مرّر فوق أي عنصر تحكم",
+  help_open_latest: "Opens the newest published snapshot: every camera in that release, with its flash usage.",
+  help_all_devices: "Back to the list of every build in this snapshot.",
+  help_snapshot: "Which published release to read. Switching reloads the page, so the address always says which one you are looking at.",
+  help_stepper: "Step to the previous or next build, keeping the tab you are on. Useful for comparing the same view across devices.",
+  help_fleet_view: "Table lists how full each build is. Map draws every flash layout to one scale, so a device partitioned differently stands out.",
+  help_fleet_numbers: "Adds each partition's size and fill as aligned columns, for the segments too small to read as bars.",
+  help_builtin: "Drivers compiled into the kernel rather than shipped as .ko files. They are part of the kernel image, so they have no size of their own.",
+  help_kconfig: "The kernel's own .config, recovered from the image itself. The count is the options actually set.",
+  help_show_unset: "Also list options explicitly disabled. Most of the file is these, so they are hidden by default.",
+  help_treemap_expand: "Expand the treemap to the whole window, where far more of the packages are large enough to label. Escape closes it.",
 };
 
 export default ar;

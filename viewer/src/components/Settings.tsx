@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useHelp } from "../help";
 import { Lang, NAMES, SUPPORTED, useI18n } from "../i18n";
 
 /**
@@ -14,6 +15,7 @@ import { Lang, NAMES, SUPPORTED, useI18n } from "../i18n";
  */
 export default function Settings({ onClose }: { onClose: () => void }) {
   const { lang, setLang, t } = useI18n();
+  const { on: helpOn, setOn: setHelpOn } = useHelp();
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -63,6 +65,14 @@ export default function Settings({ onClose }: { onClose: () => void }) {
               ))}
             </select>
           </div>
+          <label className="setting-check">
+            <input
+              type="checkbox"
+              checked={helpOn}
+              onChange={(e) => setHelpOn(e.target.checked)}
+            />
+            <span>{t("setting_help_label")}</span>
+          </label>
         </div>
         <div className="dialog-foot">
           <button className="btn btn-sm btn-outline" onClick={onClose}>

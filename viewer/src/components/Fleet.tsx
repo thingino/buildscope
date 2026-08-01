@@ -131,7 +131,7 @@ export default function Fleet({
         <div className="panel-head">
           <span className="panel-title">{t("fleet_title")}</span>
           {mappable && (
-          <div className="viewtoggle">
+          <div className="viewtoggle" data-help="help_fleet_view">
             {(["table", "map"] as View[]).map((v) => (
               <button
                 key={v}
@@ -146,6 +146,7 @@ export default function Fleet({
           {mappable && view === "map" && (
             <button
               className={`viewtoggle-btn standalone ${numbers ? "active" : ""}`}
+              data-help="help_fleet_numbers"
               onClick={() => setNumbers(!numbers)}
             >
               {t("view_numbers")}

@@ -97,6 +97,7 @@ function Treemap({ packages, total }: { packages: PackageReport[]; total: number
     <div className={`treemap-box ${expanded ? "expanded" : ""}`}>
       <button
         className="iconbtn tm-expand"
+        data-help="help_treemap_expand"
         onClick={() => setExpanded(!expanded)}
         title={expanded ? t("title_close") : t("title_expand")}
         aria-label={expanded ? t("title_close") : t("title_expand")}

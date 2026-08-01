@@ -13,6 +13,7 @@ import Settings, { GearIcon } from "./components/Settings";
 import Timings from "./components/Timings";
 import { inlineReports, Loaded, parseReportJson, tryApi } from "./data";
 import { fleetSpec, loadFleet } from "./fleet";
+import { HelpProvider, useHelp } from "./help";
 import { dateOf, humanBytes, seconds } from "./format";
 import { I18nContext, useI18nState, useT } from "./i18n";
 import { IndexEntry, Report } from "./types";
@@ -92,6 +93,23 @@ function buildRef(r: Report): string | null {
 /** Tab ids that have been renamed, so links made before still land. */
 const TAB_ALIASES: Record<string, Tab> = { modules: "kernel", kconfig: "kernel" };
 
+/** Question mark, drawn to match the gear beside it. */
+function QuestionIcon() {
+  return (
+    <svg
+      className="icon"
+      viewBox="0 0 16 16"
+      width="13"
+      height="13"
+      fill="currentColor"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M5.25 5.5a2.75 2.75 0 1 1 3.9 2.5c-.6.28-.9.79-.9 1.3v.45a.6.6 0 0 1-1.2 0V9.3c0-1.05.63-1.9 1.6-2.36a1.55 1.55 0 1 0-2.2-1.44.6.6 0 0 1-1.2 0M8 13.1a.85.85 0 1 1 0-1.7.85.85 0 0 1 0 1.7" />
+    </svg>
+  );
+}
+
 function readHash(): { b: number; t: Tab } {
   const h = new URLSearchParams(window.location.hash.replace(/^#/, ""));
   const raw = h.get("t");
@@ -106,13 +124,16 @@ export default function App() {
   const i18n = useI18nState();
   return (
     <I18nContext.Provider value={i18n}>
-      <Viewer />
+      <HelpProvider>
+        <Viewer />
+      </HelpProvider>
     </I18nContext.Provider>
   );
 }
 
 function Viewer() {
   const t = useT();
+  const { on: helpOn, setOn: setHelpOn } = useHelp();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [api, setApi] = useState<Loaded | null | "loading">("loading");
   const [staticReports, setStaticReports] = useState<Report[]>([]);
@@ -318,7 +339,7 @@ function Viewer() {
               route back to the listing. Text rather than another glyph beside
               the gear, since being found is the whole point of it. */}
           {fleetMode && !overview && entries.length > 0 && (
-            <button className="btn btn-sm" onClick={() => setOverview(true)}>
+            <button className="btn btn-sm" data-help="help_all_devices" onClick={() => setOverview(true)}>
               {t("back_to_fleet")}
             </button>
           )}
@@ -328,6 +349,7 @@ function Viewer() {
                the URL should say which one is being read. */
             <select
               className="select"
+              data-help="help_snapshot"
               value={fleet.tag ?? ""}
               title={t("title_snapshot")}
               onChange={(e) => {
@@ -365,7 +387,7 @@ function Viewer() {
               which is by name -- the same order the list opens on. The ends
               stop rather than wrap, so it is clear when you have run out. */}
           {!overview && entries.length > 1 && (
-            <div className="stepper">
+            <div className="stepper" data-help="help_stepper">
               <button
                 className="stepbtn"
                 onClick={() => setCurrent(current - 1)}
@@ -390,10 +412,21 @@ function Viewer() {
             </div>
           )}
           <button
+            className={`iconbtn ${helpOn ? "help-active" : ""}`}
+            onClick={() => setHelpOn(!helpOn)}
+            title={t("title_help")}
+            aria-label={t("title_help")}
+            aria-pressed={helpOn}
+            data-help="help_help"
+          >
+            <QuestionIcon />
+          </button>
+          <button
             className="iconbtn"
             onClick={() => setSettingsOpen(true)}
             title={t("title_settings")}
             aria-label={t("title_settings")}
+            data-help="help_settings"
           >
             <GearIcon />
           </button>

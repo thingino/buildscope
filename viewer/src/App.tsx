@@ -327,7 +327,10 @@ function Viewer() {
             {report.build.completed_at_unix && (
               <span className="readout-item muted">{dateOf(report.build.completed_at_unix)}</span>
             )}
-            <span className={`chip ctx-${report.scan.context_source}`}>
+            <span
+              className={`chip ctx-${report.scan.context_source}`}
+              data-help={`help_ctx_${report.scan.context_source}`}
+            >
               {t(`ctx_${report.scan.context_source}`)}
             </span>
           </div>
@@ -541,7 +544,9 @@ function Viewer() {
                 still checks it before rendering (see parseReportJson) and
                 refuses a version it does not understand. Nobody reading a size
                 report acts on the number. */}
-            {t("scan_mode", { mode: report.scan.scan_mode })}
+            <span data-help={`help_scan_${report.scan.scan_mode}`}>
+              {t("scan_mode", { mode: report.scan.scan_mode })}
+            </span>
             {report.generator.version !== __APP_VERSION__ && (
               <>
                 {" · "}

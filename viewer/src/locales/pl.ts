@@ -224,6 +224,11 @@ const pl: Record<string, string> = {
   scan_mode: "skan {mode}",
   report_by: "raport: {name} {version}",
   // help balloons
+  help_ctx_hook: "Where the build's paths came from: Buildroot stated them, having run buildscope as a post-image script. Says nothing about who did the reading -- that is the scan mode in the footer.",
+  help_ctx_inferred: "Where the build's paths came from: worked out from the tree layout, by finding target/, build/, images/ and .config where they usually sit. A hooked build has Buildroot state them instead; both produce the same report.",
+  help_ctx_artifact: "There was no build tree. Everything here was read out of the firmware image itself, so packages, modules and build times are absent rather than empty.",
+  help_scan_native: "Who read the tree: the command line, walking a real filesystem. It can see hardlinks, so a file linked twice is charged once.",
+  help_scan_browser: "Who read the tree: a browser tab. The File API exposes no hardlinks, so a hardlinked file is counted once per path. Buildroot target trees rarely contain any.",
   title_help: "Pomoc",
   help_help: "Turns the hints on and off. With them on, hovering a control explains it.",
   help_settings: "Language, and whether these hints are shown.",

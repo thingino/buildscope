@@ -508,7 +508,13 @@ function Viewer() {
             {effectiveTab === "kernel" && <Kernel report={report} />}
             {effectiveTab === "time" && <Timings report={report} />}
             {effectiveTab === "drift" && entries.length > 1 && (
-              <Drift entries={entries} currentIdx={current} current={report} getReport={getReport} />
+              <Drift
+                entries={entries}
+                currentIdx={current}
+                current={report}
+                getReport={getReport}
+                fleet={fleet}
+              />
             )}
           </main>
         </>

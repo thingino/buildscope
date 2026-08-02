@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { computeDrift, NamedDelta } from "../drift";
+import { fleetRepo, loadSnapshot } from "../fleet";
 import { humanBytes } from "../format";
 import { useT } from "../i18n";
 import { IndexEntry, Report } from "../types";
@@ -65,33 +66,87 @@ function DeltaTable({ titleKey, list }: { titleKey: string; list: NamedDelta[] }
   );
 }
 
+/**
+ * What the baseline picker offers, which depends on what was loaded.
+ *
+ * A release snapshot is a matrix of DIFFERENT cameras, so the neighbouring
+ * entry is a different SoC with a different sensor and the diff against it is
+ * noise. There the question worth asking is what this same profile did between
+ * one release and the next, so the picker lists release tags.
+ *
+ * A local scan of several builds is the case Drift was written for -- the same
+ * board, built repeatedly -- and there the neighbouring entry IS the previous
+ * build, so that behaviour stays.
+ */
 export default function Drift({
   entries,
   currentIdx,
   current,
   getReport,
+  fleet,
 }: {
   entries: IndexEntry[];
   currentIdx: number;
   current: Report;
   getReport: (i: number) => Promise<Report>;
+  fleet?: { tag: string | null; tags: string[] } | null;
 }) {
   const t = useT();
+  const byRelease = !!(fleet?.tag && fleet.tags.length > 1);
+  // Tags arrive newest first, so the one after the current tag is its
+  // predecessor -- the comparison someone opening this tab almost always wants.
+  const olderTags = useMemo(() => {
+    if (!byRelease) return [];
+    const at = fleet!.tags.indexOf(fleet!.tag!);
+    return fleet!.tags.filter((_, i) => i !== at);
+  }, [byRelease, fleet]);
+  const defaultTag = useMemo(() => {
+    if (!byRelease) return "";
+    const at = fleet!.tags.indexOf(fleet!.tag!);
+    return fleet!.tags[at + 1] ?? olderTags[0] ?? "";
+  }, [byRelease, fleet, olderTags]);
+
+  const [baseTag, setBaseTag] = useState(defaultTag);
   // Prefer the previous build in the list as the baseline.
   const firstOther =
     currentIdx > 0 ? currentIdx - 1 : entries.findIndex((_, i) => i !== currentIdx);
   const [baseIdx, setBaseIdx] = useState(firstOther);
   const [baseline, setBaseline] = useState<Report | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Set when the profile simply is not in the chosen release, which reads
+  // differently from a failure and is worth saying plainly.
+  const [absent, setAbsent] = useState(false);
+
+  // Switching build while the tab is open must not keep showing the old
+  // profile's baseline.
+  const name = current.build.name;
 
   useEffect(() => {
-    if (baseIdx < 0 || baseIdx === currentIdx) return;
+    let live = true;
     setBaseline(null);
     setError(null);
-    getReport(baseIdx)
-      .then(setBaseline)
-      .catch((e) => setError(String(e)));
-  }, [baseIdx, currentIdx, getReport]);
+    setAbsent(false);
+
+    if (byRelease) {
+      if (!baseTag) return;
+      loadSnapshot(baseTag, fleetRepo())
+        .then((s) => s.byName(name))
+        .then((r) => {
+          if (!live) return;
+          if (r) setBaseline(r);
+          else setAbsent(true);
+        })
+        .catch((e) => live && setError(String(e)));
+    } else {
+      if (baseIdx < 0 || baseIdx === currentIdx) return;
+      getReport(baseIdx)
+        .then((r) => live && setBaseline(r))
+        .catch((e) => live && setError(String(e)));
+    }
+    return () => {
+      live = false;
+    };
+  }, [byRelease, baseTag, name, baseIdx, currentIdx, getReport]);
 
   const drift = useMemo(
     () => (baseline ? computeDrift(baseline, current) : null),
@@ -102,20 +157,47 @@ export default function Drift({
     <div className="pane">
       <div className="controls">
         <span className="muted">{t("baseline")}</span>
-        <select className="select" value={baseIdx} onChange={(e) => setBaseIdx(Number(e.target.value))}>
-          {entries.map((b, i) =>
-            i === currentIdx ? null : (
-              <option key={b.id} value={i}>
-                {b.name}
+        {byRelease ? (
+          <select
+            className="select"
+            data-help="help_baseline_release"
+            value={baseTag}
+            onChange={(e) => setBaseTag(e.target.value)}
+          >
+            {olderTags.map((tag) => (
+              <option key={tag} value={tag}>
+                {tag}
               </option>
-            )
-          )}
-        </select>
-        <span className="muted">{t("compared_against", { name: current.build.name })}</span>
+            ))}
+          </select>
+        ) : (
+          <select
+            className="select"
+            data-help="help_baseline_build"
+            value={baseIdx}
+            onChange={(e) => setBaseIdx(Number(e.target.value))}
+          >
+            {entries.map((b, i) =>
+              i === currentIdx ? null : (
+                <option key={b.id} value={i}>
+                  {b.name}
+                </option>
+              )
+            )}
+          </select>
+        )}
+        <span className="muted">
+          {byRelease
+            ? t("compared_against_release", { name, tag: fleet?.tag ?? "" })
+            : t("compared_against", { name })}
+        </span>
       </div>
 
       {error && <div className="panel empty">{error}</div>}
-      {!drift && !error && <div className="panel empty">{t("loading_baseline")}</div>}
+      {absent && !error && (
+        <div className="panel empty">{t("not_in_release", { name, tag: baseTag })}</div>
+      )}
+      {!drift && !error && !absent && <div className="panel empty">{t("loading_baseline")}</div>}
 
       {drift && (
         <>

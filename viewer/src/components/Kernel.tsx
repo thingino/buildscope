@@ -14,29 +14,16 @@
  * so the default view stays the short one.
  */
 import { useMemo, useState } from "react";
+import { kernelConfigOf } from "../extract";
 import { humanBytes } from "../format";
 import { useT } from "../i18n";
 import { Report } from "../types";
-
-interface ConfigEntry {
-  key: string;
-  value: string;
-}
 
 function valueClass(value: string): string {
   if (value === "y") return "kc-y";
   if (value === "m") return "kc-m";
   if (value === "n") return "muted";
   return "";
-}
-
-/** The kernel's own config, if CONFIG_IKCONFIG put one in the image. */
-export function kernelConfigOf(report: Report): ConfigEntry[] {
-  for (const image of report.images) {
-    const found = (image.detail as { kernel_config?: ConfigEntry[] }).kernel_config;
-    if (Array.isArray(found) && found.length > 0) return found;
-  }
-  return [];
 }
 
 export default function Kernel({ report }: { report: Report }) {

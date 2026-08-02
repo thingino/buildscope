@@ -372,6 +372,14 @@ body {
   text-align: start;
   cursor: pointer;
   border: 1px solid var(--line);
+  /* A button centres its own content, and these sit in a row stretched to the
+     tallest tile -- the ones carrying a sub-line. Left alone, a button's label
+     rides ~9px below its plain siblings'. Laying the content out explicitly
+     starts it at the top, the way a div's does. */
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
 }
 
 .stat-btn:hover {

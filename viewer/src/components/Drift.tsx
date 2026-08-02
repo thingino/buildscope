@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { computeDrift, NamedDelta } from "../drift";
+import { computeDrift, NamedDelta, ValueDelta } from "../drift";
+import { envVarsOf, kernelConfigOf } from "../extract";
 import { fleetRepo, loadSnapshot } from "../fleet";
 import { humanBytes } from "../format";
 import { useT } from "../i18n";
@@ -15,6 +16,137 @@ function DeltaCell({ d }: { d: number }) {
 
 function opt(v: number | null): string {
   return v === null ? "–" : humanBytes(v);
+}
+
+/**
+ * A count that opens its own detail, or just a count.
+ *
+ * "nothing changed" is an answer worth showing, so the tile stays whether or
+ * not there is anything behind it -- but a control that expands to nothing is
+ * a dead control, so it is only a button when there is.
+ */
+function CountStat({
+  labelKey,
+  help,
+  value,
+  open,
+  onToggle,
+}: {
+  labelKey: string;
+  help: string;
+  value: number | string;
+  open: boolean;
+  onToggle: (() => void) | null;
+}) {
+  const t = useT();
+  if (!onToggle) {
+    return (
+      <div className="stat" data-help={help}>
+        <div className="stat-label">{t(labelKey)}</div>
+        <div className="stat-value">{value}</div>
+      </div>
+    );
+  }
+  return (
+    <button
+      className={`stat stat-btn ${open ? "active" : ""}`}
+      data-help={help}
+      onClick={onToggle}
+      aria-expanded={open}
+    >
+      <div className="stat-label">
+        {t(labelKey)}
+        <span className="stat-more">{open ? "▾" : "▸"}</span>
+      </div>
+      <div className="stat-value">{value}</div>
+    </button>
+  );
+}
+
+/** `y`/`m`/`n` read as themselves, the same colours the Kernel tab gives them. */
+function valueClass(value: string | null): string {
+  if (value === "y") return "kc-y";
+  if (value === "m") return "kc-m";
+  if (value === "n") return "muted";
+  return "";
+}
+
+/**
+ * A table of settings that changed, behind the count that raises the question.
+ *
+ * Config diffs run from three lines to three hundred, so this is collapsed
+ * until asked for and filterable once open -- the same bargain the Kernel tab
+ * strikes with the full option list.
+ */
+function ValueTable({
+  titleKey,
+  list,
+  filterKey,
+  mono,
+}: {
+  titleKey: string;
+  list: ValueDelta[];
+  filterKey: string;
+  mono?: boolean;
+}) {
+  const t = useT();
+  const [query, setQuery] = useState("");
+  const shown = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return list;
+    return list.filter(
+      (e) =>
+        e.name.toLowerCase().includes(q) ||
+        (e.before ?? "").toLowerCase().includes(q) ||
+        (e.after ?? "").toLowerCase().includes(q)
+    );
+  }, [list, query]);
+
+  return (
+    <div className="panel">
+      <div className="panel-head">
+        <span className="panel-title">{t(titleKey)}</span>
+        <span className="muted">{t("n_changed", { n: list.length })}</span>
+        <input
+          className="search"
+          type="search"
+          placeholder={t(filterKey)}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+      </div>
+      <div className="tbl-wrap">
+        <table className={`tbl${mono ? " env-table" : ""}`}>
+          <thead>
+            <tr>
+              <th>{t("th_name")}</th>
+              <th>{t("th_baseline")}</th>
+              <th>{t("th_current")}</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {shown.map((e) => (
+              <tr key={e.name}>
+                <td className="env-key">{e.name}</td>
+                <td className={valueClass(e.before)}>
+                  {e.before === null ? <span className="muted">–</span> : <span className="env-val">{e.before}</span>}
+                </td>
+                <td className={valueClass(e.after)}>
+                  {e.after === null ? <span className="muted">–</span> : <span className="env-val">{e.after}</span>}
+                </td>
+                <td>
+                  {e.before === null && <span className="chip chip-new">{t("chip_new")}</span>}
+                  {e.after === null && <span className="chip chip-gone">{t("chip_removed")}</span>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {shown.length === 0 && <div className="empty">{t("no_matches")}</div>}
+    </div>
+  );
 }
 
 function DeltaTable({ titleKey, list }: { titleKey: string; list: NamedDelta[] }) {
@@ -116,6 +248,8 @@ export default function Drift({
   // Set when the profile simply is not in the chosen release, which reads
   // differently from a failure and is worth saying plainly.
   const [absent, setAbsent] = useState(false);
+  const [showConfig, setShowConfig] = useState(false);
+  const [showEnv, setShowEnv] = useState(false);
 
   // Switching build while the tab is open must not keep showing the old
   // profile's baseline.
@@ -147,6 +281,17 @@ export default function Drift({
       live = false;
     };
   }, [byRelease, baseTag, name, baseIdx, currentIdx, getReport]);
+
+  // A zero means "nothing changed"; an absent tile means the report has
+  // nothing to compare. They are different answers.
+  const hasConfig = useMemo(
+    () => kernelConfigOf(current).length > 0 && (baseline ? kernelConfigOf(baseline).length > 0 : false),
+    [current, baseline]
+  );
+  const hasEnv = useMemo(
+    () => envVarsOf(current).size > 0 && (baseline ? envVarsOf(baseline).size > 0 : false),
+    [current, baseline]
+  );
 
   const drift = useMemo(
     () => (baseline ? computeDrift(baseline, current) : null),
@@ -250,7 +395,52 @@ export default function Drift({
                 <div className="stat-value">{drift.partitions.length}</div>
               </div>
             )}
+            {/* Settings rather than sizes, so no growth colouring: green and
+                red keep meaning bigger and smaller. Both open in place, the
+                way the Kernel tab opens its option list. */}
+            {(hasConfig || !drift.config.comparable) && (
+              <CountStat
+                labelKey="stat_config_changed"
+                help="help_config_changed"
+                value={drift.config.comparable ? drift.config.entries.length : "–"}
+                open={showConfig}
+                onToggle={
+                  drift.config.entries.length > 0 || !drift.config.comparable
+                    ? () => setShowConfig(!showConfig)
+                    : null
+                }
+              />
+            )}
+            {hasEnv && (
+              <CountStat
+                labelKey="stat_env_changed"
+                help="help_env_changed"
+                value={drift.env.length}
+                open={showEnv}
+                onToggle={drift.env.length > 0 ? () => setShowEnv(!showEnv) : null}
+              />
+            )}
           </div>
+
+          {showConfig &&
+            (drift.config.comparable ? (
+              <ValueTable
+                titleKey="drift_config"
+                list={drift.config.entries}
+                filterKey="filter_options"
+              />
+            ) : (
+              <div className="panel empty">
+                {t("config_incomparable", {
+                  before: drift.config.beforeLabel ?? "?",
+                  after: drift.config.afterLabel ?? "?",
+                })}
+              </div>
+            ))}
+
+          {showEnv && (
+            <ValueTable titleKey="drift_env" list={drift.env} filterKey="filter_vars" mono />
+          )}
 
           {drift.partitions.length > 0 && (
             <div className="panel">

@@ -1,6 +1,7 @@
 // Client-side drift computation, mirroring core's diff.rs semantics:
 // unchanged entries omitted, added/removed carried as null sides.
 
+import { envVarsOf, kernelConfigOf, kernelVersionOf } from "./extract";
 import { Report } from "./types";
 
 export interface TotalDelta {
@@ -28,9 +29,34 @@ export interface PartitionDelta {
   overlaps: boolean;
 }
 
+/**
+ * A setting that changed, rather than a size that did.
+ *
+ * Config options and environment variables carry text, so the interesting
+ * thing is the pair of values, not a signed number: `y` becoming `m` is the
+ * whole story and has no magnitude.
+ */
+export interface ValueDelta {
+  name: string;
+  before: string | null;
+  after: string | null;
+}
+
+/** Set when the two sides are not really comparable, so a caller can say so
+ *  instead of listing thousands of differences that all mean "different
+ *  kernel". */
+export interface ValueDiff {
+  entries: ValueDelta[];
+  comparable: boolean;
+  beforeLabel: string | null;
+  afterLabel: string | null;
+}
+
 export interface Drift {
   rootfsUncompressed: TotalDelta | null;
   rootfsCompressed: TotalDelta | null;
+  config: ValueDiff;
+  env: ValueDelta[];
   partitions: PartitionDelta[];
   images: NamedDelta[];
   packages: NamedDelta[];
@@ -51,6 +77,50 @@ function namedDeltas(a: Map<string, number>, b: Map<string, number>): NamedDelta
 }
 
 const toMap = (entries: [string, number][]) => new Map(entries);
+
+/** The dotted version at the front of a kernel string, dropping whatever a
+ *  vendor tree appended to it. */
+function series(v: string): string {
+  return v.match(/^\d+(?:\.\d+)*/)?.[0] ?? v;
+}
+
+/** Text settings that differ, sorted so the eye lands on the name. */
+function valueDeltas(a: Map<string, string>, b: Map<string, string>): ValueDelta[] {
+  const out: ValueDelta[] = [];
+  for (const n of new Set([...a.keys(), ...b.keys()])) {
+    const before = a.has(n) ? a.get(n)! : null;
+    const after = b.has(n) ? b.get(n)! : null;
+    if (before === after) continue;
+    out.push({ name: n, before, after });
+  }
+  out.sort((x, y) => x.name.localeCompare(y.name));
+  return out;
+}
+
+/**
+ * Kernel options that changed, and whether asking was meaningful.
+ *
+ * Across a kernel version bump almost every option differs, for the same
+ * reason two different kernels are two different kernels; a list of three
+ * thousand rows would bury the handful that were actually decided. The
+ * versions are reported instead and the comparison withheld.
+ */
+function configDiff(a: Report, b: Report): ValueDiff {
+  const va = kernelVersionOf(a);
+  const vb = kernelVersionOf(b);
+  // Compared on the version proper, not the whole string: a vendor tree
+  // appends its own name, so "3.10.14__isvp_swan_1.0__" and "3.10.14" are the
+  // same kernel and their options are worth diffing. Only a real series change
+  // makes the comparison meaningless.
+  const comparable = !va || !vb || series(va) === series(vb);
+  const entries = comparable
+    ? valueDeltas(
+        new Map(kernelConfigOf(a).map((e) => [e.key, e.value])),
+        new Map(kernelConfigOf(b).map((e) => [e.key, e.value]))
+      )
+    : [];
+  return { entries, comparable, beforeLabel: va, afterLabel: vb };
+}
 
 export function computeDrift(a: Report, b: Report): Drift {
   const rootfsUncompressed =
@@ -108,6 +178,8 @@ export function computeDrift(a: Report, b: Report): Drift {
   return {
     rootfsUncompressed,
     rootfsCompressed,
+    config: configDiff(a, b),
+    env: valueDeltas(envVarsOf(a), envVarsOf(b)),
     partitions,
     images: namedDeltas(
       toMap(a.images.map((i) => [i.name, i.bytes])),

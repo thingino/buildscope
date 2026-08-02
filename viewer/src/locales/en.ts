@@ -58,7 +58,7 @@ const en: Record<string, string> = {
   tab_files: "Files",
   tab_kernel: "Kernel",
   tab_time: "Build time",
-  tab_drift: "Drift",
+  tab_drift: "Delta",
 
   // flash tab
   flash_map: "Flash map",

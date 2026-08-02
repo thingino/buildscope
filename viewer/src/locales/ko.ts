@@ -53,7 +53,7 @@ const ko: Record<string, string> = {
   tab_files: "파일",
   tab_kernel: "커널",
   tab_time: "빌드 시간",
-  tab_drift: "변화",
+  tab_drift: "증감",
 
   // flash tab
   flash_map: "플래시 맵",

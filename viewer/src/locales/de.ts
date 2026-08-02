@@ -53,7 +53,7 @@ const de: Record<string, string> = {
   tab_files: "Dateien",
   tab_kernel: "Kernel",
   tab_time: "Build-Dauer",
-  tab_drift: "Abweichung",
+  tab_drift: "Delta",
 
   // flash tab
   flash_map: "Flash-Layout",

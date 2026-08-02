@@ -52,7 +52,7 @@ const ar: Record<string, string> = {
   tab_files: "الملفات",
   tab_kernel: "النواة",
   tab_time: "زمن البناء",
-  tab_drift: "الفروق",
+  tab_drift: "الفرق",
 
   // flash tab
   flash_map: "خريطة الفلاش",

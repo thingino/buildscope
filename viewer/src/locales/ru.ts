@@ -52,7 +52,7 @@ const ru: Record<string, string> = {
   tab_files: "Файлы",
   tab_kernel: "Ядро",
   tab_time: "Время сборки",
-  tab_drift: "Изменения",
+  tab_drift: "Дельта",
 
   // flash tab
   flash_map: "Карта флеш-памяти",

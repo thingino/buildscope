@@ -53,7 +53,7 @@ const zhCN: Record<string, string> = {
   tab_files: "文件",
   tab_kernel: "内核",
   tab_time: "构建时间",
-  tab_drift: "差异",
+  tab_drift: "增减",
 
   // flash tab
   flash_map: "闪存布局",

@@ -53,7 +53,7 @@ const ja: Record<string, string> = {
   tab_files: "ファイル",
   tab_kernel: "カーネル",
   tab_time: "ビルド時間",
-  tab_drift: "差分",
+  tab_drift: "増減",
 
   // flash tab
   flash_map: "フラッシュマップ",

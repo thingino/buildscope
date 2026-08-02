@@ -53,7 +53,7 @@ const pl: Record<string, string> = {
   tab_files: "Pliki",
   tab_kernel: "Jądro",
   tab_time: "Czas kompilacji",
-  tab_drift: "Różnice",
+  tab_drift: "Różnica",
 
   // flash tab
   flash_map: "Mapa flash",

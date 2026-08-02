@@ -53,7 +53,7 @@ const nl: Record<string, string> = {
   tab_files: "Bestanden",
   tab_kernel: "Kernel",
   tab_time: "Bouwtijd",
-  tab_drift: "Afwijking",
+  tab_drift: "Delta",
 
   // flash tab
   flash_map: "Flash-indeling",

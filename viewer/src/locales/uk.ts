@@ -53,7 +53,7 @@ const uk: Record<string, string> = {
   tab_files: "Файли",
   tab_kernel: "Ядро",
   tab_time: "Час збірки",
-  tab_drift: "Зміни",
+  tab_drift: "Різниця",
 
   // flash tab
   flash_map: "Карта флеш",

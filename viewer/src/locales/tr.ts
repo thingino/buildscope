@@ -53,7 +53,7 @@ const tr: Record<string, string> = {
   tab_files: "Dosyalar",
   tab_kernel: "Çekirdek",
   tab_time: "Derleme süresi",
-  tab_drift: "Değişim",
+  tab_drift: "Fark",
 
   // flash tab
   flash_map: "Flash haritası",

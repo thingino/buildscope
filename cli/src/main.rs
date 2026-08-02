@@ -432,9 +432,14 @@ fn main() {
             };
             let d = diff(&ra, &rb);
             if json {
-                outln!(
+                // Machine output: it must not go through the terminal filter,
+                // which would turn every newline in the pretty-printed JSON
+                // into a `?` and leave it unparseable.
+                println!(
                     "{}",
-                    serde_json::to_string_pretty(&d).expect("serialize drift")
+                    tty::json_escape_c1(
+                        &serde_json::to_string_pretty(&d).expect("serialize drift")
+                    )
                 );
             } else {
                 summary::print_drift(&d);

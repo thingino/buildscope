@@ -199,6 +199,8 @@ const tr: Record<string, string> = {
   th_partition_size: "bölüm boyutu",
   th_name: "ad",
   chip_new: "yeni",
+  chip_alias: "takma ad",
+  help_alias_partition: "Bu bölüm diğerlerini kapsar, dolayısıyla baytları zaten onların satırlarında sayılır. Bir değişiklik çift sayım olurdu, bu yüzden fark gösterilmez.",
   chip_removed: "kaldırıldı",
   n_changed: "{n} değişti",
   no_differences: "Bu iki derleme arasında fark yok.",

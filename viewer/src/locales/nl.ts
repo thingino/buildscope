@@ -199,6 +199,8 @@ const nl: Record<string, string> = {
   th_partition_size: "partitiegrootte",
   th_name: "naam",
   chip_new: "nieuw",
+  chip_alias: "alias",
+  help_alias_partition: "Deze partitie omvat de andere, dus haar bytes zijn al in hun rijen geteld. Een wijziging zou dubbel tellen, daarom wordt geen verschil getoond.",
   chip_removed: "verwijderd",
   n_changed: "{n} gewijzigd",
   no_differences: "Geen verschillen tussen deze twee builds.",

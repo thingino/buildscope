@@ -199,6 +199,8 @@ const fr: Record<string, string> = {
   th_partition_size: "taille de partition",
   th_name: "nom",
   chip_new: "nouveau",
+  chip_alias: "alias",
+  help_alias_partition: "Cette partition couvre les autres, ses octets sont donc déjà comptés dans leurs lignes. Un changement serait compté deux fois, aucun écart n'est donc affiché.",
   chip_removed: "supprimé",
   n_changed: "{n} modifiés",
   no_differences: "Aucune différence entre ces deux générations.",

@@ -198,6 +198,8 @@ const ar: Record<string, string> = {
   th_partition_size: "حجم القسم",
   th_name: "الاسم",
   chip_new: "جديد",
+  chip_alias: "اسم بديل",
+  help_alias_partition: "يمتد هذا القسم فوق الأقسام الأخرى، لذا فإن بايتاته محسوبة بالفعل في صفوفها. أي تغيّر فيه سيكون احتسابًا مزدوجًا، لذلك لا يُعرض أي فارق.",
   chip_removed: "مُزال",
   n_changed: "متغيّرة: {n}",
   no_differences: "لا توجد فروق بين هذين البناءين.",

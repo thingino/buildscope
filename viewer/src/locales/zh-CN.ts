@@ -199,6 +199,8 @@ const zhCN: Record<string, string> = {
   th_partition_size: "分区大小",
   th_name: "名称",
   chip_new: "新增",
+  chip_alias: "别名",
+  help_alias_partition: "该分区覆盖了其他分区，其字节已计入那些行中。显示变化会造成重复计算，因此不显示差值。",
   chip_removed: "已移除",
   n_changed: "{n} 项变化",
   no_differences: "这两个构建之间没有差异。",

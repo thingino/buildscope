@@ -45,7 +45,10 @@ pub struct PartitionDelta {
     pub size_after: Option<u64>,
     pub used_before: Option<u64>,
     pub used_after: Option<u64>,
-    pub used_delta: i64,
+    /// None for a partition that contains others: see `overlaps`.
+    pub used_delta: Option<i64>,
+    /// This partition spans others, so its bytes are counted twice over.
+    pub overlaps: bool,
 }
 
 #[derive(Serialize, Debug, Clone)]
@@ -130,6 +133,16 @@ pub fn diff(a: &Report, b: &Report) -> Drift {
         let mut names: Vec<&&str> = pa.keys().chain(pb.keys()).collect();
         names.sort();
         names.dedup();
+        // A partition spanning others -- a whole-chip alias like `all` -- holds
+        // no bytes of its own: everything in it is already counted in the rows
+        // it covers. Differencing one snapshot's copy of that total against the
+        // other's compares two double-counts, and when a layout change adds or
+        // drops the alias it reads as the whole chip being filled or freed:
+        // the largest number in the table, and a fiction.
+        //
+        // Only suppressed while something else accounts for the bytes.
+        let any_real = pa.values().chain(pb.values()).any(|p| !p.overlaps);
+
         for n in names {
             let x = pa.get(*n);
             let y = pb.get(*n);
@@ -138,13 +151,20 @@ pub fn diff(a: &Report, b: &Report) -> Drift {
             if x.is_some() && y.is_some() && used_b == used_a {
                 continue;
             }
+            let overlaps =
+                (x.is_some_and(|p| p.overlaps) || y.is_some_and(|p| p.overlaps)) && any_real;
             partitions.push(PartitionDelta {
                 name: n.to_string(),
                 size_before: x.and_then(|p| p.size),
                 size_after: y.and_then(|p| p.size),
                 used_before: used_b,
                 used_after: used_a,
-                used_delta: used_a.unwrap_or(0) as i64 - used_b.unwrap_or(0) as i64,
+                used_delta: if overlaps {
+                    None
+                } else {
+                    Some(used_a.unwrap_or(0) as i64 - used_b.unwrap_or(0) as i64)
+                },
+                overlaps,
             });
         }
     }
@@ -199,6 +219,59 @@ mod tests {
             });
         }
         analyze(&s)
+    }
+
+    /// A layout with a whole-chip alias, as thingino's `all` was.
+    fn report_with_alias(with_alias: bool, rootfs_used: u64) -> Report {
+        let mut s = Snapshot::empty("t");
+        s.pfl = Some("alpha,./bin/alpha\n".to_string());
+        s.target = vec![TargetEntry {
+            path: "bin/alpha".into(),
+            size: rootfs_used,
+            is_symlink: false,
+            charged: true,
+        }];
+        s.env_texts = vec![crate::snapshot::NamedText {
+            name: "uenv.txt".into(),
+            text: if with_alias {
+                "mtdparts=nor0:256k(boot),64k(env),1024k(rootfs),2048k@0(all)\n".into()
+            } else {
+                "mtdparts=nor0:256k(boot),64k(env),1024k(rootfs)\n".to_string()
+            },
+        }];
+        analyze(&s)
+    }
+
+    #[test]
+    fn a_spanning_partition_reports_no_delta() {
+        // Dropping the alias must not read as the whole chip being freed, and
+        // adding it back must not read as the chip filling up.
+        for (a, b) in [
+            (
+                report_with_alias(true, 1000),
+                report_with_alias(false, 1000),
+            ),
+            (
+                report_with_alias(false, 1000),
+                report_with_alias(true, 1000),
+            ),
+        ] {
+            let d = diff(&a, &b);
+            let all = d.partitions.iter().find(|p| p.name == "all");
+            if let Some(all) = all {
+                assert!(all.overlaps, "the alias should be flagged as spanning");
+                assert_eq!(
+                    all.used_delta, None,
+                    "a spanning partition must not carry a delta"
+                );
+            }
+            // Real partitions keep theirs.
+            for p in &d.partitions {
+                if !p.overlaps {
+                    assert!(p.used_delta.is_some(), "{} lost its delta", p.name);
+                }
+            }
+        }
     }
 
     #[test]

@@ -199,6 +199,8 @@ const ko: Record<string, string> = {
   th_partition_size: "파티션 크기",
   th_name: "이름",
   chip_new: "신규",
+  chip_alias: "별칭",
+  help_alias_partition: "이 파티션은 다른 파티션들을 포괄하므로 해당 바이트는 이미 각 행에 계산되어 있습니다. 변화를 표시하면 이중 계산이 되므로 차이를 표시하지 않습니다.",
   chip_removed: "제거",
   n_changed: "{n}개 변경",
   no_differences: "두 빌드 간 차이가 없습니다.",

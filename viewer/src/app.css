@@ -1440,6 +1440,14 @@ body.help-on [data-help] {
   border-color: rgba(248, 81, 73, 0.45);
 }
 
+/* Marks a partition that spans others. Deliberately recessive: it explains
+   an absent number, it does not report a problem. */
+.chip-alias {
+  color: var(--muted);
+  border-color: var(--border);
+  margin-inline-start: 6px;
+}
+
 /* ---------- drop zone actions (browser scanning) ---------- */
 
 .drop-actions {

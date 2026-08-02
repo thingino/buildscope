@@ -199,6 +199,8 @@ const uk: Record<string, string> = {
   th_partition_size: "розмір розділу",
   th_name: "назва",
   chip_new: "новий",
+  chip_alias: "псевдонім",
+  help_alias_partition: "Цей розділ охоплює інші, тож його байти вже враховані в їхніх рядках. Зміна була б подвійним обліком, тому різниця не показується.",
   chip_removed: "видалений",
   n_changed: "змінено: {n}",
   no_differences: "Немає різниці між цими двома збірками.",

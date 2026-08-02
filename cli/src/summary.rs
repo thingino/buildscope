@@ -464,12 +464,18 @@ pub fn print_drift(d: &Drift) {
     if !d.partitions.is_empty() {
         outln!("   partitions (used bytes):");
         for p in &d.partitions {
+            // A container's bytes belong to the rows it spans, so it is named
+            // without a delta rather than credited with the whole chip.
+            let delta = match p.used_delta {
+                Some(v) => sdelta(v),
+                None => "(alias)".to_string(),
+            };
             outln!(
                 "     {:<10} {:>10} -> {:>10}   {}",
                 p.name,
                 opt_h(p.used_before),
                 opt_h(p.used_after),
-                sdelta(p.used_delta)
+                delta
             );
         }
     }

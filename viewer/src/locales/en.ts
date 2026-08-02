@@ -204,6 +204,8 @@ const en: Record<string, string> = {
   th_partition_size: "partition size",
   th_name: "name",
   chip_new: "new",
+  chip_alias: "alias",
+  help_alias_partition: "This partition spans the others, so its bytes are already counted in their rows. A change in it would be a double count, so no delta is shown.",
   chip_removed: "removed",
   n_changed: "{n} changed",
   no_differences: "No differences between these two builds.",

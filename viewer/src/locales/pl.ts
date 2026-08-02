@@ -199,6 +199,8 @@ const pl: Record<string, string> = {
   th_partition_size: "rozmiar partycji",
   th_name: "nazwa",
   chip_new: "nowy",
+  chip_alias: "alias",
+  help_alias_partition: "Ta partycja obejmuje pozostałe, więc jej bajty są już liczone w ich wierszach. Zmiana byłaby podwójnym liczeniem, dlatego nie pokazujemy różnicy.",
   chip_removed: "usunięty",
   n_changed: "zmienionych: {n}",
   no_differences: "Brak różnic między tymi dwiema kompilacjami.",

@@ -199,6 +199,8 @@ const de: Record<string, string> = {
   th_partition_size: "Partitionsgröße",
   th_name: "Name",
   chip_new: "neu",
+  chip_alias: "Alias",
+  help_alias_partition: "Diese Partition umspannt die anderen, ihre Bytes sind also in deren Zeilen bereits gezählt. Eine Änderung wäre doppelt gezählt, deshalb wird keine Differenz angezeigt.",
   chip_removed: "entfernt",
   n_changed: "{n} geändert",
   no_differences: "Keine Unterschiede zwischen diesen beiden Builds.",

@@ -199,6 +199,8 @@ const ja: Record<string, string> = {
   th_partition_size: "パーティションサイズ",
   th_name: "名前",
   chip_new: "新規",
+  chip_alias: "エイリアス",
+  help_alias_partition: "このパーティションは他を包含するため、そのバイト数は各行ですでに数えられています。変化を示すと二重計上になるので、差分は表示しません。",
   chip_removed: "削除",
   n_changed: "{n} 件変化",
   no_differences: "この 2 つのビルドに差分はありません。",

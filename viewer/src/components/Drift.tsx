@@ -271,11 +271,24 @@ export default function Drift({
                 <tbody>
                   {drift.partitions.map((p) => (
                     <tr key={p.name}>
-                      <td>{p.name}</td>
+                      <td>
+                        {p.name}
+                        {/* Named, not hidden: that the alias came or went is
+                            real, it is only its delta that is not. */}
+                        {p.overlaps && (
+                          <span className="chip chip-alias" data-help="help_alias_partition">
+                            {t("chip_alias")}
+                          </span>
+                        )}
+                      </td>
                       <td className="num">{opt(p.usedBefore)}</td>
                       <td className="num">{opt(p.usedAfter)}</td>
                       <td className="num">
-                        <DeltaCell d={p.usedDelta} />
+                        {p.usedDelta === null ? (
+                          <span className="muted">–</span>
+                        ) : (
+                          <DeltaCell d={p.usedDelta} />
+                        )}
                       </td>
                       <td className="num mono-dim">
                         {p.sizeBefore === p.sizeAfter

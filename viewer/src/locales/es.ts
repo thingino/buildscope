@@ -199,6 +199,8 @@ const es: Record<string, string> = {
   th_partition_size: "tamaño de partición",
   th_name: "nombre",
   chip_new: "nuevo",
+  chip_alias: "alias",
+  help_alias_partition: "Esta partición abarca las demás, así que sus bytes ya se cuentan en sus filas. Un cambio sería un doble conteo, por eso no se muestra ninguna diferencia.",
   chip_removed: "eliminado",
   n_changed: "{n} cambiados",
   no_differences: "No hay diferencias entre estas dos compilaciones.",

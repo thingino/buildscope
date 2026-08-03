@@ -52,7 +52,26 @@ function allowed(tag, name) {
  * than longer because a snapshot is re-uploaded to the same tag with --clobber
  * on every rerun; the long stale window is safe because revalidation is an
  * If-None-Match away, and a rerun changes the ETag. */
-const CACHE_CONTROL = 'public, max-age=300, stale-while-revalidate=86400';
+/* The current release, which CI re-uploads to the same tag with --clobber on
+ * every rerun, so it has to be re-checked often. `stale-if-error` is the
+ * failure-case sibling of `stale-while-revalidate`: if GitHub is down or
+ * refuses us, a reader gets the last good copy instead of an error. */
+const CACHE_CONTROL =
+    'public, max-age=300, stale-while-revalidate=86400, stale-if-error=86400';
+
+/* A release that is no longer the newest is finished: nothing re-uploads to it,
+ * so re-checking it every five minutes buys nothing and browsing history costs
+ * a revalidation per asset per visit. Deliberately NOT `immutable`, which would
+ * stop the browser revalidating even on reload -- a rerun against an older tag
+ * is unusual but does happen, and the ETag makes catching that nearly free. */
+const SETTLED_CONTROL =
+    'public, max-age=86400, stale-while-revalidate=604800, stale-if-error=604800';
+
+/* Discovery. Longer than it was: confirmed tags are remembered now, so a slow
+ * rediscovery no longer risks losing a release, and this is the request that
+ * spends the shared API quota. */
+const LIST_CONTROL =
+    'public, max-age=900, stale-while-revalidate=86400, stale-if-error=86400';
 /* The remembered-tags entry is not a cached answer, it is a note to self, so
  * it is kept far longer than any response. Evicting it costs a rediscovery,
  * never a wrong answer: every remembered tag is re-probed before it is
@@ -66,10 +85,10 @@ function matches(header, etag) {
     return header.split(',').some((t) => t.trim().replace(/^W\//, '') === want);
 }
 
-function notModified(etag, origin) {
+function notModified(etag, origin, control = CACHE_CONTROL) {
     const h = new Headers(cors(origin));
     if (etag) h.set('ETag', etag);
-    h.set('Cache-Control', CACHE_CONTROL);
+    h.set('Cache-Control', control);
     return new Response(null, { status: 304, headers: h });
 }
 
@@ -214,7 +233,7 @@ export default {
             }
             const h = new Headers(cors(origin));
             h.set('Content-Type', 'application/json');
-            h.set('Cache-Control', CACHE_CONTROL);
+            h.set('Cache-Control', LIST_CONTROL);
             const res = new Response(JSON.stringify({ tags }), { status: 200, headers: h });
             if (request.method === 'GET') ctx.waitUntil(cache.put(listKey, res.clone()));
             res.headers.set('X-Fleet-Cache', 'MISS');
@@ -233,12 +252,27 @@ export default {
         const key = new Request(`${url.origin}/fleet?repo=${which}&tag=${tag}&name=${name}`,
                                 { method: 'GET' });
         const cache = caches.default;
+
+        /* Only the newest release is still being written to, so everything
+         * behind it can be held far longer. The tag list we already keep says
+         * which that is; not knowing simply means the cautious policy. */
+        let control = CACHE_CONTROL;
+        try {
+            const prev = await cache.match(
+                new Request(`${url.origin}/fleet/known?repo=${which}`, { method: 'GET' }));
+            if (prev) {
+                const body = await prev.json();
+                const newest = Array.isArray(body.tags) ? body.tags[0] : null;
+                if (newest && tag !== newest) control = SETTLED_CONTROL;
+            }
+        } catch { /* the cautious policy stands */ }
+
         const inm = request.headers.get('If-None-Match');
         const hit = await cache.match(key);
         if (hit) {
             const etag = hit.headers.get('ETag');
             /* Nothing to send: the reader's copy is the one we have. */
-            if (matches(inm, etag)) return notModified(etag, origin);
+            if (matches(inm, etag)) return notModified(etag, origin, control);
             const h = new Headers(hit.headers);
             for (const [k, v] of Object.entries(cors(origin))) h.set(k, v);
             h.set('X-Fleet-Cache', 'HIT');
@@ -258,7 +292,7 @@ export default {
         /* Pass the length through, or the viewer's progress bar goes indeterminate. */
         const len = upstream.headers.get('Content-Length');
         if (len) h.set('Content-Length', len);
-        h.set('Cache-Control', CACHE_CONTROL);
+        h.set('Cache-Control', control);
         /* Upstream's validators, forwarded. Without them a reader whose copy has
          * expired can only re-download the whole asset, and no cache lifetime
          * would be safe, because nothing could notice a rerun replacing it. */
@@ -273,7 +307,7 @@ export default {
              * response itself feeds the cache -- no clone, because tee-ing a
              * stream whose other half is never read would strand it. */
             if (request.method === 'GET') ctx.waitUntil(cache.put(key, res));
-            return notModified(h.get('ETag'), origin);
+            return notModified(h.get('ETag'), origin, control);
         }
         /* clone() tees the stream: the client and the cache each get a copy, and
          * the bytes are still never held in memory. cache.put only takes GETs. */

@@ -78,6 +78,13 @@ const LIST_CONTROL =
  * offered. */
 const REMEMBER_CONTROL = 'public, max-age=31536000';
 
+/* Part of every cached response key, so changing a policy above takes effect
+ * on the next deploy instead of waiting out the entries already stored under
+ * the old one. Bump it whenever the cache semantics change. Deliberately NOT
+ * part of the remembered-tags key: that is memory, and a policy change is no
+ * reason to forget which releases have snapshots. */
+const CACHE_VERSION = 'v2';
+
 /* An If-None-Match may list several, and may weaken them with W/. */
 function matches(header, etag) {
     if (!header || !etag) return false;
@@ -204,7 +211,8 @@ export default {
         /* Which releases have a snapshot. Small enough to hold in memory and
          * cache whole, unlike the assets below, which stream. */
         if (url.pathname === '/fleet/releases') {
-            const listKey = new Request(`${url.origin}/fleet/releases?repo=${which}`, { method: 'GET' });
+            const listKey = new Request(
+                `${url.origin}/fleet/releases?repo=${which}&c=${CACHE_VERSION}`, { method: 'GET' });
             const cache = caches.default;
             const hit = await cache.match(listKey);
             if (hit) {
@@ -249,8 +257,9 @@ export default {
          *
          * The repo is part of the key: both repos carry the same tag and asset
          * names, and without it one would be served the other's bytes. */
-        const key = new Request(`${url.origin}/fleet?repo=${which}&tag=${tag}&name=${name}`,
-                                { method: 'GET' });
+        const key = new Request(
+            `${url.origin}/fleet?repo=${which}&tag=${tag}&name=${name}&c=${CACHE_VERSION}`,
+            { method: 'GET' });
         const cache = caches.default;
 
         /* Only the newest release is still being written to, so everything

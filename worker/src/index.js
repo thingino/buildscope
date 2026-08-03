@@ -29,10 +29,10 @@ const REPOS = {
 };
 const DEFAULT_REPO = 'thingino';
 
-/* How many recent tags to check for a snapshot. Each is one HEAD, and the
- * answer is cached, so this is cheap; it only has to be deep enough to cover
- * the releases anyone would still want to look at. */
-const PROBE_LIMIT = 8;
+/* Bounds the HEADs per refresh. Each is one HEAD and the answer is cached, so
+ * this is cheap. Covers remembered tags as well as freshly
+ * discovered ones, so it is the length of the history the picker can offer. */
+const PROBE_LIMIT = 32;
 
 /* The allow-list IS the security model, same as the repo one above. Only
  * firmware-* release tags, and only the two assets a snapshot publishes. */
@@ -53,6 +53,11 @@ function allowed(tag, name) {
  * on every rerun; the long stale window is safe because revalidation is an
  * If-None-Match away, and a rerun changes the ETag. */
 const CACHE_CONTROL = 'public, max-age=300, stale-while-revalidate=86400';
+/* The remembered-tags entry is not a cached answer, it is a note to self, so
+ * it is kept far longer than any response. Evicting it costs a rediscovery,
+ * never a wrong answer: every remembered tag is re-probed before it is
+ * offered. */
+const REMEMBER_CONTROL = 'public, max-age=31536000';
 
 /* An If-None-Match may list several, and may weaken them with W/. */
 function matches(header, etag) {
@@ -81,42 +86,73 @@ function assetUrl(repo, tag, name) {
 }
 
 /**
- * Which recent releases carry a fleet snapshot.
+ * Tags that might carry a snapshot, from sources that do not share a quota.
  *
  * Deliberately not `/releases`: that endpoint embeds every release's full
- * asset list, which for a firmware repo is ~18 MB of JSON to discover a
- * handful of tags -- and it spends the caller's 60-per-hour unauthenticated
- * quota, so a shared address runs out and sees nothing at all. Here it costs
- * a redirect, ~16 KB of tag names, and one HEAD per candidate, once per cache
- * period rather than once per reader.
+ * asset list, ~18 MB of JSON for a firmware repo to learn a handful of tag
+ * names.
+ *
+ * `api.github.com` allows 60 requests an hour PER IP, and a Worker's outbound
+ * address is shared with every other customer on that edge, so the API call
+ * is refused often. It used to be the only source of candidates, and when it
+ * failed the list collapsed to the single tag the redirect gives -- an answer
+ * indistinguishable from a real one, cached like a real one, which is how a
+ * published release quietly stopped being offered.
+ *
+ * The tags feed costs no quota at all and is ~10 KB. The API still runs
+ * because it reaches further back, but now it is an enrichment: losing it
+ * costs a few older candidates rather than all of them.
  */
-async function snapshotTags(repo) {
-    /* Newest release, from a redirect: no quota, nothing to parse. */
-    let newest = '';
-    try {
-        const res = await fetch(`https://github.com/${repo}/releases/latest`, { redirect: 'manual' });
-        newest = (res.headers.get('Location') || '').split('/releases/tag/')[1] || '';
-    } catch { /* fall back to the tag list alone */ }
+async function candidateTags(repo) {
+    const seen = new Set();
 
-    /* Candidates. This endpoint carries no asset lists, so it is kilobytes. */
-    let candidates = [];
+    try {
+        const res = await fetch(`https://github.com/${repo}/tags.atom`, {
+            headers: { 'User-Agent': 'buildscope-fleet' },
+        });
+        if (res.ok) {
+            const xml = await res.text();
+            /* The href of each entry, not any tag URL quoted in its text: a
+             * release note that links another project's tag is not ours. */
+            for (const entry of xml.match(/<entry>[\s\S]*?<\/entry>/g) || []) {
+                const m = /<link[^>]*href="[^"]*\/releases\/tag\/([^"]+)"/.exec(entry);
+                if (m) seen.add(decodeURIComponent(m[1]));
+            }
+        }
+    } catch { /* the API and the redirect are still to come */ }
+
     try {
         const res = await fetch(`https://api.github.com/repos/${repo}/tags?per_page=30`, {
             headers: { 'User-Agent': 'buildscope-fleet' },
         });
-        if (res.ok) {
-            candidates = (await res.json())
-                .map((t) => t && t.name)
-                .filter((t) => typeof t === 'string' && TAG_RE.test(t));
-        }
-    } catch { /* the redirect may still have given us one */ }
+        if (res.ok) for (const t of await res.json()) if (t && t.name) seen.add(t.name);
+    } catch { /* rate limited, most likely; the feed already answered */ }
 
+    /* Newest release, from a redirect: no quota, nothing to parse. */
+    try {
+        const res = await fetch(`https://github.com/${repo}/releases/latest`, { redirect: 'manual' });
+        const newest = (res.headers.get('Location') || '').split('/releases/tag/')[1] || '';
+        if (newest) seen.add(newest);
+    } catch { /* whatever the other two found stands */ }
+
+    return [...seen].filter((t) => TAG_RE.test(t));
+}
+
+/**
+ * Which releases carry a snapshot, remembering the ones already confirmed.
+ *
+ * A release that has a snapshot does not stop having one, so a tag confirmed
+ * before is checked again rather than having to be rediscovered: enumeration
+ * failing cannot take an existing release off the list, and a release stays
+ * offered after it has aged out of the feed. Still probed every time, so one
+ * whose assets are deleted does drop away.
+ */
+async function snapshotTags(repo, remembered = []) {
+    const found = await candidateTags(repo);
     /* Date-stamped names, so lexical order is chronological. */
-    candidates.sort().reverse();
-    if (newest && TAG_RE.test(newest) && !candidates.includes(newest)) candidates.unshift(newest);
-    candidates = candidates.slice(0, PROBE_LIMIT);
+    const all = [...new Set([...found, ...remembered])].sort().reverse().slice(0, PROBE_LIMIT);
 
-    const checked = await Promise.all(candidates.map(async (tag) => {
+    const checked = await Promise.all(all.map(async (tag) => {
         try {
             const r = await fetch(assetUrl(repo, tag, 'fleet-index.json'), { method: 'HEAD', redirect: 'follow' });
             return r.ok ? tag : null;
@@ -158,7 +194,24 @@ export default {
                 h.set('X-Fleet-Cache', 'HIT');
                 return new Response(hit.body, { status: hit.status, headers: h });
             }
-            const tags = await snapshotTags(repo);
+            /* Tags confirmed on an earlier pass, so a failed enumeration
+             * cannot drop a release that is still published. */
+            const knownKey = new Request(`${url.origin}/fleet/known?repo=${which}`, { method: 'GET' });
+            let remembered = [];
+            try {
+                const prev = await cache.match(knownKey);
+                if (prev) {
+                    const body = await prev.json();
+                    if (Array.isArray(body.tags)) remembered = body.tags.filter((t) => TAG_RE.test(t));
+                }
+            } catch { /* a note to self that cannot be read is simply absent */ }
+
+            const tags = await snapshotTags(repo, remembered);
+            if (request.method === 'GET' && tags.length) {
+                ctx.waitUntil(cache.put(knownKey, new Response(JSON.stringify({ tags }), {
+                    headers: { 'Content-Type': 'application/json', 'Cache-Control': REMEMBER_CONTROL },
+                })));
+            }
             const h = new Headers(cors(origin));
             h.set('Content-Type', 'application/json');
             h.set('Cache-Control', CACHE_CONTROL);

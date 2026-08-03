@@ -20,10 +20,21 @@ every release's full asset list: for a firmware repo that is ~18 MB of JSON and
 8000 asset objects to learn a handful of tag names, spent out of the reader's
 own 60-per-hour unauthenticated quota, so a shared address runs out and the
 page silently shows nothing. `/fleet/releases` answers the same question in
-tens of bytes, from three cheap signals instead of the expensive one: the
-newest tag from the 302 that `github.com/<repo>/releases/latest` returns, which
-needs no parsing and no quota; candidates from the tags endpoint, which carries
-no asset lists; and one `HEAD` each to see which actually have the asset.
+tens of bytes, from signals that do not share a quota: the `tags.atom` feed,
+~10 KB and outside the API limit entirely; the newest tag from the 302 that
+`github.com/<repo>/releases/latest` returns, which needs no parsing either; the
+tags endpoint, which reaches further back when it is not rate limited; and one
+`HEAD` each to see which actually carry the asset.
+
+Confirmed tags are remembered between refreshes. The API allows 60 requests an
+hour *per IP* and a Worker's outbound address is shared with every other
+customer on that edge, so it is refused often; when it was the only source of
+candidates, a refusal collapsed the list to the single tag the redirect gives,
+and that answer was cached like a real one, so a published release quietly
+stopped being offered. Remembering means a failed enumeration cannot drop a
+release that is still published, and a release stays offered once it has aged
+out of the feed. Every remembered tag is re-probed before it is offered, so one
+whose assets are deleted still drops away.
 
 Only `firmware-*` tags, only `fleet-index.json` and `fleet-reports.tar.gz`, only
 the repos named in `REPOS`. That allow-list is the security model: without it

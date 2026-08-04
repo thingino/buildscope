@@ -79,6 +79,12 @@ pub struct Snapshot {
 
     /// Contents of .config (BR2_CONFIG).
     pub config: Option<String>,
+    /// Contents of the defconfig `.config` names in BR2_DEFCONFIG, when that
+    /// file is still on disk. The authored profile rather than the expansion:
+    /// a couple of dozen lines someone chose, against several hundred the
+    /// Kconfig machinery derived from them. Absent for an artifact-only scan,
+    /// and for a build tree whose source checkout has gone.
+    pub defconfig_text: Option<String>,
     /// Contents of build/packages-file-list.txt.
     pub pfl: Option<String>,
     /// Contents of build/build-time.log.
@@ -125,6 +131,7 @@ impl Snapshot {
             target: Vec::new(),
             images: Vec::new(),
             config: None,
+            defconfig_text: None,
             pfl: None,
             build_time_log: None,
             etc_modules: None,

@@ -254,6 +254,35 @@ fn collect_env_texts(paths: &BuildPaths) -> Vec<NamedText> {
     out
 }
 
+/// The authored defconfig, if `.config` names one that is still on disk.
+///
+/// The path is Buildroot's own record of where the profile came from, and it
+/// points outside the build tree -- normally into the source checkout beside
+/// it. Read only if it is there: a released build scanned on another machine
+/// has a stale path, which is a miss and not an error.
+///
+/// Capped, because a config file is small and this is a path taken from a file
+/// rather than from the command line. Only the contents are ever kept: the
+/// path itself carries the builder's home directory, which is exactly what the
+/// report goes out of its way not to publish.
+fn read_defconfig(config: &str) -> Option<String> {
+    const MAX_DEFCONFIG: u64 = 256 * 1024;
+
+    let path = config.lines().find_map(|line| {
+        line.trim()
+            .strip_prefix("BR2_DEFCONFIG=")
+            .map(|v| v.trim().trim_matches('"'))
+            .filter(|v| !v.is_empty())
+    })?;
+
+    let path = Path::new(path);
+    let meta = fs::metadata(path).ok()?;
+    if !meta.is_file() || meta.len() > MAX_DEFCONFIG {
+        return None;
+    }
+    fs::read_to_string(path).ok()
+}
+
 pub fn build_snapshot(
     paths: &BuildPaths,
     extra_env_text: Option<&str>,
@@ -271,6 +300,7 @@ pub fn build_snapshot(
 
     if let Some(c) = &paths.config {
         snap.config = fs::read_to_string(c).ok();
+        snap.defconfig_text = snap.config.as_deref().and_then(read_defconfig);
     }
     if let Some(b) = &paths.build_dir {
         snap.pfl = fs::read_to_string(b.join("packages-file-list.txt")).ok();

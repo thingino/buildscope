@@ -41,6 +41,22 @@ impl BrConfig {
         self.values.get(key).map(|s| s.as_str())
     }
 
+    /// Every option that is set, by key.
+    ///
+    /// Sorted, because the source is a hash map and a report that reordered
+    /// itself between runs would make every diff noise. Options that are not
+    /// set never appear: Buildroot writes those as comments, so "absent" and
+    /// "not set" are the same thing here.
+    pub fn options(&self) -> Vec<(String, String)> {
+        let mut out: Vec<(String, String)> = self
+            .values
+            .iter()
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect();
+        out.sort_by(|a, b| a.0.cmp(&b.0));
+        out
+    }
+
     pub fn is_y(&self, key: &str) -> bool {
         self.get(key) == Some("y")
     }

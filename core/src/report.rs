@@ -52,6 +52,31 @@ pub struct BuildInfo {
     pub os_release: BTreeMap<String, String>,
 }
 
+/// One option Buildroot was configured with.
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ConfigOption {
+    pub key: String,
+    pub value: String,
+}
+
+/// How this build was configured: the profile someone authored, and what the
+/// Kconfig machinery made of it.
+///
+/// Both, because they answer different questions. The defconfig is a couple of
+/// dozen lines and says what was *chosen* -- the SoC, the sensor, the features
+/// -- which is what identifies a camera. The expansion is several hundred
+/// options and says what was actually *built*, which is what explains a size
+/// or a behaviour. Neither is derivable from the other here: Buildroot needs
+/// its whole Kconfig tree to go one way, and the choices are not recoverable
+/// from the result going the other.
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct BuildConfigReport {
+    /// The defconfig file verbatim, when the source tree was still there.
+    pub defconfig_text: Option<String>,
+    /// Every option set in the expanded `.config`, sorted by key.
+    pub options: Vec<ConfigOption>,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PartitionReport {
     pub name: String,
@@ -184,6 +209,9 @@ pub struct Report {
     pub packages: Vec<PackageReport>,
     pub modules: Vec<ModuleReport>,
     pub modules_meta: Option<ModulesMeta>,
+    /// Absent for an artifact-only scan, which has no build to configure.
+    #[serde(default)]
+    pub build_config: Option<BuildConfigReport>,
     pub timings: Vec<TimingReport>,
     /// Files a package installed that are absent from the final rootfs,
     /// excluding Buildroot's default target-finalize removals (headers,

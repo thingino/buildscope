@@ -1431,6 +1431,16 @@ pub fn analyze(snap: &Snapshot) -> Report {
         packages,
         modules,
         modules_meta,
+        // Both halves come from the same scan: the expansion is the .config
+        // already parsed for build facts, the profile is the file it names.
+        build_config: cfg.as_ref().map(|c| crate::report::BuildConfigReport {
+            defconfig_text: snap.defconfig_text.clone(),
+            options: c
+                .options()
+                .into_iter()
+                .map(|(key, value)| crate::report::ConfigOption { key, value })
+                .collect(),
+        }),
         timings,
         removed_not_shipped,
     }

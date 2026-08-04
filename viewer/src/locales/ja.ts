@@ -52,7 +52,7 @@ const ja: Record<string, string> = {
   tab_packages: "パッケージ",
   tab_files: "ファイル",
   tab_kernel: "カーネル",
-  tab_time: "ビルド時間",
+  tab_time: "ビルド",
   tab_drift: "増減",
 
   // flash tab
@@ -178,6 +178,13 @@ const ja: Record<string, string> = {
   stat_packages_timed: "計測済みパッケージ",
   stat_finished: "完了時刻",
   no_build_log: "このツリーに build-time.log がありません。",
+  stat_profile: "プロファイル",
+  stat_build_config: "ビルド設定",
+  profile_title: "カメラプロファイル (defconfig)",
+  build_config_title: "ビルド設定",
+  n_options: "{n} 項目",
+  help_profile: "このカメラのビルド元となった defconfig を、書かれたそのままで表示します。SoC、センサー、フラッシュ容量、選択された機能。数十行に対し、Kconfig がそこから導く項目は数百に及びます。",
+  help_build_config: "Buildroot が実際にビルドに用いた全項目で、プロファイルを展開したものです。サイズや挙動を説明するのはこちら、カメラを識別するのはプロファイルです。",
 
   // drift tab
   baseline: "基準",
@@ -195,6 +202,9 @@ const ja: Record<string, string> = {
   stat_env_changed: "環境変数の変更",
   drift_config: "カーネル設定",
   drift_env: "U-Boot 環境変数",
+  stat_build_config_changed: "ビルド設定の変更",
+  drift_build_config: "ビルド設定",
+  help_build_config_changed: "2 つのビルドで異なる設定になった Buildroot 項目。パッケージの増減やサイズの変化は、たいていここから始まります。",
   config_incomparable: "これらのビルドはカーネルが異なります（{before} と {after}）。ほぼすべての項目が異なるため、比較しても意味がありません。",
   help_config_changed: "2 つのビルドで異なる設定になったカーネル項目。開くと項目と値が確認できます。",
   help_env_changed: "異なる U-Boot 変数。基板が起動する際のパーティション構成を含みます。",

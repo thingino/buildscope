@@ -52,7 +52,7 @@ const de: Record<string, string> = {
   tab_packages: "Pakete",
   tab_files: "Dateien",
   tab_kernel: "Kernel",
-  tab_time: "Build-Dauer",
+  tab_time: "Build",
   tab_drift: "Delta",
 
   // flash tab
@@ -178,6 +178,13 @@ const de: Record<string, string> = {
   stat_packages_timed: "Pakete gemessen",
   stat_finished: "fertig",
   no_build_log: "Kein build-time.log in diesem Verzeichnis.",
+  stat_profile: "Profil",
+  stat_build_config: "Build-Konfiguration",
+  profile_title: "Kameraprofil (defconfig)",
+  build_config_title: "Build-Konfiguration",
+  n_options: "{n} Optionen",
+  help_profile: "Das defconfig, aus dem diese Kamera gebaut wurde, genau wie geschrieben: SoC, Sensor, Flash-Größe und die gewählten Funktionen. Ein paar Dutzend Zeilen gegenüber den mehreren Hundert, die Kconfig daraus ableitet.",
+  help_build_config: "Jede Option, mit der Buildroot am Ende gebaut hat, aus dem Profil expandiert. Das erklärt eine Größe oder ein Verhalten; das Profil identifiziert die Kamera.",
 
   // drift tab
   baseline: "Baseline",
@@ -195,6 +202,9 @@ const de: Record<string, string> = {
   stat_env_changed: "Umgebung geändert",
   drift_config: "Kernel-Konfiguration",
   drift_env: "U-Boot-Umgebung",
+  stat_build_config_changed: "Build-Konfig geändert",
+  drift_build_config: "Build-Konfiguration",
+  help_build_config_changed: "Buildroot-Optionen, die in den beiden Builds unterschiedlich gesetzt sind. Hier beginnt meist ein neues Paket oder eine Größenänderung.",
   config_incomparable: "Diese Builds verwenden verschiedene Kernel ({before} und {after}), daher unterscheidet sich fast jede Option und ein Vergleich sagt nichts aus.",
   help_config_changed: "Kernel-Optionen, die in den beiden Builds unterschiedlich entschieden wurden. Öffnen für Details.",
   help_env_changed: "U-Boot-Variablen, die sich unterscheiden, einschließlich der Partitionsaufteilung, mit der das Board startet.",

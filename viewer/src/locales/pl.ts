@@ -52,7 +52,7 @@ const pl: Record<string, string> = {
   tab_packages: "Pakiety",
   tab_files: "Pliki",
   tab_kernel: "Jądro",
-  tab_time: "Czas kompilacji",
+  tab_time: "Kompilacja",
   tab_drift: "Różnica",
 
   // flash tab
@@ -178,6 +178,13 @@ const pl: Record<string, string> = {
   stat_packages_timed: "zmierzone pakiety",
   stat_finished: "zakończono",
   no_build_log: "Brak build-time.log w tym drzewie.",
+  stat_profile: "profil",
+  stat_build_config: "konfiguracja kompilacji",
+  profile_title: "Profil kamery (defconfig)",
+  build_config_title: "Konfiguracja kompilacji",
+  n_options: "{n} opcji",
+  help_profile: "Defconfig, z którego zbudowano tę kamerę, dokładnie tak jak go zapisano: SoC, sensor, rozmiar pamięci flash i wybrane funkcje. Kilkadziesiąt linii wobec setek, które Kconfig z nich wyprowadza.",
+  help_build_config: "Każda opcja, z którą Buildroot faktycznie zbudował obraz, rozwinięta z profilu. To wyjaśnia rozmiar lub zachowanie; profil natomiast identyfikuje kamerę.",
 
   // drift tab
   baseline: "odniesienie",
@@ -195,6 +202,9 @@ const pl: Record<string, string> = {
   stat_env_changed: "zmiany środowiska",
   drift_config: "Konfiguracja jądra",
   drift_env: "Środowisko U-Boot",
+  stat_build_config_changed: "zmiany konfiguracji kompilacji",
+  drift_build_config: "Konfiguracja kompilacji",
+  help_build_config_changed: "Opcje Buildroota ustawione inaczej w obu kompilacjach. Zwykle stąd bierze się nowy pakiet albo zmiana rozmiaru.",
   config_incomparable: "Te kompilacje używają różnych jąder ({before} i {after}), więc niemal każda opcja się różni i porównanie nic nie mówi.",
   help_config_changed: "Opcje jądra ustawione inaczej w obu kompilacjach. Otwórz, aby zobaczyć które i z jaką wartością.",
   help_env_changed: "Zmienne U-Boot, które się różnią, w tym układ partycji, z którym startuje płyta.",

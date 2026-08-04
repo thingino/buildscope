@@ -52,7 +52,7 @@ const pt: Record<string, string> = {
   tab_packages: "Pacotes",
   tab_files: "Ficheiros",
   tab_kernel: "Kernel",
-  tab_time: "Tempo de compilação",
+  tab_time: "Compilação",
   tab_drift: "Delta",
 
   // flash tab
@@ -178,6 +178,13 @@ const pt: Record<string, string> = {
   stat_packages_timed: "pacotes cronometrados",
   stat_finished: "concluída",
   no_build_log: "Sem build-time.log nesta árvore.",
+  stat_profile: "perfil",
+  stat_build_config: "configuração de compilação",
+  profile_title: "Perfil da câmera (defconfig)",
+  build_config_title: "Configuração de compilação",
+  n_options: "{n} opções",
+  help_profile: "O defconfig com que esta câmera foi compilada, exatamente como foi escrito: o SoC, o sensor, o tamanho da flash e as funções escolhidas. Algumas dezenas de linhas contra as centenas que o Kconfig deriva delas.",
+  help_build_config: "Cada opção com que o Buildroot acabou compilando, expandida a partir do perfil. É isto que explica um tamanho ou um comportamento; o perfil é o que identifica a câmera.",
 
   // drift tab
   baseline: "referência",
@@ -195,6 +202,9 @@ const pt: Record<string, string> = {
   stat_env_changed: "ambiente alterado",
   drift_config: "Configuração do kernel",
   drift_env: "Ambiente U-Boot",
+  stat_build_config_changed: "config de compilação alterada",
+  drift_build_config: "Configuração de compilação",
+  help_build_config_changed: "Opções do Buildroot definidas de forma diferente entre as duas compilações. É normalmente aqui que começa o aparecimento de um pacote ou uma mudança de tamanho.",
   config_incomparable: "Estas compilações usam kernels diferentes ({before} e {after}), por isso quase todas as opções diferem e compará-las não diz nada.",
   help_config_changed: "Opções do kernel decididas de forma diferente entre as duas compilações. Abra para ver quais e com que valor.",
   help_env_changed: "Variáveis U-Boot que diferem, incluindo o esquema de partições com que a placa arranca.",

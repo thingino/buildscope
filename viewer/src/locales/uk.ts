@@ -52,7 +52,7 @@ const uk: Record<string, string> = {
   tab_packages: "Пакети",
   tab_files: "Файли",
   tab_kernel: "Ядро",
-  tab_time: "Час збірки",
+  tab_time: "Збірка",
   tab_drift: "Різниця",
 
   // flash tab
@@ -178,6 +178,13 @@ const uk: Record<string, string> = {
   stat_packages_timed: "виміряні пакети",
   stat_finished: "завершено",
   no_build_log: "У цьому дереві немає build-time.log.",
+  stat_profile: "профіль",
+  stat_build_config: "конфігурація збірки",
+  profile_title: "Профіль камери (defconfig)",
+  build_config_title: "Конфігурація збірки",
+  n_options: "{n} параметрів",
+  help_profile: "Defconfig, з якого зібрано цю камеру, точно так, як його написано: SoC, сенсор, обсяг флеш-пам'яті та обрані функції. Кілька десятків рядків проти сотень, які Kconfig з них виводить.",
+  help_build_config: "Усі параметри, з якими Buildroot насправді зібрав образ, розгорнуті з профілю. Саме вони пояснюють розмір або поведінку; профіль же визначає, що це за камера.",
 
   // drift tab
   baseline: "база",
@@ -195,6 +202,9 @@ const uk: Record<string, string> = {
   stat_env_changed: "зміни середовища",
   drift_config: "Конфігурація ядра",
   drift_env: "Середовище U-Boot",
+  stat_build_config_changed: "зміни конфігурації збірки",
+  drift_build_config: "Конфігурація збірки",
+  help_build_config_changed: "Параметри Buildroot, задані по-різному у двох збірках. Зазвичай саме звідси береться новий пакунок або зміна розміру.",
   config_incomparable: "Ці збірки використовують різні ядра ({before} і {after}), тож відрізняється майже кожен параметр і порівняння нічого не дає.",
   help_config_changed: "Параметри ядра, задані по-різному у двох збірках. Відкрийте, щоб побачити які і з якими значеннями.",
   help_env_changed: "Змінні U-Boot, що відрізняються, включно з розміткою розділів, з якою завантажується плата.",

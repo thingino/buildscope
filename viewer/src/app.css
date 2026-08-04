@@ -1465,6 +1465,27 @@ body.help-on [data-help] {
   border-color: rgba(248, 81, 73, 0.45);
 }
 
+/* A defconfig shown as written: wrapped rather than scrolled, because the
+   lines are short and the comments at the top carry the board name. */
+.defconfig {
+  margin: 0;
+  padding: 12px 14px;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.65;
+  color: var(--ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* A stat whose value is a name, not a number: the mono face and the 19px of a
+   count would overflow the tile. */
+.stat-value.stat-name {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
 /* Marks a partition that spans others. Deliberately recessive: it explains
    an absent number, it does not report a problem. */
 .chip-alias {

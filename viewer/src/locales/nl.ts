@@ -52,7 +52,7 @@ const nl: Record<string, string> = {
   tab_packages: "Pakketten",
   tab_files: "Bestanden",
   tab_kernel: "Kernel",
-  tab_time: "Bouwtijd",
+  tab_time: "Build",
   tab_drift: "Delta",
 
   // flash tab
@@ -178,6 +178,13 @@ const nl: Record<string, string> = {
   stat_packages_timed: "pakketten gemeten",
   stat_finished: "klaar",
   no_build_log: "Geen build-time.log in deze map.",
+  stat_profile: "profiel",
+  stat_build_config: "buildconfiguratie",
+  profile_title: "Cameraprofiel (defconfig)",
+  build_config_title: "Buildconfiguratie",
+  n_options: "{n} opties",
+  help_profile: "Het defconfig waarmee deze camera is gebouwd, precies zoals geschreven: de SoC, de sensor, de flashgrootte en de gekozen functies. Een paar dozijn regels tegenover de honderden die Kconfig eruit afleidt.",
+  help_build_config: "Elke optie waarmee Buildroot uiteindelijk heeft gebouwd, uitgeklapt vanuit het profiel. Dit verklaart een grootte of een gedrag; het profiel is wat de camera identificeert.",
 
   // drift tab
   baseline: "baseline",
@@ -195,6 +202,9 @@ const nl: Record<string, string> = {
   stat_env_changed: "omgeving gewijzigd",
   drift_config: "Kernelconfiguratie",
   drift_env: "U-Boot-omgeving",
+  stat_build_config_changed: "buildconfig gewijzigd",
+  drift_build_config: "Buildconfiguratie",
+  help_build_config_changed: "Buildroot-opties die in de twee builds anders zijn ingesteld. Hier begint meestal een pakket dat verschijnt of een grootte die verschuift.",
   config_incomparable: "Deze builds draaien verschillende kernels ({before} en {after}), dus vrijwel elke optie verschilt en vergelijken zegt niets.",
   help_config_changed: "Kernelopties die in de twee builds anders zijn ingesteld. Open om te zien welke en met welke waarde.",
   help_env_changed: "U-Boot-variabelen die verschillen, inclusief de partitie-indeling waarmee het board opstart.",

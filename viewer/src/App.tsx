@@ -73,7 +73,9 @@ function tabHasData(tab: Tab, r: Report, reportCount: number): boolean {
         kernelConfigOf(r).length > 0
       );
     case "time":
-      return r.timings.length > 0;
+      // Configuration counts as much as duration now: a build with no timing
+      // log still has a profile worth reading.
+      return r.timings.length > 0 || (r.build_config?.options.length ?? 0) > 0;
     case "drift":
       return reportCount > 1;
   }

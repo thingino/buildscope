@@ -52,7 +52,7 @@ const zhCN: Record<string, string> = {
   tab_packages: "软件包",
   tab_files: "文件",
   tab_kernel: "内核",
-  tab_time: "构建时间",
+  tab_time: "构建",
   tab_drift: "增减",
 
   // flash tab
@@ -178,6 +178,13 @@ const zhCN: Record<string, string> = {
   stat_packages_timed: "已计时的软件包",
   stat_finished: "完成时间",
   no_build_log: "此目录树中没有 build-time.log。",
+  stat_profile: "配置档案",
+  stat_build_config: "构建配置",
+  profile_title: "摄像机配置档案 (defconfig)",
+  build_config_title: "构建配置",
+  n_options: "{n} 个选项",
+  help_profile: "构建这台摄像机所用的 defconfig，按原样显示：SoC、传感器、闪存容量以及选择的功能。只有几十行，而 Kconfig 会由此推导出数百个选项。",
+  help_build_config: "Buildroot 实际构建时使用的全部选项，由配置档案展开而来。解释体积或行为的是它，而标识这台摄像机的是配置档案。",
 
   // drift tab
   baseline: "基线",
@@ -195,6 +202,9 @@ const zhCN: Record<string, string> = {
   stat_env_changed: "环境变量变更",
   drift_config: "内核配置",
   drift_env: "U-Boot 环境变量",
+  stat_build_config_changed: "构建配置变更",
+  drift_build_config: "构建配置",
+  help_build_config_changed: "两个构建中设置不同的 Buildroot 选项。新增软件包或体积变化通常都从这里开始。",
   config_incomparable: "这两个构建使用不同的内核（{before} 和 {after}），几乎所有选项都不同，比较没有意义。",
   help_config_changed: "两个构建中设置不同的内核选项。展开可查看具体项目及其取值。",
   help_env_changed: "存在差异的 U-Boot 变量，包括开发板启动时使用的分区布局。",

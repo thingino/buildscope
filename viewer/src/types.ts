@@ -1,5 +1,20 @@
 // Mirrors buildscope-core's report schema v1 (core/src/report.rs).
 
+/** One option Buildroot was configured with. */
+export interface ConfigOption {
+  key: string;
+  value: string;
+}
+
+/** How a build was configured: the profile someone authored, and what Kconfig
+ *  made of it. Absent for an artifact-only scan, which has no build. */
+export interface BuildConfig {
+  /** The defconfig verbatim, when the source tree was still there to read. */
+  defconfig_text: string | null;
+  /** Every option set in the expanded .config, sorted by key. */
+  options: ConfigOption[];
+}
+
 export interface Report {
   schema: number;
   generator: { name: string; version: string };
@@ -34,6 +49,8 @@ export interface Report {
   } | null;
   packages: PackageReport[];
   modules: ModuleReport[];
+  /** Absent on reports written before it was captured. */
+  build_config?: BuildConfig | null;
   modules_meta: {
     kernel_version: string;
     builtin: string[];

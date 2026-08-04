@@ -56,6 +56,7 @@ export interface Drift {
   rootfsUncompressed: TotalDelta | null;
   rootfsCompressed: TotalDelta | null;
   config: ValueDiff;
+  buildConfig: ValueDelta[];
   env: ValueDelta[];
   partitions: PartitionDelta[];
   images: NamedDelta[];
@@ -82,6 +83,11 @@ const toMap = (entries: [string, number][]) => new Map(entries);
  *  vendor tree appended to it. */
 function series(v: string): string {
   return v.match(/^\d+(?:\.\d+)*/)?.[0] ?? v;
+}
+
+/** Every Buildroot option a report was configured with, by key. */
+function buildOptionsOf(r: Report): Map<string, string> {
+  return new Map((r.build_config?.options ?? []).map((o) => [o.key, o.value]));
 }
 
 /** Text settings that differ, sorted so the eye lands on the name. */
@@ -179,6 +185,10 @@ export function computeDrift(a: Report, b: Report): Drift {
     rootfsUncompressed,
     rootfsCompressed,
     config: configDiff(a, b),
+    // Buildroot's own options: what was asked for, against the kernel config's
+    // what was compiled. A package appearing or a size moving usually starts
+    // here.
+    buildConfig: valueDeltas(buildOptionsOf(a), buildOptionsOf(b)),
     env: valueDeltas(envVarsOf(a), envVarsOf(b)),
     partitions,
     images: namedDeltas(

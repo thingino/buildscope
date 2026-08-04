@@ -51,7 +51,7 @@ const ar: Record<string, string> = {
   tab_packages: "الحزم",
   tab_files: "الملفات",
   tab_kernel: "النواة",
-  tab_time: "زمن البناء",
+  tab_time: "البناء",
   tab_drift: "الفرق",
 
   // flash tab
@@ -177,6 +177,13 @@ const ar: Record<string, string> = {
   stat_packages_timed: "حزم مقيسة",
   stat_finished: "اكتمل",
   no_build_log: "لا يوجد build-time.log في هذه الشجرة.",
+  stat_profile: "الملف التعريفي",
+  stat_build_config: "إعدادات البناء",
+  profile_title: "ملف الكاميرا التعريفي (defconfig)",
+  build_config_title: "إعدادات البناء",
+  n_options: "{n} خيار",
+  help_profile: "ملف defconfig الذي بُنيت منه هذه الكاميرا، كما كُتب تمامًا: المعالج والحساس وحجم الذاكرة والميزات المختارة. بضعة عشرات من الأسطر مقابل مئات يشتقها Kconfig منها.",
+  help_build_config: "كل خيار انتهى Buildroot إلى البناء به، موسّعًا من الملف التعريفي. هذا ما يفسّر الحجم أو السلوك؛ والملف التعريفي هو ما يعرّف الكاميرا.",
 
   // drift tab
   baseline: "المرجع",
@@ -194,6 +201,9 @@ const ar: Record<string, string> = {
   stat_env_changed: "تغيّرات البيئة",
   drift_config: "إعداد النواة",
   drift_env: "بيئة U-Boot",
+  stat_build_config_changed: "تغيّرات إعدادات البناء",
+  drift_build_config: "إعدادات البناء",
+  help_build_config_changed: "خيارات Buildroot المضبوطة بشكل مختلف بين البناءين. هنا يبدأ عادةً ظهور حزمة أو تغيّر في الحجم.",
   config_incomparable: "هذان البناءان يستخدمان نواتين مختلفتين ({before} و {after})، لذا تختلف معظم الخيارات ومقارنتها لا تفيد.",
   help_config_changed: "خيارات النواة التي تقررت بشكل مختلف بين البناءين. افتحها لمعرفة أيها وقيمة كل منها.",
   help_env_changed: "متغيّرات U-Boot المختلفة، بما في ذلك تخطيط الأقسام الذي يقلع به الجهاز.",

@@ -250,6 +250,7 @@ export default function Drift({
   const [absent, setAbsent] = useState(false);
   const [showConfig, setShowConfig] = useState(false);
   const [showEnv, setShowEnv] = useState(false);
+  const [showBuild, setShowBuild] = useState(false);
 
   // Switching build while the tab is open must not keep showing the old
   // profile's baseline.
@@ -286,6 +287,12 @@ export default function Drift({
   // nothing to compare. They are different answers.
   const hasConfig = useMemo(
     () => kernelConfigOf(current).length > 0 && (baseline ? kernelConfigOf(baseline).length > 0 : false),
+    [current, baseline]
+  );
+  const hasBuildConfig = useMemo(
+    () =>
+      (current.build_config?.options.length ?? 0) > 0 &&
+      (baseline ? (baseline.build_config?.options.length ?? 0) > 0 : false),
     [current, baseline]
   );
   const hasEnv = useMemo(
@@ -411,6 +418,15 @@ export default function Drift({
                 }
               />
             )}
+            {hasBuildConfig && (
+              <CountStat
+                labelKey="stat_build_config_changed"
+                help="help_build_config_changed"
+                value={drift.buildConfig.length}
+                open={showBuild}
+                onToggle={drift.buildConfig.length > 0 ? () => setShowBuild(!showBuild) : null}
+              />
+            )}
             {hasEnv && (
               <CountStat
                 labelKey="stat_env_changed"
@@ -437,6 +453,14 @@ export default function Drift({
                 })}
               </div>
             ))}
+
+          {showBuild && drift.buildConfig.length > 0 && (
+            <ValueTable
+              titleKey="drift_build_config"
+              list={drift.buildConfig}
+              filterKey="filter_options"
+            />
+          )}
 
           {showEnv && (
             <ValueTable titleKey="drift_env" list={drift.env} filterKey="filter_vars" mono />

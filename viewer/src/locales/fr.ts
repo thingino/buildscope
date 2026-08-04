@@ -52,7 +52,7 @@ const fr: Record<string, string> = {
   tab_packages: "Paquets",
   tab_files: "Fichiers",
   tab_kernel: "Noyau",
-  tab_time: "Temps de génération",
+  tab_time: "Génération",
   tab_drift: "Delta",
 
   // flash tab
@@ -178,6 +178,13 @@ const fr: Record<string, string> = {
   stat_packages_timed: "paquets chronométrés",
   stat_finished: "terminée",
   no_build_log: "Aucun build-time.log dans cette arborescence.",
+  stat_profile: "profil",
+  stat_build_config: "configuration de build",
+  profile_title: "Profil de la caméra (defconfig)",
+  build_config_title: "Configuration de build",
+  n_options: "{n} options",
+  help_profile: "Le defconfig avec lequel cette caméra a été compilée, tel qu'il a été écrit : le SoC, le capteur, la taille de flash et les fonctions choisies. Quelques dizaines de lignes contre les centaines que Kconfig en dérive.",
+  help_build_config: "Chaque option avec laquelle Buildroot a réellement compilé, développée depuis le profil. C'est ce qui explique une taille ou un comportement ; le profil, lui, identifie la caméra.",
 
   // drift tab
   baseline: "référence",
@@ -195,6 +202,9 @@ const fr: Record<string, string> = {
   stat_env_changed: "environnement modifié",
   drift_config: "Configuration du noyau",
   drift_env: "Environnement U-Boot",
+  stat_build_config_changed: "config de build modifiée",
+  drift_build_config: "Configuration de build",
+  help_build_config_changed: "Options Buildroot définies différemment entre les deux compilations. C'est là que commence en général l'apparition d'un paquet ou un changement de taille.",
   config_incomparable: "Ces compilations utilisent des noyaux différents ({before} et {after}) : presque toutes les options diffèrent et les comparer n'apprend rien.",
   help_config_changed: "Options du noyau décidées différemment entre les deux compilations. Ouvrez pour voir lesquelles et leurs valeurs.",
   help_env_changed: "Variables U-Boot qui diffèrent, y compris la table des partitions avec laquelle la carte démarre.",

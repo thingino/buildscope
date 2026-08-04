@@ -254,6 +254,37 @@ fn collect_env_texts(paths: &BuildPaths) -> Vec<NamedText> {
     out
 }
 
+/// Absolute paths that identify this machine rather than the build.
+///
+/// The home directory covers the usual case, where a checkout and its output
+/// both live under it. The build root's own parents cover the rest: a tree
+/// under /srv or /opt has no home in its path but still names directories
+/// nobody outside needs. Two levels up is where a Buildroot external tree
+/// normally sits relative to `output/<board>`.
+fn host_prefixes(root: &Path) -> Vec<String> {
+    let mut out = Vec::new();
+    if let Some(home) = std::env::var_os("HOME") {
+        let home = home.to_string_lossy().into_owned();
+        if home.len() > 1 {
+            out.push(home);
+        }
+    }
+    if let Ok(abs) = root.canonicalize() {
+        let mut at = abs.as_path();
+        for _ in 0..3 {
+            let s = at.to_string_lossy();
+            if s.len() > 1 && !out.iter().any(|p| p == s.as_ref()) {
+                out.push(s.into_owned());
+            }
+            match at.parent() {
+                Some(p) if p != Path::new("/") => at = p,
+                _ => break,
+            }
+        }
+    }
+    out
+}
+
 /// The authored defconfig, if `.config` names one that is still on disk.
 ///
 /// The path is Buildroot's own record of where the profile came from, and it
@@ -298,6 +329,7 @@ pub fn build_snapshot(
     snap.context_source = paths.context;
     snap.scan_mode = ScanMode::Native;
 
+    snap.redact_prefixes = host_prefixes(&paths.root);
     if let Some(c) = &paths.config {
         snap.config = fs::read_to_string(c).ok();
         snap.defconfig_text = snap.config.as_deref().and_then(read_defconfig);

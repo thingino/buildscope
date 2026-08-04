@@ -79,6 +79,15 @@ pub struct Snapshot {
 
     /// Contents of .config (BR2_CONFIG).
     pub config: Option<String>,
+    /// Absolute paths on the build host that must not reach the report.
+    ///
+    /// A Buildroot config is full of them -- where the external tree is, which
+    /// defconfig was used, which u-boot fragments were applied -- and a report
+    /// is committed, attached to a release and published, so a builder's home
+    /// directory and username would go with it. The scanner knows what those
+    /// prefixes are; the core does not, and cannot ask the filesystem.
+    /// Empty when nothing needs hiding, which is the case in a browser.
+    pub redact_prefixes: Vec<String>,
     /// Contents of the defconfig `.config` names in BR2_DEFCONFIG, when that
     /// file is still on disk. The authored profile rather than the expansion:
     /// a couple of dozen lines someone chose, against several hundred the
@@ -131,6 +140,7 @@ impl Snapshot {
             target: Vec::new(),
             images: Vec::new(),
             config: None,
+            redact_prefixes: Vec::new(),
             defconfig_text: None,
             pfl: None,
             build_time_log: None,

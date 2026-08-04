@@ -575,6 +575,39 @@ pub(crate) const MAX_ENV_VARS: usize = 1024;
 
 /// The environment's variables, sorted by key so a report diffs cleanly and
 /// reads the way `fw_printenv` prints it.
+/// A config value with any build-host path in it reduced to a bare name.
+///
+/// Buildroot records where things came from -- the external tree, the
+/// defconfig, u-boot fragments -- as absolute paths, and a report is published,
+/// so those would carry the builder's home directory and username to every
+/// reader. What is worth keeping is which file, not whose machine, so a path
+/// under one of the scanner's prefixes keeps only its last component. One
+/// component deliberately: two would put a directory name back.
+///
+/// Values are handled token by token, since several of these options hold a
+/// space-separated list. Paths that are not the host's -- `/dev/mtdblock3`,
+/// `/etc/ssl/certs/uhttpd.crt`, a target `PATH` -- describe the device rather
+/// than the machine that built it, and are left exactly as they are.
+pub(crate) fn redact_paths(value: &str, prefixes: &[String]) -> String {
+    if prefixes.is_empty() || !value.contains('/') {
+        return value.to_string();
+    }
+    value
+        .split(' ')
+        .map(|tok| {
+            if prefixes
+                .iter()
+                .any(|p| !p.is_empty() && tok.contains(p.as_str()))
+            {
+                tok.rsplit('/').next().unwrap_or(tok)
+            } else {
+                tok
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
 pub(crate) fn env_vars_json(info: &ubootenv::UbootEnvInfo) -> (serde_json::Value, bool) {
     let mut vars: Vec<&(String, String)> = info.vars.iter().collect();
     vars.sort_by(|a, b| a.0.cmp(&b.0));
@@ -1434,11 +1467,19 @@ pub fn analyze(snap: &Snapshot) -> Report {
         // Both halves come from the same scan: the expansion is the .config
         // already parsed for build facts, the profile is the file it names.
         build_config: cfg.as_ref().map(|c| crate::report::BuildConfigReport {
-            defconfig_text: snap.defconfig_text.clone(),
+            defconfig_text: snap.defconfig_text.as_deref().map(|t| {
+                t.lines()
+                    .map(|l| redact_paths(l, &snap.redact_prefixes))
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            }),
             options: c
                 .options()
                 .into_iter()
-                .map(|(key, value)| crate::report::ConfigOption { key, value })
+                .map(|(key, value)| crate::report::ConfigOption {
+                    key,
+                    value: redact_paths(&value, &snap.redact_prefixes),
+                })
                 .collect(),
         }),
         timings,
@@ -1590,6 +1631,40 @@ mod tests {
         assert_eq!(decompress_kernel(&with_junk, "lzma"), None);
 
         assert_eq!(decompress_kernel(&stream, "none"), None);
+    }
+
+    #[test]
+    fn build_host_paths_are_reduced_but_target_paths_are_not() {
+        let prefixes = vec!["/home/someone".to_string()];
+
+        // Where a thing came from on the machine that built it: which file is
+        // worth keeping, whose directory is not.
+        assert_eq!(
+            redact_paths("/home/someone/src/configs/cam_defconfig", &prefixes),
+            "cam_defconfig"
+        );
+        // Several of these options hold a list.
+        assert_eq!(
+            redact_paths(
+                "/home/someone/a/x.config /home/someone/b/y.config",
+                &prefixes
+            ),
+            "x.config y.config"
+        );
+        // Paths that describe the device, not the builder.
+        assert_eq!(redact_paths("/dev/mtdblock3", &prefixes), "/dev/mtdblock3");
+        assert_eq!(
+            redact_paths("/bin:/sbin:/usr/bin", &prefixes),
+            "/bin:/sbin:/usr/bin"
+        );
+        assert_eq!(
+            redact_paths("/etc/ssl/certs/uhttpd.crt", &prefixes),
+            "/etc/ssl/certs/uhttpd.crt"
+        );
+        // Ordinary values are untouched, and so is everything when the scanner
+        // gave no prefixes, which is the browser's case.
+        assert_eq!(redact_paths("y", &prefixes), "y");
+        assert_eq!(redact_paths("/home/someone/x", &[]), "/home/someone/x");
     }
 
     #[test]

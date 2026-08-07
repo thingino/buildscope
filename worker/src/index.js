@@ -92,7 +92,7 @@ const REMEMBER_CONTROL = 'public, max-age=31536000';
  * the old one. Bump it whenever the cache semantics change. Deliberately NOT
  * part of the remembered-tags key: that is memory, and a policy change is no
  * reason to forget which releases have snapshots. */
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4';
 
 /* An If-None-Match may list several, and may weaken them with W/. */
 function matches(header, etag) {
@@ -301,8 +301,16 @@ export default {
                 new Request(`${url.origin}/fleet/known?repo=${which}`, { method: 'GET' }));
             if (prev) {
                 const body = await prev.json();
-                const current = currentTags(Array.isArray(body.tags) ? body.tags : []);
-                if (current.size > 0 && !current.has(tag)) control = SETTLED_CONTROL;
+                const known = Array.isArray(body.tags) ? body.tags : [];
+                /* Only a tag we have positively seen finish can be held long.
+                 * Absent from the list is not evidence of that: the list is
+                 * written by discovery and can lag a release by a refresh, and
+                 * treating "not mentioned" as settled would pin the snapshot
+                 * most likely to be re-uploaded -- a brand new one -- for a day.
+                 * Unknown means cautious. */
+                if (known.includes(tag) && !currentTags(known).has(tag)) {
+                    control = SETTLED_CONTROL;
+                }
             }
         } catch { /* the cautious policy stands */ }
 

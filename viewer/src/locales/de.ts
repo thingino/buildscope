@@ -101,6 +101,10 @@ const de: Record<string, string> = {
   th_found_in: "gefunden in",
   th_nodes: "Knoten",
   th_bootargs: "Kernel-Befehlszeile",
+  dtb_in_image: "Loader",
+  dtb_in_payload: "U-Boot",
+  help_dtb_image: "Im Binary gefunden, wie es ausgeliefert wird. Bei einem Bootloader ist das dessen eigener Baum, der nur beschreibt, was zum Hochfahren des DRAM und zum Lesen des Flash nötig ist.",
+  help_dtb_payload: "In der komprimierten Nutzlast gefunden, die der Loader auspackt. Das ist der eigentliche Board-Baum, mit den GPIOs und Peripherien, für die eine bestimmte Kamera konfiguriert wurde.",
   device_trees_note:
     "Ein Board, das aus dem rohen Flash startet, liefert diese meist nicht als Datei: der Bootloader hängt seinen Baum an sein Binary an, und der Kernel trägt einen in sich, hinter seiner eigenen Kompression.",
   ubi_volumes: "UBI-Volumes",

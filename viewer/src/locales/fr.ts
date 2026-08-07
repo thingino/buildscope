@@ -101,6 +101,10 @@ const fr: Record<string, string> = {
   th_found_in: "trouvé dans",
   th_nodes: "nœuds",
   th_bootargs: "ligne de commande du noyau",
+  dtb_in_image: "chargeur",
+  dtb_in_payload: "U-Boot",
+  help_dtb_image: "Trouvé dans le binaire tel qu'il est livré. Pour un chargeur d'amorçage, c'est son propre arbre, qui ne décrit que ce qu'il lui faut pour démarrer la DRAM et lire la flash.",
+  help_dtb_payload: "Trouvé dans la charge compressée que le chargeur décompresse. C'est le véritable arbre de la carte, avec les GPIO et périphériques configurés pour une caméra donnée.",
   device_trees_note:
     "Une carte qui démarre depuis la flash brute n'en livre généralement aucun sous forme de fichier : le chargeur ajoute son arbre à son binaire, et le noyau en porte un à l'intérieur, derrière sa propre compression.",
   ubi_volumes: "Volumes UBI",

@@ -106,6 +106,10 @@ const en: Record<string, string> = {
   th_found_in: "found in",
   th_nodes: "nodes",
   th_bootargs: "kernel command line",
+  dtb_in_image: "loader",
+  dtb_in_payload: "u-boot",
+  help_dtb_image: "Found in the binary as it ships. For a bootloader that is the loader's own tree, describing only what it needs to bring up DRAM and read flash.",
+  help_dtb_payload: "Found inside the compressed payload the loader unpacks. This is the board's real tree, with the GPIOs and peripherals a particular camera was configured with.",
   device_trees_note:
     "A board that boots from raw flash usually ships none of these as a file: the bootloader keeps its tree appended to its binary, and the kernel carries one inside itself, behind the kernel's own compression.",
   ubi_volumes: "UBI volumes",

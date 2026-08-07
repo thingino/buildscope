@@ -101,6 +101,10 @@ const es: Record<string, string> = {
   th_found_in: "encontrado en",
   th_nodes: "nodos",
   th_bootargs: "línea de comandos del kernel",
+  dtb_in_image: "cargador",
+  dtb_in_payload: "U-Boot",
+  help_dtb_image: "Encontrado en el binario tal como se distribuye. En un gestor de arranque ese es su propio árbol, que describe solo lo necesario para levantar la DRAM y leer la flash.",
+  help_dtb_payload: "Encontrado dentro de la carga comprimida que el cargador descomprime. Este es el árbol real de la placa, con los GPIO y periféricos con los que se configuró una cámara concreta.",
   device_trees_note:
     "Una placa que arranca desde flash en bruto no suele entregarlos como archivo: el gestor de arranque añade su árbol a su binario y el kernel lleva uno dentro, tras su propia compresión.",
   ubi_volumes: "Volúmenes UBI",

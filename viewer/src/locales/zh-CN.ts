@@ -101,6 +101,10 @@ const zhCN: Record<string, string> = {
   th_found_in: "位于",
   th_nodes: "节点",
   th_bootargs: "内核命令行",
+  dtb_in_image: "加载器",
+  dtb_in_payload: "U-Boot",
+  help_dtb_image: "在发布的二进制文件中找到的树。对于引导加载器，这是它自身的树，只描述启动 DRAM 和读取闪存所需的部分。",
+  help_dtb_payload: "在加载器解压的压缩负载中找到的树。这才是实际的板级树，包含某台摄像机所配置的 GPIO 和外设。",
   device_trees_note:
     "从裸闪存启动的板子通常不会把它们作为文件输出：引导程序把设备树附加在自己的二进制后面，内核则在自身压缩之内携带一份。",
   ubi_volumes: "UBI 卷",

@@ -101,6 +101,10 @@ const nl: Record<string, string> = {
   th_found_in: "gevonden in",
   th_nodes: "knopen",
   th_bootargs: "kernel-opdrachtregel",
+  dtb_in_image: "loader",
+  dtb_in_payload: "U-Boot",
+  help_dtb_image: "Gevonden in de binary zoals die wordt geleverd. Bij een bootloader is dat zijn eigen boom, die alleen beschrijft wat nodig is om DRAM op te starten en flash te lezen.",
+  help_dtb_payload: "Gevonden in de gecomprimeerde payload die de loader uitpakt. Dit is de echte boardboom, met de GPIO's en randapparatuur waarmee een bepaalde camera is geconfigureerd.",
   device_trees_note:
     "Een board dat vanaf ruwe flash start levert deze meestal niet als bestand: de bootloader hangt zijn tree aan zijn binary, en de kernel draagt er een in zich, achter zijn eigen compressie.",
   ubi_volumes: "UBI-volumes",

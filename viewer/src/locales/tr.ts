@@ -101,6 +101,10 @@ const tr: Record<string, string> = {
   th_found_in: "şurada bulundu",
   th_nodes: "düğüm",
   th_bootargs: "çekirdek komut satırı",
+  dtb_in_image: "yükleyici",
+  dtb_in_payload: "U-Boot",
+  help_dtb_image: "İkili dosyanın dağıtıldığı hâlinde bulundu. Bir önyükleyicide bu, yalnızca DRAM'i açmak ve flash'ı okumak için gerekeni tanımlayan kendi ağacıdır.",
+  help_dtb_payload: "Yükleyicinin açtığı sıkıştırılmış yükün içinde bulundu. Asıl kart ağacı budur; belirli bir kameranın yapılandırıldığı GPIO'ları ve çevre birimlerini içerir.",
   device_trees_note:
     "Ham flash'tan açılan bir kart bunları genellikle dosya olarak vermez: önyükleyici ağacını kendi ikilisine ekler, çekirdek de kendi sıkıştırmasının ardında birini içinde taşır.",
   ubi_volumes: "UBI birimleri",

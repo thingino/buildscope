@@ -101,6 +101,10 @@ const pt: Record<string, string> = {
   th_found_in: "encontrada em",
   th_nodes: "nós",
   th_bootargs: "linha de comando do kernel",
+  dtb_in_image: "carregador",
+  dtb_in_payload: "U-Boot",
+  help_dtb_image: "Encontrado no binário tal como é distribuído. Num bootloader é a sua própria árvore, que descreve apenas o necessário para arrancar a DRAM e ler a flash.",
+  help_dtb_payload: "Encontrado dentro da carga comprimida que o carregador descomprime. Esta é a árvore real da placa, com os GPIO e periféricos com que uma câmera concreta foi configurada.",
   device_trees_note:
     "Uma placa que arranca da flash bruta normalmente não as entrega como ficheiro: o bootloader anexa a sua árvore ao binário e o kernel leva uma dentro de si, atrás da sua própria compressão.",
   ubi_volumes: "Volumes UBI",

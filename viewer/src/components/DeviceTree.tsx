@@ -16,6 +16,8 @@ interface Tree {
   compatible: string[];
   /** The file it is, or the file it is buried in and where. */
   where: string;
+  /** Where in the artifact it was found: see the origin chip. */
+  origin?: string;
   bytes: number;
   nodeCount: number;
   propCount: number;
@@ -60,12 +62,14 @@ export function collectTrees(report: Report): Tree[] {
         property_count: number;
         nodes: Node[];
         nodes_truncated: boolean;
+        origin?: string;
       }[]) {
         out.push({
           id: `${img.name}@${v.offset}`,
           who: name(v),
           compatible: v.compatible ?? [],
           where: `${img.name} ${hex(v.offset)}`,
+          origin: v.origin,
           bytes: v.bytes,
           nodeCount: v.node_count,
           propCount: v.property_count,
@@ -157,6 +161,19 @@ export default function DeviceTree({ report }: { report: Report }) {
                 >
                   <td>
                     <span className="env-key">{x.who}</span>
+                    {/* One binary can carry two: the loader's own tree and the
+                        board tree inside the payload it unpacks. Without this
+                        they read as the same tree listed twice. */}
+                    {x.origin === "payload" && (
+                      <span className="chip chip-alias" data-help="help_dtb_payload">
+                        {t("dtb_in_payload")}
+                      </span>
+                    )}
+                    {x.origin === "image" && (
+                      <span className="chip chip-alias" data-help="help_dtb_image">
+                        {t("dtb_in_image")}
+                      </span>
+                    )}
                     {x.compatible.length > 1 && (
                       <div className="mono-dim">{x.compatible.slice(1).join(", ")}</div>
                     )}

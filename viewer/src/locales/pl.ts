@@ -101,6 +101,10 @@ const pl: Record<string, string> = {
   th_found_in: "znalezione w",
   th_nodes: "węzły",
   th_bootargs: "wiersz poleceń jądra",
+  dtb_in_image: "loader",
+  dtb_in_payload: "U-Boot",
+  help_dtb_image: "Znalezione w binarce w postaci, w jakiej jest dostarczana. W bootloaderze to jego własne drzewo, opisujące tylko to, co potrzebne do uruchomienia DRAM i odczytu pamięci flash.",
+  help_dtb_payload: "Znalezione wewnątrz skompresowanego ładunku, który loader rozpakowuje. To właściwe drzewo płytki, z GPIO i peryferiami skonfigurowanymi dla konkretnej kamery.",
   device_trees_note:
     "Płyta startująca z surowej pamięci flash zwykle nie dostarcza ich jako plików: bootloader dołącza swoje drzewo do binarki, a jądro niesie jedno w sobie, za własną kompresją.",
   ubi_volumes: "Wolumeny UBI",

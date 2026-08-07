@@ -101,6 +101,10 @@ const it: Record<string, string> = {
   th_found_in: "trovato in",
   th_nodes: "nodi",
   th_bootargs: "riga di comando del kernel",
+  dtb_in_image: "loader",
+  dtb_in_payload: "U-Boot",
+  help_dtb_image: "Trovato nel binario così come viene distribuito. In un bootloader è il suo stesso albero, che descrive solo ciò che gli serve per avviare la DRAM e leggere la flash.",
+  help_dtb_payload: "Trovato dentro il payload compresso che il loader scompatta. Questo è il vero albero della scheda, con i GPIO e le periferiche con cui è stata configurata una specifica camera.",
   device_trees_note:
     "Una scheda che avvia da flash grezza di solito non li fornisce come file: il bootloader accoda il proprio albero al binario e il kernel ne porta uno al suo interno, dietro la propria compressione.",
   ubi_volumes: "Volumi UBI",

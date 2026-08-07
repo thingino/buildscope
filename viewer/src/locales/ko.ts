@@ -101,6 +101,10 @@ const ko: Record<string, string> = {
   th_found_in: "발견 위치",
   th_nodes: "노드",
   th_bootargs: "커널 명령줄",
+  dtb_in_image: "로더",
+  dtb_in_payload: "U-Boot",
+  help_dtb_image: "배포되는 바이너리 안에서 찾은 트리입니다. 부트로더의 경우 로더 자신의 트리로, DRAM을 올리고 플래시를 읽는 데 필요한 것만 기술합니다.",
+  help_dtb_payload: "로더가 푸는 압축 페이로드 안에서 찾은 트리입니다. 이쪽이 실제 보드 트리로, 해당 카메라에 설정된 GPIO와 주변장치가 들어 있습니다.",
   device_trees_note:
     "로우 플래시에서 부팅하는 보드는 보통 이를 파일로 제공하지 않습니다. 부트로더는 자신의 바이너리에 트리를 덧붙이고, 커널은 자체 압축 안쪽에 하나를 품고 있습니다.",
   ubi_volumes: "UBI 볼륨",

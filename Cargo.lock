@@ -60,7 +60,7 @@ dependencies = [
 
 [[package]]
 name = "buildscope"
-version = "0.1.7"
+version = "0.1.8"
 dependencies = [
  "buildscope-core",
  "clap",
@@ -70,7 +70,7 @@ dependencies = [
 
 [[package]]
 name = "buildscope-core"
-version = "0.1.7"
+version = "0.1.8"
 dependencies = [
  "lz4_flex",
  "lzma-rs",
@@ -82,7 +82,7 @@ dependencies = [
 
 [[package]]
 name = "buildscope-wasm"
-version = "0.1.7"
+version = "0.1.8"
 dependencies = [
  "buildscope-core",
  "serde_json",

@@ -36,8 +36,14 @@ release that is still published, and a release stays offered once it has aged
 out of the feed. Every remembered tag is re-probed before it is offered, so one
 whose assets are deleted still drops away.
 
-Only `firmware-*` tags, only `fleet-index.json` and `fleet-reports.tar.gz`, only
-the repos named in `REPOS`. That allow-list is the security model: without it
+Only `fleet-index.json` and `fleet-reports.tar.gz`, only the repos named in
+`REPOS`, and a tag has to look like a tag. The repo and the asset name are what
+keep this from being an open proxy; the tag needs no prefix rule, since every
+release of an allow-listed repo is public anyway, and a branch that publishes
+snapshots under its own name -- `master-2026-08-07` beside
+`firmware-2026-08-02` -- is then readable without redeploying this. Discovery
+is narrower than serving: it only spends a `HEAD` on `firmware-*` and `master-*`
+tags, because a repo also tags caches and toolchains that never carry one. That allow-list is the security model: without it
 this would be an open proxy anyone could aim at any URL, on someone else's
 bandwidth. `repo` exists so a CI change can be proven on the fork before it
 lands on the main repo.

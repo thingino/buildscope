@@ -34,9 +34,18 @@ const DEFAULT_REPO = 'thingino';
  * discovered ones, so it is the length of the history the picker can offer. */
 const PROBE_LIMIT = 32;
 
-/* The allow-list IS the security model, same as the repo one above. Only
- * firmware-* release tags, and only the two assets a snapshot publishes. */
-const TAG_RE = /^firmware-[A-Za-z0-9._-]{1,64}$/;
+/* The allow-list IS the security model, same as the repo one above. The repo
+ * and the asset name are what keep this from being an open proxy; the tag only
+ * has to be a tag, since every release of an allow-listed repo is public
+ * anyway. A shape rule rather than a prefix, so a branch that publishes
+ * snapshots under its own name -- master-2026-08-07 beside
+ * firmware-2026-08-02 -- does not need this redeployed to be readable. */
+const TAG_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
+
+/* Which tags are worth spending a HEAD on when discovering snapshots. Every
+ * release is servable, but a repo also tags caches and toolchains, and probing
+ * those would burn the budget on tags that never carry a snapshot. */
+const SNAPSHOT_TAG_RE = /^(firmware|master)-/;
 const NAMES = {
     'fleet-index.json': 'application/json',
     'fleet-reports.tar.gz': 'application/gzip',
@@ -111,6 +120,24 @@ function assetUrl(repo, tag, name) {
     return `https://github.com/${repo}/releases/download/${encodeURIComponent(tag)}/${encodeURIComponent(name)}`;
 }
 
+/* The newest tag of each line, not just the newest tag.
+ *
+ * Two lines publish snapshots now -- the stable one and the branch one -- and
+ * sorting them together only says which prefix is later in the alphabet, so
+ * `master-2026-08-07` would outrank a `firmware-` release published the same
+ * morning and that release would be cached as though it were finished. What
+ * decides the policy is whether a tag is still being re-uploaded, which is true
+ * of the newest of its OWN line. */
+function currentTags(tags) {
+    const newest = new Map();
+    for (const t of tags) {
+        const family = t.slice(0, t.indexOf('-') + 1) || t;
+        const held = newest.get(family);
+        if (!held || t > held) newest.set(family, t);
+    }
+    return new Set(newest.values());
+}
+
 /**
  * Tags that might carry a snapshot, from sources that do not share a quota.
  *
@@ -154,14 +181,16 @@ async function candidateTags(repo) {
         if (res.ok) for (const t of await res.json()) if (t && t.name) seen.add(t.name);
     } catch { /* rate limited, most likely; the feed already answered */ }
 
-    /* Newest release, from a redirect: no quota, nothing to parse. */
+    /* Newest release, from a redirect: no quota, nothing to parse. Only ever
+     * the stable line -- GitHub's "latest" skips pre-releases, and a branch
+     * build publishes as one -- so this confirms rather than enumerates. */
     try {
         const res = await fetch(`https://github.com/${repo}/releases/latest`, { redirect: 'manual' });
         const newest = (res.headers.get('Location') || '').split('/releases/tag/')[1] || '';
         if (newest) seen.add(newest);
     } catch { /* whatever the other two found stands */ }
 
-    return [...seen].filter((t) => TAG_RE.test(t));
+    return [...seen].filter((t) => TAG_RE.test(t) && SNAPSHOT_TAG_RE.test(t));
 }
 
 /**
@@ -229,7 +258,8 @@ export default {
                 const prev = await cache.match(knownKey);
                 if (prev) {
                     const body = await prev.json();
-                    if (Array.isArray(body.tags)) remembered = body.tags.filter((t) => TAG_RE.test(t));
+                    if (Array.isArray(body.tags))
+                        remembered = body.tags.filter((t) => TAG_RE.test(t) && SNAPSHOT_TAG_RE.test(t));
                 }
             } catch { /* a note to self that cannot be read is simply absent */ }
 
@@ -271,8 +301,8 @@ export default {
                 new Request(`${url.origin}/fleet/known?repo=${which}`, { method: 'GET' }));
             if (prev) {
                 const body = await prev.json();
-                const newest = Array.isArray(body.tags) ? body.tags[0] : null;
-                if (newest && tag !== newest) control = SETTLED_CONTROL;
+                const current = currentTags(Array.isArray(body.tags) ? body.tags : []);
+                if (current.size > 0 && !current.has(tag)) control = SETTLED_CONTROL;
             }
         } catch { /* the cautious policy stands */ }
 

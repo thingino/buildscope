@@ -295,11 +295,11 @@ export default function Flash({ report }: { report: Report }) {
                 <tr>
                   <th>{t("th_partition")}</th>
                   <th>{t("th_range")}</th>
-                  <th className="num">{t("th_size")}</th>
+                  <th className="num" data-help="help_col_size">{t("th_size")}</th>
                   <th>{t("th_image")}</th>
-                  <th className="num">{t("th_content")}</th>
-                  <th className="num">{t("th_used")}</th>
-                  <th className="num">{t("th_free")}</th>
+                  <th className="num" data-help="help_col_content">{t("th_content")}</th>
+                  <th className="num" data-help="help_col_used">{t("th_used")}</th>
+                  <th className="num" data-help="help_col_free">{t("th_free")}</th>
                   <th className="num">{t("th_fill")}</th>
                   <th>{t("th_check")}</th>
                 </tr>

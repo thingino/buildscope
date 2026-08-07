@@ -92,7 +92,7 @@ const REMEMBER_CONTROL = 'public, max-age=31536000';
  * the old one. Bump it whenever the cache semantics change. Deliberately NOT
  * part of the remembered-tags key: that is memory, and a policy change is no
  * reason to forget which releases have snapshots. */
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 
 /* An If-None-Match may list several, and may weaken them with W/. */
 function matches(header, etag) {

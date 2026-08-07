@@ -15,6 +15,7 @@ import { inlineReports, Loaded, parseReportJson, tryApi } from "./data";
 import { kernelConfigOf } from "./extract";
 import { fleetSpec, loadFleet } from "./fleet";
 import { HelpProvider, useHelp } from "./help";
+import { UnitsProvider } from "./units";
 import { dateOf, humanBytes, seconds } from "./format";
 import { I18nContext, useI18nState, useT } from "./i18n";
 import { IndexEntry, Report } from "./types";
@@ -127,9 +128,11 @@ export default function App() {
   const i18n = useI18nState();
   return (
     <I18nContext.Provider value={i18n}>
-      <HelpProvider>
-        <Viewer />
-      </HelpProvider>
+      <UnitsProvider>
+        <HelpProvider>
+          <Viewer />
+        </HelpProvider>
+      </UnitsProvider>
     </I18nContext.Provider>
   );
 }

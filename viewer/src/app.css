@@ -1814,6 +1814,9 @@ body.help-on [data-help] {
 
 .dialog-body {
   padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
 .dialog-foot {
@@ -1824,10 +1827,29 @@ body.help-on [data-help] {
   border-top: 1px solid var(--line);
 }
 
+/* Every setting reads the same way: what it is on the left, the control that
+   changes it on the right, so the eye finds both down one edge. */
 .setting-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.setting-row-check {
+  cursor: pointer;
+}
+
+/* A checkbox carries its own margin, which would leave it a few pixels short
+   of the edge the other controls end on. */
+.setting-row-check input[type="checkbox"] {
+  margin: 0;
+}
+
+/* The row already places it; the fleet toggle pushes itself right, which here
+   would fight the row. */
+.setting-row .viewtoggle {
+  margin-inline-start: 0;
 }
 
 .setting-label {

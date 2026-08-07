@@ -1,6 +1,8 @@
 import { useEffect } from "react";
 import { useHelp } from "../help";
 import { Lang, NAMES, SUPPORTED, useI18n } from "../i18n";
+import { Units } from "../format";
+import { useUnits } from "../units";
 
 /**
  * Settings dialog, matching the one webflash and the web flasher family use:
@@ -16,6 +18,7 @@ import { Lang, NAMES, SUPPORTED, useI18n } from "../i18n";
 export default function Settings({ onClose }: { onClose: () => void }) {
   const { lang, setLang, t } = useI18n();
   const { on: helpOn, setOn: setHelpOn } = useHelp();
+  const { units, setUnits } = useUnits();
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -65,13 +68,32 @@ export default function Settings({ onClose }: { onClose: () => void }) {
               ))}
             </select>
           </div>
-          <label className="setting-check">
+          {/* The same segmented control the fleet overview uses for its view:
+              one of three, named, and already part of the vocabulary here. */}
+          <div className="setting-row" data-help="help_units">
+            <span className="setting-label">{t("setting_units")}</span>
+            <div className="viewtoggle" role="radiogroup" aria-label={t("setting_units")}>
+              {(["human", "bytes", "hex"] as Units[]).map((u) => (
+                <button
+                  key={u}
+                  type="button"
+                  role="radio"
+                  aria-checked={units === u}
+                  className={`viewtoggle-btn ${units === u ? "active" : ""}`}
+                  onClick={() => setUnits(u)}
+                >
+                  {t(`units_${u}`)}
+                </button>
+              ))}
+            </div>
+          </div>
+          <label className="setting-row setting-row-check">
+            <span className="setting-label">{t("setting_help_label")}</span>
             <input
               type="checkbox"
               checked={helpOn}
               onChange={(e) => setHelpOn(e.target.checked)}
             />
-            <span>{t("setting_help_label")}</span>
           </label>
         </div>
         <div className="dialog-foot">

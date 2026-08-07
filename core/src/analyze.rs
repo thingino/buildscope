@@ -559,14 +559,81 @@ pub(crate) fn classify(name: &str, size: u64, bytes: Option<&[u8]>) -> Classifie
         "trailing_padding": pad.trailing_bytes,
     });
     // A bootloader built with CONFIG_OF_SEPARATE has its device tree appended
-    // to its binary, so a raw region can be carrying one.
-    let found = dtb::find_embedded(&data[..pad.content_end.min(size) as usize], 4);
-    if !found.is_empty() {
+    // to its binary, so a raw region can be carrying one. That one belongs to
+    // the loader; the board's own tree is inside the payload it unpacks, so
+    // both are looked for and each says where it was found.
+    let mut trees = embedded_dtb_list(
+        dtb::find_embedded(&data[..pad.content_end.min(size) as usize], 4),
+        "image",
+    );
+    if let Some(payload) = bootloader_payload(data, pad.content_end.min(size) as usize) {
+        let inner = embedded_dtb_list(dtb::find_embedded(&payload, 4), "payload");
+        if !inner.is_empty() {
+            if let Some(obj) = c.detail.as_object_mut() {
+                obj.insert("payload_uncompressed_bytes".into(), json!(payload.len()));
+            }
+        }
+        trees.extend(inner);
+    }
+    if !trees.is_empty() {
         if let Some(obj) = c.detail.as_object_mut() {
-            obj.insert("device_trees".into(), embedded_dtb_json(&found));
+            obj.insert("device_trees".into(), json!(trees));
         }
     }
     c
+}
+
+/// A bootloader's own compressed payload, decompressed.
+///
+/// A loader small enough to fit the boot ROM's window cannot hold all of
+/// U-Boot, so the build packs the rest as a compressed blob the loader unpacks
+/// into DRAM. Everything board-specific lives in there: the loader's own device
+/// tree describes only what it needs to bring DRAM up and read flash, while the
+/// tree that names a camera's GPIOs travels inside the payload.
+///
+/// So the raw scan alone reports the bootstrap tree and misses the board one,
+/// which is the opposite of what a reader wants. This is the same step already
+/// taken for a uImage, applied where the compression is not declared: an
+/// lzma-alone stream announces itself with a properties byte, a little-endian
+/// dictionary size and an unknown-size marker, which is specific enough to find
+/// by scanning.
+fn bootloader_payload(data: &[u8], content_end: usize) -> Option<Vec<u8>> {
+    /// A loader is tens of kilobytes; a payload past this is not one.
+    const MAX_SCAN: usize = 4 << 20;
+    let window = &data[..data.len().min(MAX_SCAN)];
+
+    for at in 0..window.len().saturating_sub(13) {
+        // 0x5D is lzma-alone's usual lc/lp/pb byte; the dictionary size that
+        // follows is a power of two in every stream a build produces.
+        if window[at] != 0x5D || window[at + 1] != 0 || window[at + 2] != 0 {
+            continue;
+        }
+        let Ok(head) = window[at + 1..at + 5].try_into() else {
+            continue;
+        };
+        if !u32::from_le_bytes(head).is_power_of_two() {
+            continue;
+        }
+        // Where the stream ends depends on how the image was obtained, and a
+        // decoder handed trailing bytes after the end-of-stream marker treats
+        // that as an error rather than as success. A file read from a build
+        // tree ends at the stream; the same bootloader carved out of flash
+        // carries the partition's padding after it. Neither bound is right for
+        // both, so both are tried.
+        for end in [data.len(), content_end.min(data.len())] {
+            if end <= at {
+                continue;
+            }
+            if let Some(out) = decompress_kernel(&data[at..end], "lzma") {
+                // A payload that decodes to less than the loader carrying it is
+                // a false positive on some other byte pattern.
+                if out.len() > data.len() {
+                    return Some(out);
+                }
+            }
+        }
+    }
+    None
 }
 
 /// A U-Boot environment is small, so the whole of it is reported; the cap only
@@ -638,6 +705,36 @@ fn dtb_tree_json(info: &dtb::DtbInfo) -> serde_json::Value {
 }
 
 /// Describe device trees found inside another artifact.
+/// The same trees, each recording where in the artifact it was found.
+///
+/// `image` means it sat in the file as it ships, which for a bootloader is the
+/// loader's own tree. `payload` means it came out of the compressed blob the
+/// loader unpacks, which is where the board's real configuration lives. A
+/// reader who cannot tell them apart will read the bootstrap tree as though it
+/// described the board, and conclude the build is missing everything.
+fn embedded_dtb_list(found: Vec<(usize, dtb::DtbInfo)>, origin: &str) -> Vec<serde_json::Value> {
+    found
+        .iter()
+        .map(|(at, d)| {
+            let mut v = json!({
+                "offset": at,
+                "bytes": d.total_bytes,
+                "model": d.model,
+                "compatible": d.compatible,
+                "bootargs": d.bootargs,
+                "node_count": d.node_count,
+                "property_count": d.property_count,
+                "nodes": dtb_tree_json(d),
+                "nodes_truncated": d.nodes_truncated,
+            });
+            if let Some(obj) = v.as_object_mut() {
+                obj.insert("origin".into(), json!(origin));
+            }
+            v
+        })
+        .collect()
+}
+
 fn embedded_dtb_json(found: &[(usize, dtb::DtbInfo)]) -> serde_json::Value {
     json!(found
         .iter()

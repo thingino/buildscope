@@ -270,6 +270,12 @@ export default function Files({ report }: { report: Report }) {
       </div>
 
       <div className="panel">
+        <div className="panel-head">
+          <span className="panel-title">{t("files_title")}</span>
+          {/* Which listing this is. More than one can exist: the attributed
+              rootfs walk, and any image that rebuilt its own contents. */}
+          <span className="muted">{source.label}</span>
+        </div>
         {source.truncated && <div className="muted trunc-note">{t("files_capped")}</div>}
         <div className="tbl-wrap">
           <table className="tbl">

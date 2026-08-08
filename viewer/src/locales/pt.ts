@@ -146,6 +146,9 @@ const pt: Record<string, string> = {
   cat_base: "Sistema base",
   cat_overlay: "Overlay / post-build",
   toggle_category: "alternar {name}",
+  pkg_table_title: "Pacotes",
+  pkg_table_sub: "{n} de {total}",
+  pkg_map_title: "Quota do rootfs",
   th_package: "pacote",
   th_bytes: "bytes",
   th_flash_approx: "~flash",
@@ -162,6 +165,7 @@ const pt: Record<string, string> = {
   show_top: "mostrar menos",
 
   // files tab
+  files_title: "Ficheiros",
   files_source_rootfs: "rootfs (atribuído a pacotes)",
   files_total: "ficheiros",
   files_bytes: "sem compressão",

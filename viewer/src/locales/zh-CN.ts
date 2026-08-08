@@ -146,6 +146,9 @@ const zhCN: Record<string, string> = {
   cat_base: "基础系统",
   cat_overlay: "overlay / 构建后",
   toggle_category: "切换{name}",
+  pkg_table_title: "软件包",
+  pkg_table_sub: "{total} 个中的 {n} 个",
+  pkg_map_title: "占 rootfs 的比例",
   th_package: "软件包",
   th_bytes: "字节数",
   th_flash_approx: "~闪存",
@@ -162,6 +165,7 @@ const zhCN: Record<string, string> = {
   show_top: "只显示前几项",
 
   // files tab
+  files_title: "文件",
   files_source_rootfs: "rootfs（按软件包归属）",
   files_total: "文件数",
   files_bytes: "未压缩",

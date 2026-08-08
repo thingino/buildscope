@@ -146,6 +146,9 @@ const ko: Record<string, string> = {
   cat_base: "기본 시스템",
   cat_overlay: "overlay / 빌드 후",
   toggle_category: "{name} 표시 전환",
+  pkg_table_title: "패키지",
+  pkg_table_sub: "{total}개 중 {n}개",
+  pkg_map_title: "rootfs 점유 비율",
   th_package: "패키지",
   th_bytes: "바이트 수",
   th_flash_approx: "~플래시",
@@ -162,6 +165,7 @@ const ko: Record<string, string> = {
   show_top: "상위만 표시",
 
   // files tab
+  files_title: "파일",
   files_source_rootfs: "rootfs(패키지별 분류)",
   files_total: "파일 수",
   files_bytes: "비압축",

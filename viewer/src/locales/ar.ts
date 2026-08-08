@@ -145,6 +145,9 @@ const ar: Record<string, string> = {
   cat_base: "النظام الأساسي",
   cat_overlay: "التراكب / post-build",
   toggle_category: "تبديل {name}",
+  pkg_table_title: "الحزم",
+  pkg_table_sub: "{n} من {total}",
+  pkg_map_title: "الحصة من نظام الملفات الجذري",
   th_package: "الحزمة",
   th_bytes: "بايت",
   th_flash_approx: "~الفلاش",
@@ -161,6 +164,7 @@ const ar: Record<string, string> = {
   show_top: "طيّ القائمة",
 
   // files tab
+  files_title: "الملفات",
   files_source_rootfs: "rootfs (منسوبة إلى الحزم)",
   files_total: "الملفات",
   files_bytes: "غير مضغوط",

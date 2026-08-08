@@ -146,6 +146,9 @@ const ja: Record<string, string> = {
   cat_base: "基本システム",
   cat_overlay: "overlay / ビルド後",
   toggle_category: "{name} の表示切り替え",
+  pkg_table_title: "パッケージ",
+  pkg_table_sub: "{total} 中 {n}",
+  pkg_map_title: "rootfs に占める割合",
   th_package: "パッケージ",
   th_bytes: "バイト数",
   th_flash_approx: "~フラッシュ",
@@ -162,6 +165,7 @@ const ja: Record<string, string> = {
   show_top: "上位のみ表示",
 
   // files tab
+  files_title: "ファイル",
   files_source_rootfs: "rootfs（パッケージ別）",
   files_total: "ファイル数",
   files_bytes: "非圧縮",

@@ -151,6 +151,9 @@ const en: Record<string, string> = {
   cat_base: "Base system",
   cat_overlay: "Overlay / post-build",
   toggle_category: "toggle {name}",
+  pkg_table_title: "Packages",
+  pkg_table_sub: "{n} of {total}",
+  pkg_map_title: "Share of rootfs",
   th_package: "package",
   th_bytes: "bytes",
   th_flash_approx: "~flash",
@@ -167,6 +170,7 @@ const en: Record<string, string> = {
   show_top: "show top",
 
   // files tab
+  files_title: "Files",
   files_source_rootfs: "rootfs (attributed to packages)",
   files_total: "files",
   files_bytes: "uncompressed",

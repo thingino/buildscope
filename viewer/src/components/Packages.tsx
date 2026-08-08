@@ -277,6 +277,14 @@ export default function Packages({ report }: { report: Report }) {
 
       <div className="pkg-split">
         <div className="panel pkg-table">
+          <div className="panel-head">
+            <span className="panel-title">{t("pkg_table_title")}</span>
+            {/* What the filter left. The tiles above cannot say this: they
+                count the whole rootfs. */}
+            <span className="muted">
+              {t("pkg_table_sub", { n: filtered.length, total: report.packages.length })}
+            </span>
+          </div>
           <div className="tbl-wrap">
               <table className="tbl">
             <thead>
@@ -338,6 +346,9 @@ export default function Packages({ report }: { report: Report }) {
               </div>
         </div>
         <div className="panel pkg-map">
+          <div className="panel-head">
+            <span className="panel-title">{t("pkg_map_title")}</span>
+          </div>
           <Treemap packages={filtered} total={total || 1} />
         </div>
       </div>

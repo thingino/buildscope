@@ -146,6 +146,9 @@ const tr: Record<string, string> = {
   cat_base: "Temel sistem",
   cat_overlay: "Overlay / post-build",
   toggle_category: "{name} aç/kapat",
+  pkg_table_title: "Paketler",
+  pkg_table_sub: "{total} içinden {n}",
+  pkg_map_title: "Rootfs içindeki pay",
   th_package: "paket",
   th_bytes: "bayt",
   th_flash_approx: "~flash",
@@ -162,6 +165,7 @@ const tr: Record<string, string> = {
   show_top: "daha az göster",
 
   // files tab
+  files_title: "Dosyalar",
   files_source_rootfs: "rootfs (paketlere atanmış)",
   files_total: "dosya",
   files_bytes: "sıkıştırılmamış",

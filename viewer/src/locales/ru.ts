@@ -145,6 +145,9 @@ const ru: Record<string, string> = {
   cat_base: "Базовая система",
   cat_overlay: "Overlay / post-build",
   toggle_category: "переключить {name}",
+  pkg_table_title: "Пакеты",
+  pkg_table_sub: "{n} из {total}",
+  pkg_map_title: "Доля rootfs",
   th_package: "пакет",
   th_bytes: "байты",
   th_flash_approx: "~флеш",
@@ -161,6 +164,7 @@ const ru: Record<string, string> = {
   show_top: "свернуть",
 
   // files tab
+  files_title: "Файлы",
   files_source_rootfs: "rootfs (с разбивкой по пакетам)",
   files_total: "файлы",
   files_bytes: "без сжатия",

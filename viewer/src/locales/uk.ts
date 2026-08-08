@@ -146,6 +146,9 @@ const uk: Record<string, string> = {
   cat_base: "Базова система",
   cat_overlay: "Overlay / post-build",
   toggle_category: "перемкнути {name}",
+  pkg_table_title: "Пакунки",
+  pkg_table_sub: "{n} з {total}",
+  pkg_map_title: "Частка rootfs",
   th_package: "пакет",
   th_bytes: "байти",
   th_flash_approx: "~флеш",
@@ -162,6 +165,7 @@ const uk: Record<string, string> = {
   show_top: "показати менше",
 
   // files tab
+  files_title: "Файли",
   files_source_rootfs: "rootfs (розподілено за пакетами)",
   files_total: "файли",
   files_bytes: "нестиснуто",

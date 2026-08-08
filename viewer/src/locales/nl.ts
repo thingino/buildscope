@@ -146,6 +146,9 @@ const nl: Record<string, string> = {
   cat_base: "Basissysteem",
   cat_overlay: "Overlay / post-build",
   toggle_category: "{name} aan/uit",
+  pkg_table_title: "Pakketten",
+  pkg_table_sub: "{n} van {total}",
+  pkg_map_title: "Aandeel van de rootfs",
   th_package: "pakket",
   th_bytes: "bytes",
   th_flash_approx: "~flash",
@@ -162,6 +165,7 @@ const nl: Record<string, string> = {
   show_top: "minder tonen",
 
   // files tab
+  files_title: "Bestanden",
   files_source_rootfs: "rootfs (toegewezen aan pakketten)",
   files_total: "bestanden",
   files_bytes: "ongecomprimeerd",

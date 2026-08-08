@@ -34,6 +34,7 @@ export default function Timings({ report }: { report: Report }) {
   }, [options, query]);
 
   const timed = report.timings.length > 0;
+  const totalWork = report.timings.reduce((a, x) => a + x.seconds, 0);
   const max = timed ? Math.max(...report.timings.map((row) => row.seconds)) : 0;
   const list = showAll ? report.timings : report.timings.slice(0, SHOW);
 
@@ -41,7 +42,9 @@ export default function Timings({ report }: { report: Report }) {
     <div className="pane">
       <div className="statrow">
         <div className="stat">
-          <div className="stat-label">{t("stat_active_build_time")}</div>
+          <div className="stat-label" data-help="help_active_build_time">
+            {t("stat_active_build_time")}
+          </div>
           <div className="stat-value">
             {report.build.build_active_seconds !== null ? seconds(report.build.build_active_seconds) : "–"}
           </div>
@@ -173,6 +176,16 @@ export default function Timings({ report }: { report: Report }) {
 
       {timed && (
       <div className="panel">
+        <div className="panel-head">
+          <span className="panel-title">{t("timings_title")}</span>
+          {/* The summed figure belongs here rather than beside the tile: on a
+              parallel build it is package work, not elapsed time, and putting
+              it over the bars it actually describes stops it reading as a
+              second, contradictory answer to how long the build took. */}
+          <span className="muted" data-help="help_package_work">
+            {t("timings_sub", { n: report.timings.length, total: seconds(totalWork) })}
+          </span>
+        </div>
         <div className="timing-list">
           {list.map((row) => {
             const isOpen = open === row.package;

@@ -184,6 +184,8 @@ const pt: Record<string, string> = {
   th_load: "carga",
   load_auto: "auto",
   load_on_demand: "a pedido",
+  modules_title: "Módulos carregáveis",
+  modules_sub: "{n} módulos · {size}",
   no_modules: "Sem módulos do kernel neste rootfs.",
 
   // build time tab
@@ -191,6 +193,10 @@ const pt: Record<string, string> = {
   stat_packages_timed: "pacotes cronometrados",
   stat_finished: "concluída",
   no_build_log: "Sem build-time.log nesta árvore.",
+  timings_title: "Tempos de compilação por pacote",
+  timings_sub: "{n} pacotes · {total} de trabalho de pacotes",
+  help_package_work: "O tempo de compilação de cada pacote somado. Numa compilação paralela excede o tempo decorrido, porque o trabalho simultâneo é contado uma vez por pacote aqui e apenas uma vez no tempo ativo.",
+  help_active_build_time: "Quanto tempo a compilação esteve a compilar: a união dos passos instrumentados, pelo que o trabalho paralelo conta uma vez. Menos do que o trabalho completo, que inclui também checkout e empacotamento, e menos do que a soma dos tempos dos pacotes.",
   stat_profile: "perfil",
   stat_build_config: "configuração de compilação",
   profile_title: "Perfil da câmera (defconfig)",

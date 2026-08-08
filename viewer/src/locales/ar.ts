@@ -183,6 +183,8 @@ const ar: Record<string, string> = {
   th_load: "التحميل",
   load_auto: "تلقائي",
   load_on_demand: "عند الطلب",
+  modules_title: "الوحدات القابلة للتحميل",
+  modules_sub: "{n} وحدة · {size}",
   no_modules: "لا توجد وحدات نواة في rootfs هذا.",
 
   // build time tab
@@ -190,6 +192,10 @@ const ar: Record<string, string> = {
   stat_packages_timed: "حزم مقيسة",
   stat_finished: "اكتمل",
   no_build_log: "لا يوجد build-time.log في هذه الشجرة.",
+  timings_title: "أزمنة بناء الحزم",
+  timings_sub: "{n} حزمة · {total} من زمن عمل الحزم",
+  help_package_work: "مجموع أزمنة بناء كل حزمة. في بناء متوازٍ يتجاوز هذا الزمن المنقضي، لأن العمل المتزامن يُحسب هنا مرة لكل حزمة، بينما يُحسب مرة واحدة في زمن البناء الفعلي.",
+  help_active_build_time: "المدة التي كان البناء يترجم خلالها: اتحاد الخطوات المرصودة، فيُحسب العمل المتوازي مرة واحدة. أقل من زمن المهمة كاملة التي تشمل أيضًا الجلب والتحزيم، وأقل من مجموع أزمنة الحزم.",
   stat_profile: "الملف التعريفي",
   stat_build_config: "إعدادات البناء",
   profile_title: "ملف الكاميرا التعريفي (defconfig)",

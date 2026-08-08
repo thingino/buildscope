@@ -184,6 +184,8 @@ const ko: Record<string, string> = {
   th_load: "로드",
   load_auto: "자동",
   load_on_demand: "온디맨드",
+  modules_title: "로드 가능 모듈",
+  modules_sub: "{n}개 · {size}",
   no_modules: "이 rootfs에는 커널 모듈이 없습니다.",
 
   // build time tab
@@ -191,6 +193,10 @@ const ko: Record<string, string> = {
   stat_packages_timed: "측정된 패키지",
   stat_finished: "완료 시각",
   no_build_log: "이 트리에는 build-time.log가 없습니다.",
+  timings_title: "패키지 빌드 시간",
+  timings_sub: "{n}개 패키지 · 작업 시간 {total}",
+  help_package_work: "각 패키지의 빌드 시간을 합한 값입니다. 병렬 빌드에서는 경과 시간을 넘어섭니다. 동시에 진행된 작업이 여기서는 패키지마다, 실제 빌드 시간에서는 한 번만 계산되기 때문입니다.",
+  help_active_build_time: "빌드가 컴파일한 시간입니다. 계측된 단계들의 합집합이라 병렬로 진행된 작업은 한 번만 계산됩니다. 체크아웃과 패키징을 포함한 전체 작업보다 짧고, 패키지 시간의 총합보다도 짧습니다.",
   stat_profile: "프로파일",
   stat_build_config: "빌드 설정",
   profile_title: "카메라 프로파일 (defconfig)",

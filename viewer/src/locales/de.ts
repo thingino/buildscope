@@ -184,6 +184,8 @@ const de: Record<string, string> = {
   th_load: "Laden",
   load_auto: "auto",
   load_on_demand: "bei Bedarf",
+  modules_title: "Ladbare Module",
+  modules_sub: "{n} Module · {size}",
   no_modules: "Keine Kernel-Module in diesem rootfs.",
 
   // build time tab
@@ -191,6 +193,10 @@ const de: Record<string, string> = {
   stat_packages_timed: "Pakete gemessen",
   stat_finished: "fertig",
   no_build_log: "Kein build-time.log in diesem Verzeichnis.",
+  timings_title: "Paket-Bauzeiten",
+  timings_sub: "{n} Pakete · {total} Paketarbeit",
+  help_package_work: "Die Bauzeit jedes Pakets aufsummiert. Bei einem parallelen Build übersteigt das die verstrichene Zeit, denn gleichzeitig laufende Arbeit zählt hier je Paket und in der aktiven Bauzeit nur einmal.",
+  help_active_build_time: "Wie lange der Build kompiliert hat: die Vereinigung der instrumentierten Schritte, parallel Laufendes zählt einmal. Weniger als der ganze Job, der auch Checkout und Packen umfasst, und weniger als die Summe der Paketzeiten.",
   stat_profile: "Profil",
   stat_build_config: "Build-Konfiguration",
   profile_title: "Kameraprofil (defconfig)",

@@ -184,6 +184,8 @@ const ja: Record<string, string> = {
   th_load: "ロード",
   load_auto: "自動",
   load_on_demand: "オンデマンド",
+  modules_title: "ロード可能モジュール",
+  modules_sub: "{n} 個 · {size}",
   no_modules: "この rootfs にカーネルモジュールはありません。",
 
   // build time tab
@@ -191,6 +193,10 @@ const ja: Record<string, string> = {
   stat_packages_timed: "計測済みパッケージ",
   stat_finished: "完了時刻",
   no_build_log: "このツリーに build-time.log がありません。",
+  timings_title: "パッケージのビルド時間",
+  timings_sub: "{n} パッケージ · 作業時間 {total}",
+  help_package_work: "各パッケージのビルド時間を合計したものです。並列ビルドでは経過時間を上回ります。同時に走った作業が、ここではパッケージごとに、実ビルド時間では一度だけ数えられるためです。",
+  help_active_build_time: "ビルドがコンパイルしていた時間。計測された処理区間の和で、並列に走った分は一度だけ数えます。チェックアウトやパッケージングを含むジョブ全体より短く、各パッケージ時間の合計より短くなります。",
   stat_profile: "プロファイル",
   stat_build_config: "ビルド設定",
   profile_title: "カメラプロファイル (defconfig)",

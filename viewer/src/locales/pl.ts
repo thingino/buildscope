@@ -184,6 +184,8 @@ const pl: Record<string, string> = {
   th_load: "ładowanie",
   load_auto: "auto",
   load_on_demand: "na żądanie",
+  modules_title: "Moduły ładowalne",
+  modules_sub: "{n} modułów · {size}",
   no_modules: "Brak modułów jądra w tym rootfs.",
 
   // build time tab
@@ -191,6 +193,10 @@ const pl: Record<string, string> = {
   stat_packages_timed: "zmierzone pakiety",
   stat_finished: "zakończono",
   no_build_log: "Brak build-time.log w tym drzewie.",
+  timings_title: "Czasy budowania pakietów",
+  timings_sub: "{n} pakietów · {total} pracy pakietów",
+  help_package_work: "Czas budowania każdego pakietu zsumowany. Przy kompilacji równoległej przekracza to czas rzeczywisty, bo praca wykonywana jednocześnie liczy się tu raz na pakiet, a w czasie aktywnym tylko raz.",
+  help_active_build_time: "Jak długo trwała kompilacja: suma rozłączna zmierzonych kroków, więc praca równoległa liczy się raz. Mniej niż całe zadanie, obejmujące też pobranie i pakowanie, i mniej niż suma czasów pakietów.",
   stat_profile: "profil",
   stat_build_config: "konfiguracja kompilacji",
   profile_title: "Profil kamery (defconfig)",

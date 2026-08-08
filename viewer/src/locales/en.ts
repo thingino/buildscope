@@ -189,6 +189,8 @@ const en: Record<string, string> = {
   th_load: "load",
   load_auto: "auto",
   load_on_demand: "on demand",
+  modules_title: "Loadable modules",
+  modules_sub: "{n} modules · {size}",
   no_modules: "No kernel modules in this rootfs.",
 
   // build time tab
@@ -196,6 +198,10 @@ const en: Record<string, string> = {
   stat_packages_timed: "packages timed",
   stat_finished: "finished",
   no_build_log: "No build-time.log in this tree.",
+  timings_title: "Package build times",
+  timings_sub: "{n} packages · {total} of package work",
+  help_package_work: "Every package's own build time added together. On a parallel build this exceeds the elapsed time, because work that ran at the same time is counted once per package here and only once in the active build time.",
+  help_active_build_time: "How long the build was compiling: the union of the instrumented steps, so work running in parallel counts once. Less than the whole job, which also spends time on checkout and packing, and less than the package times added up.",
   stat_profile: "profile",
   stat_build_config: "build config",
   profile_title: "Camera profile (defconfig)",

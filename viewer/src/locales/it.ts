@@ -184,6 +184,8 @@ const it: Record<string, string> = {
   th_load: "caricamento",
   load_auto: "auto",
   load_on_demand: "su richiesta",
+  modules_title: "Moduli caricabili",
+  modules_sub: "{n} moduli · {size}",
   no_modules: "Nessun modulo kernel in questo rootfs.",
 
   // build time tab
@@ -191,6 +193,10 @@ const it: Record<string, string> = {
   stat_packages_timed: "pacchetti misurati",
   stat_finished: "terminata",
   no_build_log: "Nessun build-time.log in questa directory.",
+  timings_title: "Tempi di build dei pacchetti",
+  timings_sub: "{n} pacchetti · {total} di lavoro sui pacchetti",
+  help_package_work: "Il tempo di build di ogni pacchetto sommato. In una build parallela supera il tempo trascorso, perché il lavoro simultaneo qui viene contato una volta per pacchetto e nel tempo attivo una sola volta.",
+  help_active_build_time: "Per quanto tempo la build ha compilato: l'unione dei passi strumentati, quindi il lavoro in parallelo conta una volta. Meno dell'intero job, che comprende anche checkout e impacchettamento, e meno della somma dei tempi dei pacchetti.",
   stat_profile: "profilo",
   stat_build_config: "configurazione di build",
   profile_title: "Profilo della camera (defconfig)",

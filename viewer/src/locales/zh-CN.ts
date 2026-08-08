@@ -184,6 +184,8 @@ const zhCN: Record<string, string> = {
   th_load: "加载",
   load_auto: "自动",
   load_on_demand: "按需",
+  modules_title: "可加载模块",
+  modules_sub: "{n} 个模块 · {size}",
   no_modules: "此 rootfs 中没有内核模块。",
 
   // build time tab
@@ -191,6 +193,10 @@ const zhCN: Record<string, string> = {
   stat_packages_timed: "已计时的软件包",
   stat_finished: "完成时间",
   no_build_log: "此目录树中没有 build-time.log。",
+  timings_title: "软件包构建耗时",
+  timings_sub: "{n} 个软件包 · {total} 的软件包工作量",
+  help_package_work: "把每个软件包各自的构建时间相加。在并行构建中这会超过实际经过的时间，因为同时进行的工作在这里按每个软件包各计一次，而在实际构建时间中只计一次。",
+  help_active_build_time: "构建实际在编译的时长：已插桩步骤的并集，因此并行进行的工作只计一次。小于整个任务（还包含检出与打包），也小于各软件包耗时之和。",
   stat_profile: "配置档案",
   stat_build_config: "构建配置",
   profile_title: "摄像机配置档案 (defconfig)",

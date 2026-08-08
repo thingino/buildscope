@@ -215,6 +215,17 @@ export default function Kernel({ report }: { report: Report }) {
           </div>
 
           <div className="panel">
+            <div className="panel-head">
+              <span className="panel-title">{t("modules_title")}</span>
+              {/* Follows the filter, so ticking on-demand says how many that
+                  leaves and what they cost rather than repeating the tile. */}
+              <span className="muted">
+                {t("modules_sub", {
+                  n: modules.length,
+                  size: humanBytes(modules.reduce((a, m) => a + m.bytes, 0)),
+                })}
+              </span>
+            </div>
             <div className="tbl-wrap">
               <table className="tbl">
                 <thead>

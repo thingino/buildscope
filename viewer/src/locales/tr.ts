@@ -184,6 +184,8 @@ const tr: Record<string, string> = {
   th_load: "yükleme",
   load_auto: "otomatik",
   load_on_demand: "istek üzerine",
+  modules_title: "Yüklenebilir modüller",
+  modules_sub: "{n} modül · {size}",
   no_modules: "Bu rootfs'te çekirdek modülü yok.",
 
   // build time tab
@@ -191,6 +193,10 @@ const tr: Record<string, string> = {
   stat_packages_timed: "ölçülen paketler",
   stat_finished: "bitiş",
   no_build_log: "Bu ağaçta build-time.log yok.",
+  timings_title: "Paket derleme süreleri",
+  timings_sub: "{n} paket · {total} paket işi",
+  help_package_work: "Her paketin kendi derleme süresinin toplamı. Paralel bir derlemede bu, geçen süreyi aşar; aynı anda yürüyen iş burada paket başına, etkin derleme süresinde ise yalnızca bir kez sayılır.",
+  help_active_build_time: "Derlemenin ne kadar süre derleme yaptığı: ölçülen adımların birleşimi, paralel yürüyen iş bir kez sayılır. Checkout ve paketlemeyi de kapsayan işin tamamından, ve paket sürelerinin toplamından azdır.",
   stat_profile: "profil",
   stat_build_config: "derleme yapılandırması",
   profile_title: "Kamera profili (defconfig)",

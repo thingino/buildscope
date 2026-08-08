@@ -184,6 +184,8 @@ const fr: Record<string, string> = {
   th_load: "chargement",
   load_auto: "auto",
   load_on_demand: "à la demande",
+  modules_title: "Modules chargeables",
+  modules_sub: "{n} modules · {size}",
   no_modules: "Aucun module du noyau dans ce rootfs.",
 
   // build time tab
@@ -191,6 +193,10 @@ const fr: Record<string, string> = {
   stat_packages_timed: "paquets chronométrés",
   stat_finished: "terminée",
   no_build_log: "Aucun build-time.log dans cette arborescence.",
+  timings_title: "Temps de compilation par paquet",
+  timings_sub: "{n} paquets · {total} de travail de paquets",
+  help_package_work: "Le temps de compilation de chaque paquet additionné. Sur une compilation parallèle, cela dépasse le temps écoulé, car le travail simultané est compté une fois par paquet ici et une seule fois dans le temps actif.",
+  help_active_build_time: "Combien de temps la compilation a duré : l'union des étapes instrumentées, le travail parallèle ne comptant qu'une fois. Moins que le job entier, qui inclut aussi le checkout et l'empaquetage, et moins que la somme des temps par paquet.",
   stat_profile: "profil",
   stat_build_config: "configuration de build",
   profile_title: "Profil de la caméra (defconfig)",

@@ -184,6 +184,8 @@ const nl: Record<string, string> = {
   th_load: "laden",
   load_auto: "auto",
   load_on_demand: "op verzoek",
+  modules_title: "Laadbare modules",
+  modules_sub: "{n} modules · {size}",
   no_modules: "Geen kernelmodules in deze rootfs.",
 
   // build time tab
@@ -191,6 +193,10 @@ const nl: Record<string, string> = {
   stat_packages_timed: "pakketten gemeten",
   stat_finished: "klaar",
   no_build_log: "Geen build-time.log in deze map.",
+  timings_title: "Bouwtijden per pakket",
+  timings_sub: "{n} pakketten · {total} aan pakketwerk",
+  help_package_work: "De bouwtijd van elk pakket bij elkaar opgeteld. Bij een parallelle build overstijgt dit de verstreken tijd, omdat gelijktijdig werk hier per pakket telt en in de actieve bouwtijd maar één keer.",
+  help_active_build_time: "Hoe lang de build aan het compileren was: de vereniging van de gemeten stappen, waarbij parallel werk één keer telt. Minder dan de hele job, die ook checkout en inpakken omvat, en minder dan de opgetelde pakkettijden.",
   stat_profile: "profiel",
   stat_build_config: "buildconfiguratie",
   profile_title: "Cameraprofiel (defconfig)",

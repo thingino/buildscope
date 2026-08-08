@@ -251,6 +251,7 @@ export default function Drift({
   const [showConfig, setShowConfig] = useState(false);
   const [showEnv, setShowEnv] = useState(false);
   const [showBuild, setShowBuild] = useState(false);
+  const [showDevice, setShowDevice] = useState(false);
 
   // Switching build while the tab is open must not keep showing the old
   // profile's baseline.
@@ -293,6 +294,12 @@ export default function Drift({
     () =>
       (current.build_config?.options.length ?? 0) > 0 &&
       (baseline ? (baseline.build_config?.options.length ?? 0) > 0 : false),
+    [current, baseline]
+  );
+  const hasDevice = useMemo(
+    () =>
+      (current.captured_files?.length ?? 0) > 0 &&
+      (baseline ? (baseline.captured_files?.length ?? 0) > 0 : false),
     [current, baseline]
   );
   const hasEnv = useMemo(
@@ -427,6 +434,15 @@ export default function Drift({
                 onToggle={drift.buildConfig.length > 0 ? () => setShowBuild(!showBuild) : null}
               />
             )}
+            {hasDevice && (
+              <CountStat
+                labelKey="stat_device_config_changed"
+                help="help_device_config_changed"
+                value={drift.deviceConfig.length}
+                open={showDevice}
+                onToggle={drift.deviceConfig.length > 0 ? () => setShowDevice(!showDevice) : null}
+              />
+            )}
             {hasEnv && (
               <CountStat
                 labelKey="stat_env_changed"
@@ -459,6 +475,15 @@ export default function Drift({
               titleKey="drift_build_config"
               list={drift.buildConfig}
               filterKey="filter_options"
+            />
+          )}
+
+          {showDevice && drift.deviceConfig.length > 0 && (
+            <ValueTable
+              titleKey="drift_device_config"
+              list={drift.deviceConfig}
+              filterKey="filter_vars"
+              mono
             />
           )}
 

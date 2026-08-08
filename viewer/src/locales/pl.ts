@@ -198,6 +198,9 @@ const pl: Record<string, string> = {
   n_options: "{n} opcji",
   help_profile: "Defconfig, z którego zbudowano tę kamerę, dokładnie tak jak go zapisano: SoC, sensor, rozmiar pamięci flash i wybrane funkcje. Kilkadziesiąt linii wobec setek, które Kconfig z nich wyprowadza.",
   help_build_config: "Każda opcja, z którą Buildroot faktycznie zbudował obraz, rozwinięta z profilu. To wyjaśnia rozmiar lub zachowanie; profil natomiast identyfikuje kamerę.",
+  stat_device_config: "konfiguracja urządzenia",
+  device_config_title: "Konfiguracja urządzenia",
+  help_device_config: "Plik konfiguracyjny pobrany z rootfs, dokładnie tak jak odczyta go urządzenie. System budowania tego nie zawiera: który GPIO steruje filtrem IR ani ile kroków wykonuje silnik obrotu, rozstrzyga się wyłącznie tutaj.",
 
   // drift tab
   baseline: "odniesienie",
@@ -217,7 +220,10 @@ const pl: Record<string, string> = {
   drift_env: "Środowisko U-Boot",
   stat_build_config_changed: "zmiany konfiguracji kompilacji",
   drift_build_config: "Konfiguracja kompilacji",
+  stat_device_config_changed: "zmiany konfiguracji urządzenia",
+  drift_device_config: "Konfiguracja urządzenia",
   help_build_config_changed: "Opcje Buildroota ustawione inaczej w obu kompilacjach. Zwykle stąd bierze się nowy pakiet albo zmiana rozmiaru.",
+  help_device_config_changed: "Wartości różniące się w plikach konfiguracyjnych pobranych z rootfs, według pliku i ustawienia w nim.",
   config_incomparable: "Te kompilacje używają różnych jąder ({before} i {after}), więc niemal każda opcja się różni i porównanie nic nie mówi.",
   help_config_changed: "Opcje jądra ustawione inaczej w obu kompilacjach. Otwórz, aby zobaczyć które i z jaką wartością.",
   help_env_changed: "Zmienne U-Boot, które się różnią, w tym układ partycji, z którym startuje płyta.",

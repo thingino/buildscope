@@ -198,6 +198,9 @@ const fr: Record<string, string> = {
   n_options: "{n} options",
   help_profile: "Le defconfig avec lequel cette caméra a été compilée, tel qu'il a été écrit : le SoC, le capteur, la taille de flash et les fonctions choisies. Quelques dizaines de lignes contre les centaines que Kconfig en dérive.",
   help_build_config: "Chaque option avec laquelle Buildroot a réellement compilé, développée depuis le profil. C'est ce qui explique une taille ou un comportement ; le profil, lui, identifie la caméra.",
+  stat_device_config: "configuration de l'appareil",
+  device_config_title: "Configuration de l'appareil",
+  help_device_config: "Un fichier de configuration relevé dans le rootfs, tel que l'appareil le lira. Le système de compilation n'en sait rien : quel GPIO commande le filtre IR, ou combien de pas fait un moteur de panoramique, ne se décide qu'ici.",
 
   // drift tab
   baseline: "référence",
@@ -217,7 +220,10 @@ const fr: Record<string, string> = {
   drift_env: "Environnement U-Boot",
   stat_build_config_changed: "config de build modifiée",
   drift_build_config: "Configuration de build",
+  stat_device_config_changed: "configuration de l'appareil modifiée",
+  drift_device_config: "Configuration de l'appareil",
   help_build_config_changed: "Options Buildroot définies différemment entre les deux compilations. C'est là que commence en général l'apparition d'un paquet ou un changement de taille.",
+  help_device_config_changed: "Valeurs qui diffèrent dans les fichiers de configuration relevés du rootfs, indexées par fichier et par réglage.",
   config_incomparable: "Ces compilations utilisent des noyaux différents ({before} et {after}) : presque toutes les options diffèrent et les comparer n'apprend rien.",
   help_config_changed: "Options du noyau décidées différemment entre les deux compilations. Ouvrez pour voir lesquelles et leurs valeurs.",
   help_env_changed: "Variables U-Boot qui diffèrent, y compris la table des partitions avec laquelle la carte démarre.",

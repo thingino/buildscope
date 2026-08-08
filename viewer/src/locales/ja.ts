@@ -198,6 +198,9 @@ const ja: Record<string, string> = {
   n_options: "{n} 項目",
   help_profile: "このカメラのビルド元となった defconfig を、書かれたそのままで表示します。SoC、センサー、フラッシュ容量、選択された機能。数十行に対し、Kconfig がそこから導く項目は数百に及びます。",
   help_build_config: "Buildroot が実際にビルドに用いた全項目で、プロファイルを展開したものです。サイズや挙動を説明するのはこちら、カメラを識別するのはプロファイルです。",
+  stat_device_config: "デバイス設定",
+  device_config_title: "デバイス設定",
+  help_device_config: "rootfs から取得した設定ファイルを、デバイスが読むそのままの形で表示します。ビルドシステムはこの情報を持ちません。どの GPIO が IR カットフィルタを駆動するか、パンモータが何ステップ必要かは、ここでしか決まりません。",
 
   // drift tab
   baseline: "基準",
@@ -217,7 +220,10 @@ const ja: Record<string, string> = {
   drift_env: "U-Boot 環境変数",
   stat_build_config_changed: "ビルド設定の変更",
   drift_build_config: "ビルド設定",
+  stat_device_config_changed: "デバイス設定の変更",
+  drift_device_config: "デバイス設定",
   help_build_config_changed: "2 つのビルドで異なる設定になった Buildroot 項目。パッケージの増減やサイズの変化は、たいていここから始まります。",
+  help_device_config_changed: "rootfs から取得した設定ファイルのうち差異のある値を、ファイルとその中の設定項目ごとに示します。",
   config_incomparable: "これらのビルドはカーネルが異なります（{before} と {after}）。ほぼすべての項目が異なるため、比較しても意味がありません。",
   help_config_changed: "2 つのビルドで異なる設定になったカーネル項目。開くと項目と値が確認できます。",
   help_env_changed: "異なる U-Boot 変数。基板が起動する際のパーティション構成を含みます。",

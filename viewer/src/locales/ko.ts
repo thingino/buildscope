@@ -198,6 +198,9 @@ const ko: Record<string, string> = {
   n_options: "{n}개 항목",
   help_profile: "이 카메라를 빌드한 defconfig를 작성된 그대로 보여줍니다. SoC, 센서, 플래시 용량, 선택한 기능들입니다. 수십 줄에 불과하지만 Kconfig는 여기서 수백 개 항목을 도출합니다.",
   help_build_config: "Buildroot가 실제로 빌드에 사용한 모든 항목으로, 프로파일을 확장한 결과입니다. 크기나 동작을 설명하는 것은 이쪽이고, 카메라를 식별하는 것은 프로파일입니다.",
+  stat_device_config: "장치 설정",
+  device_config_title: "장치 설정",
+  help_device_config: "rootfs에서 가져온 설정 파일을 장치가 읽는 그대로 보여줍니다. 빌드 시스템에는 이 정보가 없습니다. 어떤 GPIO가 IR 컷 필터를 구동하는지, 팬 모터가 몇 스텝인지는 여기에서만 정해집니다.",
 
   // drift tab
   baseline: "기준",
@@ -217,7 +220,10 @@ const ko: Record<string, string> = {
   drift_env: "U-Boot 환경 변수",
   stat_build_config_changed: "빌드 설정 변경",
   drift_build_config: "빌드 설정",
+  stat_device_config_changed: "장치 설정 변경",
+  drift_device_config: "장치 설정",
   help_build_config_changed: "두 빌드에서 다르게 설정된 Buildroot 옵션입니다. 패키지가 생기거나 크기가 달라지는 일은 대개 여기서 시작됩니다.",
+  help_device_config_changed: "rootfs에서 가져온 설정 파일 중 값이 다른 항목을, 파일과 그 안의 설정 단위로 보여줍니다.",
   config_incomparable: "두 빌드의 커널이 다릅니다({before}, {after}). 거의 모든 옵션이 달라 비교해도 의미가 없습니다.",
   help_config_changed: "두 빌드에서 다르게 설정된 커널 옵션입니다. 열면 항목과 값을 볼 수 있습니다.",
   help_env_changed: "서로 다른 U-Boot 변수입니다. 보드가 부팅할 때 쓰는 파티션 구성을 포함합니다.",

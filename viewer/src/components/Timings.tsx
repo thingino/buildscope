@@ -19,9 +19,11 @@ export default function Timings({ report }: { report: Report }) {
   const [showAll, setShowAll] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
+  const [showFile, setShowFile] = useState<string | null>(null);
   const [query, setQuery] = useState("");
 
   const bc = report.build_config ?? null;
+  const captured = report.captured_files ?? [];
   const options = useMemo(() => bc?.options ?? [], [bc]);
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -67,6 +69,23 @@ export default function Timings({ report }: { report: Report }) {
             <div className="stat-value stat-name">{report.build.defconfig ?? "–"}</div>
           </button>
         )}
+        {captured.map((f) => (
+          <button
+            key={f.path}
+            className={`stat stat-btn ${showFile === f.path ? "active" : ""}`}
+            data-help="help_device_config"
+            onClick={() => setShowFile(showFile === f.path ? null : f.path)}
+            aria-expanded={showFile === f.path}
+          >
+            <div className="stat-label">
+              {t("stat_device_config")}
+              <span className="stat-more">{showFile === f.path ? "▾" : "▸"}</span>
+            </div>
+            {/* The name alone: the tile is a label, and the directory is
+                already on the panel it opens. */}
+            <div className="stat-value stat-name">{f.path.split("/").pop()}</div>
+          </button>
+        ))}
         {options.length > 0 && (
           <button
             className={`stat stat-btn ${showOptions ? "active" : ""}`}
@@ -82,6 +101,20 @@ export default function Timings({ report }: { report: Report }) {
           </button>
         )}
       </div>
+
+      {captured.map((f) =>
+        showFile === f.path ? (
+          <div className="panel" key={f.path}>
+            <div className="panel-head">
+              <span className="panel-title">{t("device_config_title")}</span>
+              <span className="muted">{f.path}</span>
+            </div>
+            {/* Verbatim: the file is what the device reads, and reformatting it
+                would put this tool between the reader and that. */}
+            <pre className="defconfig">{f.text}</pre>
+          </div>
+        ) : null
+      )}
 
       {showProfile && bc?.defconfig_text && (
         <div className="panel">

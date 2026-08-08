@@ -198,6 +198,9 @@ const pt: Record<string, string> = {
   n_options: "{n} opções",
   help_profile: "O defconfig com que esta câmera foi compilada, exatamente como foi escrito: o SoC, o sensor, o tamanho da flash e as funções escolhidas. Algumas dezenas de linhas contra as centenas que o Kconfig deriva delas.",
   help_build_config: "Cada opção com que o Buildroot acabou compilando, expandida a partir do perfil. É isto que explica um tamanho ou um comportamento; o perfil é o que identifica a câmera.",
+  stat_device_config: "configuração do dispositivo",
+  device_config_title: "Configuração do dispositivo",
+  help_device_config: "Um ficheiro de configuração recolhido do rootfs, exatamente como o dispositivo o lerá. O sistema de compilação não contém isto: qual GPIO aciona o filtro IR, ou quantos passos dá um motor de rotação, decide-se só aqui.",
 
   // drift tab
   baseline: "referência",
@@ -217,7 +220,10 @@ const pt: Record<string, string> = {
   drift_env: "Ambiente U-Boot",
   stat_build_config_changed: "config de compilação alterada",
   drift_build_config: "Configuração de compilação",
+  stat_device_config_changed: "configuração do dispositivo alterada",
+  drift_device_config: "Configuração do dispositivo",
   help_build_config_changed: "Opções do Buildroot definidas de forma diferente entre as duas compilações. É normalmente aqui que começa o aparecimento de um pacote ou uma mudança de tamanho.",
+  help_device_config_changed: "Valores que diferem nos ficheiros de configuração recolhidos do rootfs, por ficheiro e pela definição lá dentro.",
   config_incomparable: "Estas compilações usam kernels diferentes ({before} e {after}), por isso quase todas as opções diferem e compará-las não diz nada.",
   help_config_changed: "Opções do kernel decididas de forma diferente entre as duas compilações. Abra para ver quais e com que valor.",
   help_env_changed: "Variáveis U-Boot que diferem, incluindo o esquema de partições com que a placa arranca.",

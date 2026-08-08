@@ -15,6 +15,13 @@ export interface BuildConfig {
   options: ConfigOption[];
 }
 
+/** A file recorded from the rootfs because the scan was asked for it. */
+export interface CapturedFile {
+  path: string;
+  bytes: number;
+  text: string;
+}
+
 export interface Report {
   schema: number;
   generator: { name: string; version: string };
@@ -51,6 +58,8 @@ export interface Report {
   modules: ModuleReport[];
   /** Absent on reports written before it was captured. */
   build_config?: BuildConfig | null;
+  /** Absent on reports written before capture existed, empty unless asked. */
+  captured_files?: CapturedFile[];
   modules_meta: {
     kernel_version: string;
     builtin: string[];

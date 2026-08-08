@@ -57,6 +57,7 @@ export interface Drift {
   rootfsCompressed: TotalDelta | null;
   config: ValueDiff;
   buildConfig: ValueDelta[];
+  deviceConfig: ValueDelta[];
   env: ValueDelta[];
   partitions: PartitionDelta[];
   images: NamedDelta[];
@@ -83,6 +84,37 @@ const toMap = (entries: [string, number][]) => new Map(entries);
  *  vendor tree appended to it. */
 function series(v: string): string {
   return v.match(/^\d+(?:\.\d+)*/)?.[0] ?? v;
+}
+
+/**
+ * Captured files flattened to one key per value, so they diff like any other
+ * setting.
+ *
+ * A path such as `etc/config.json:motors.gpio_pan` names the file and the value
+ * inside it, which is what a reader needs to act on. JSON is flattened because
+ * a whole-file comparison would only ever say "it changed"; anything that does
+ * not parse is compared as a single value, which is still better than silence.
+ */
+function capturedOf(r: Report): Map<string, string> {
+  const out = new Map<string, string>();
+  for (const f of r.captured_files ?? []) {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(f.text);
+    } catch {
+      out.set(f.path, f.text);
+      continue;
+    }
+    const walk = (v: unknown, at: string) => {
+      if (v && typeof v === "object" && !Array.isArray(v)) {
+        for (const [k, inner] of Object.entries(v)) walk(inner, at ? `${at}.${k}` : k);
+      } else {
+        out.set(`${f.path}:${at}`, Array.isArray(v) ? JSON.stringify(v) : String(v));
+      }
+    };
+    walk(parsed, "");
+  }
+  return out;
 }
 
 /** Every Buildroot option a report was configured with, by key. */
@@ -189,6 +221,9 @@ export function computeDrift(a: Report, b: Report): Drift {
     // what was compiled. A package appearing or a size moving usually starts
     // here.
     buildConfig: valueDeltas(buildOptionsOf(a), buildOptionsOf(b)),
+    // What the device itself will read, which nothing in .config carries: a
+    // GPIO pin or a motor's step count lives only here.
+    deviceConfig: valueDeltas(capturedOf(a), capturedOf(b)),
     env: valueDeltas(envVarsOf(a), envVarsOf(b)),
     partitions,
     images: namedDeltas(

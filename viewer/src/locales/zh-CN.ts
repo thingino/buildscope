@@ -198,6 +198,9 @@ const zhCN: Record<string, string> = {
   n_options: "{n} 个选项",
   help_profile: "构建这台摄像机所用的 defconfig，按原样显示：SoC、传感器、闪存容量以及选择的功能。只有几十行，而 Kconfig 会由此推导出数百个选项。",
   help_build_config: "Buildroot 实际构建时使用的全部选项，由配置档案展开而来。解释体积或行为的是它，而标识这台摄像机的是配置档案。",
+  stat_device_config: "设备配置",
+  device_config_title: "设备配置",
+  help_device_config: "从 rootfs 中取得的配置文件，与设备读取到的完全一致。构建系统并不包含这些信息：哪个 GPIO 驱动红外滤镜、云台电机需要多少步，只在这里决定。",
 
   // drift tab
   baseline: "基线",
@@ -217,7 +220,10 @@ const zhCN: Record<string, string> = {
   drift_env: "U-Boot 环境变量",
   stat_build_config_changed: "构建配置变更",
   drift_build_config: "构建配置",
+  stat_device_config_changed: "设备配置变更",
+  drift_device_config: "设备配置",
   help_build_config_changed: "两个构建中设置不同的 Buildroot 选项。新增软件包或体积变化通常都从这里开始。",
+  help_device_config_changed: "从 rootfs 取得的配置文件中存在差异的值，按文件及其中的设置项列出。",
   config_incomparable: "这两个构建使用不同的内核（{before} 和 {after}），几乎所有选项都不同，比较没有意义。",
   help_config_changed: "两个构建中设置不同的内核选项。展开可查看具体项目及其取值。",
   help_env_changed: "存在差异的 U-Boot 变量，包括开发板启动时使用的分区布局。",

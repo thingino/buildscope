@@ -198,6 +198,9 @@ const tr: Record<string, string> = {
   n_options: "{n} seçenek",
   help_profile: "Bu kameranın derlendiği defconfig, yazıldığı haliyle: SoC, sensör, flash boyutu ve seçilen özellikler. Kconfig'in bunlardan türettiği yüzlerce seçeneğe karşılık birkaç düzine satır.",
   help_build_config: "Buildroot'un gerçekte derlediği tüm seçenekler, profilden genişletilmiş hali. Bir boyutu ya da davranışı açıklayan budur; kamerayı tanımlayan ise profildir.",
+  stat_device_config: "cihaz yapılandırması",
+  device_config_title: "Cihaz yapılandırması",
+  help_device_config: "Rootfs'ten alınan bir yapılandırma dosyası, cihazın okuyacağı hâliyle. Derleme sistemi bunu içermez: IR kesme filtresini hangi GPIO sürer ya da bir pan motoru kaç adım atar, yalnızca burada belirlenir.",
 
   // drift tab
   baseline: "referans",
@@ -217,7 +220,10 @@ const tr: Record<string, string> = {
   drift_env: "U-Boot ortamı",
   stat_build_config_changed: "derleme yapılandırması değişti",
   drift_build_config: "Derleme yapılandırması",
+  stat_device_config_changed: "cihaz yapılandırması değişti",
+  drift_device_config: "Cihaz yapılandırması",
   help_build_config_changed: "İki derlemede farklı ayarlanmış Buildroot seçenekleri. Bir paketin belirmesi ya da boyutun kayması genelde burada başlar.",
+  help_device_config_changed: "Rootfs'ten alınan yapılandırma dosyalarında farklılık gösteren değerler; dosya ve içindeki ayara göre.",
   config_incomparable: "Bu derlemeler farklı çekirdekler kullanıyor ({before} ve {after}); neredeyse her seçenek farklı olduğundan karşılaştırma bir şey söylemez.",
   help_config_changed: "İki derlemede farklı ayarlanmış çekirdek seçenekleri. Hangileri olduğunu ve değerlerini görmek için açın.",
   help_env_changed: "Farklılık gösteren U-Boot değişkenleri; kartın açılışta kullandığı bölüm düzeni dahil.",

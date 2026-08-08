@@ -1563,6 +1563,15 @@ pub fn analyze(snap: &Snapshot) -> Report {
         modules_meta,
         // Both halves come from the same scan: the expansion is the .config
         // already parsed for build facts, the profile is the file it names.
+        captured_files: snap
+            .captured
+            .iter()
+            .map(|f| crate::report::CapturedFile {
+                path: f.name.clone(),
+                bytes: f.text.len() as u64,
+                text: f.text.clone(),
+            })
+            .collect(),
         build_config: cfg.as_ref().map(|c| crate::report::BuildConfigReport {
             defconfig_text: snap.defconfig_text.as_deref().map(|t| {
                 t.lines()

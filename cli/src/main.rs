@@ -50,6 +50,14 @@ enum Cmd {
         /// Path to a genimage config describing the flash/disk layout
         #[arg(long)]
         genimage: Option<PathBuf>,
+        /// Record a file from the target filesystem into the report, by its
+        /// path inside the rootfs (e.g. etc/config.json). Repeatable.
+        ///
+        /// A rootfs carries configuration no part of the build system knows
+        /// about, and which files matter is the project's business rather than
+        /// this tool's, so they are named rather than guessed at.
+        #[arg(long = "capture", value_name = "PATH")]
+        capture: Vec<String>,
     },
     /// Analyze bare firmware artifacts with no build tree (a released .bin,
     /// a flash dump, a lone rootfs image)
@@ -206,7 +214,7 @@ fn load_report(path: &Path) -> Result<Report, String> {
             path.display()
         )),
         1 => {
-            let snap = walker::build_snapshot(&builds[0], None, None)
+            let snap = walker::build_snapshot(&builds[0], None, None, &[])
                 .map_err(|e| format!("{}: {e}", path.display()))?;
             Ok(analyze(&snap))
         }
@@ -225,6 +233,7 @@ fn scan_dirs(
     hook: bool,
     flash_map: Option<&str>,
     genimage: Option<&std::path::Path>,
+    capture: &[String],
 ) -> Vec<(Option<walker::BuildPaths>, Report)> {
     let mut out = Vec::new();
     if hook {
@@ -233,7 +242,7 @@ fn scan_dirs(
             std::process::exit(2);
         }
         let paths = walker::from_hook(&dirs[0]);
-        match walker::build_snapshot(&paths, flash_map, genimage) {
+        match walker::build_snapshot(&paths, flash_map, genimage, capture) {
             Ok(snap) => out.push((Some(paths), analyze(&snap))),
             Err(e) => errln!("buildscope: {}: {e}", dirs[0].display()),
         }
@@ -276,7 +285,7 @@ fn scan_dirs(
             continue;
         }
         for paths in builds {
-            match walker::build_snapshot(&paths, flash_map, genimage) {
+            match walker::build_snapshot(&paths, flash_map, genimage, capture) {
                 Ok(snap) => out.push((Some(paths.clone()), analyze(&snap))),
                 Err(e) => errln!("buildscope: {}: {e}", paths.root.display()),
             }
@@ -296,8 +305,15 @@ fn main() {
             quiet,
             flash_map,
             genimage,
+            capture,
         } => {
-            let results = scan_dirs(&dirs, hook, flash_map.as_deref(), genimage.as_deref());
+            let results = scan_dirs(
+                &dirs,
+                hook,
+                flash_map.as_deref(),
+                genimage.as_deref(),
+                &capture,
+            );
             if results.is_empty() {
                 std::process::exit(1);
             }
@@ -460,7 +476,7 @@ fn main() {
                     Err(single) => {
                         // Not hook mode: this is an ordinary directory, and
                         // one holding several builds yields all of them.
-                        let found = scan_dirs(std::slice::from_ref(input), false, None, None);
+                        let found = scan_dirs(std::slice::from_ref(input), false, None, None, &[]);
                         if found.is_empty() {
                             errln!("buildscope: {single}");
                             std::process::exit(1);

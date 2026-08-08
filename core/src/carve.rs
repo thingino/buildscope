@@ -844,6 +844,7 @@ pub fn carve_flash_image(file_name: &str, data: &[u8], root: &str, scan_mode: Sc
         modules: Vec::new(),
         modules_meta: None,
         build_config: None,
+        captured_files: Vec::new(),
         timings: Vec::new(),
         removed_not_shipped: Vec::new(),
     }

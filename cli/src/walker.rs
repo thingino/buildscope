@@ -314,10 +314,40 @@ fn read_defconfig(config: &str) -> Option<String> {
     fs::read_to_string(path).ok()
 }
 
+/// Read the files a caller asked to record, by their path inside the rootfs.
+///
+/// Relative to the target directory rather than to the build, because these
+/// paths are how the file will be addressed on the device -- `etc/config.json`
+/// means /etc/config.json there. A path that escapes the rootfs is refused: the
+/// point is to record what ships, and a report is published, so this must not
+/// become a way to read the build host.
+fn capture_files(target: &Path, want: &[String]) -> Vec<NamedText> {
+    let mut out = Vec::new();
+    for rel in want {
+        let rel = rel.trim_start_matches('/');
+        if rel.is_empty() || rel.split('/').any(|c| c == "..") {
+            eprintln!("buildscope: --capture {rel}: not a path inside the rootfs");
+            continue;
+        }
+        let path = target.join(rel);
+        match read_text_capped(&path) {
+            Some(text) => out.push(NamedText {
+                name: rel.to_string(),
+                text,
+            }),
+            // Absent is ordinary: a file can be optional, or belong to another
+            // board in the same matrix. Silence would be worse than a note.
+            None => eprintln!("buildscope: --capture {rel}: not found or too large"),
+        }
+    }
+    out
+}
+
 pub fn build_snapshot(
     paths: &BuildPaths,
     extra_env_text: Option<&str>,
     genimage_path: Option<&Path>,
+    capture: &[String],
 ) -> io::Result<Snapshot> {
     let root_name = paths
         .root
@@ -339,6 +369,7 @@ pub fn build_snapshot(
         snap.build_time_log = fs::read_to_string(b.join("build-time.log")).ok();
     }
     if let Some(t) = &paths.target_dir {
+        snap.captured = capture_files(t, capture);
         snap.target = walk_target(t)?;
         snap.etc_modules = fs::read_to_string(t.join("etc/modules")).ok();
         // Current Buildroot writes usr/lib/os-release and leaves etc/os-release

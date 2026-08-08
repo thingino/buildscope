@@ -94,6 +94,15 @@ pub struct Snapshot {
     /// Kconfig machinery derived from them. Absent for an artifact-only scan,
     /// and for a build tree whose source checkout has gone.
     pub defconfig_text: Option<String>,
+    /// Files the scanner was asked to record from the target filesystem.
+    ///
+    /// A rootfs holds configuration nothing in the build system knows about --
+    /// which GPIO drives an IR cut filter, how many steps a pan motor takes --
+    /// and none of it is derivable from `.config`. Which files those are is a
+    /// project's own business, so they are named on the command line rather
+    /// than guessed at here: this end stores bytes and has no opinion about
+    /// what is in them.
+    pub captured: Vec<NamedText>,
     /// Contents of build/packages-file-list.txt.
     pub pfl: Option<String>,
     /// Contents of build/build-time.log.
@@ -141,6 +150,7 @@ impl Snapshot {
             images: Vec::new(),
             config: None,
             redact_prefixes: Vec::new(),
+            captured: Vec::new(),
             defconfig_text: None,
             pfl: None,
             build_time_log: None,

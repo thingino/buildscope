@@ -77,6 +77,15 @@ pub struct BuildConfigReport {
     pub options: Vec<ConfigOption>,
 }
 
+/// A file recorded from the target filesystem because someone asked for it.
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct CapturedFile {
+    /// Path inside the rootfs, as it will be on the device.
+    pub path: String,
+    pub bytes: u64,
+    pub text: String,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PartitionReport {
     pub name: String,
@@ -212,6 +221,10 @@ pub struct Report {
     /// Absent for an artifact-only scan, which has no build to configure.
     #[serde(default)]
     pub build_config: Option<BuildConfigReport>,
+    /// Files named with `--capture`. Empty unless asked for, and absent from
+    /// an artifact-only scan, which has no filesystem to read.
+    #[serde(default)]
+    pub captured_files: Vec<CapturedFile>,
     pub timings: Vec<TimingReport>,
     /// Files a package installed that are absent from the final rootfs,
     /// excluding Buildroot's default target-finalize removals (headers,

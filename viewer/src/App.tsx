@@ -123,7 +123,7 @@ function QuestionIcon() {
  * added or retired shifts every build after it, so position 42 in one snapshot
  * is a different camera in the next. Where both are present the name wins.
  */
-function readHash(): { b: number; n: string | null; t: Tab } {
+function readHash(): { b: number; n: string | null; t: Tab; addressed: boolean } {
   const h = new URLSearchParams(window.location.hash.replace(/^#/, ""));
   const raw = h.get("t");
   const t = (raw && TAB_ALIASES[raw]) ?? (raw as Tab | null);
@@ -131,6 +131,9 @@ function readHash(): { b: number; n: string | null; t: Tab } {
     b: Number(h.get("b") ?? 0) || 0,
     n: h.get("n"),
     t: t && TABS.some((x) => x.id === t) ? t : "flash",
+    // Whether a build is named at all. No hash is the listing's own address,
+    // which is a destination in its own right rather than a missing one.
+    addressed: h.has("b") || h.has("n"),
   };
 }
 
@@ -172,11 +175,7 @@ function Viewer() {
   const [missing, setMissing] = useState<string | null>(null);
   // A fleet opens on its overview, not on some arbitrary first build -- unless
   // the URL already names a build, which is what a shared link does.
-  const [overview, setOverview] = useState(() => {
-    if (fleetSpec() === null) return false;
-    const h = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-    return !h.has("b") && !h.has("n");
-  });
+  const [overview, setOverview] = useState(() => fleetSpec() !== null && !readHash().addressed);
   const [initError, setInitError] = useState<string | null>(null);
   const [progress, setProgress] = useState<string | null>(null);
 
@@ -236,25 +235,89 @@ function Viewer() {
     if (!overview) setMissing(null);
   }, [overview]);
 
+  // The address the app is currently answering. Kept so a navigation can be
+  // told from an echo of one: Chromium delivers a single fragment navigation
+  // as BOTH popstate and hashchange, and re-applying an address is only a
+  // no-op if it lands in one step. It does not: a name goes through a pending
+  // state that the index resolves, so a second delivery arriving after that
+  // resolved would set the name pending again -- and, because React sees the
+  // dependency go from the name back to the same name, never run the resolver
+  // to answer it. The build then sits unread behind a spinner.
+  const shown = useRef<string | null>(null);
+  const fromHistory = useRef(false);
+
+  // The address is read as well as written. Without this the app answers only
+  // the address it was loaded with: editing the fragment by hand does nothing,
+  // and neither does a step back through the entries below. Both events are
+  // listened for, because neither covers the other -- a typed fragment fires
+  // hashchange alone -- and the guard above makes the overlap harmless.
+  useEffect(() => {
+    const apply = () => {
+      if (location.hash === shown.current) return;
+      shown.current = location.hash;
+      const h = readHash();
+      fromHistory.current = true;
+      if (!h.addressed) {
+        // Back to the listing, in a fleet. Elsewhere there is no listing to go
+        // to, so the first build stands in for it.
+        setOverview(fleetMode);
+        if (!fleetMode) setCurrent(0);
+        return;
+      }
+      setTab(h.t);
+      // Same order of preference as a fresh load: a name outranks a position,
+      // and is resolved against the index rather than trusted.
+      if (fleetMode && h.n) setWantName(h.n);
+      else {
+        setCurrent(h.b);
+        setOverview(false);
+      }
+    };
+    window.addEventListener("popstate", apply);
+    window.addEventListener("hashchange", apply);
+    return () => {
+      window.removeEventListener("popstate", apply);
+      window.removeEventListener("hashchange", apply);
+    };
+  }, [fleetMode]);
+
+  // Which build was open, as last written. Used to tell a move between builds
+  // -- which is a place a reader can want to come back to -- from a change of
+  // tab within one, which is not worth an entry of its own: a step back after
+  // reading four tabs should leave the build, not walk back through them.
+  const lastPlace = useRef<string | null>(null);
   useEffect(() => {
     // Still resolving: the address the reader arrived with is the one that
     // says what is wanted, so leave it alone until it has been answered.
     if (wantName) return;
+    // Nothing to address yet, or nothing any more: leave the address alone
+    // rather than naming a build that is not on screen.
+    if (!overview && entries.length === 0) return;
+    const h = new URLSearchParams();
+    if (!overview) {
+      h.set("b", String(current));
+      // In a fleet the name goes in beside the position, because it is the half
+      // that keeps meaning something in another release. Both are written, so a
+      // link made before this still opens what it always did.
+      const named = fleetMode ? entries[current]?.name : undefined;
+      if (named) h.set("n", named);
+      h.set("t", tab);
+    }
     // The overview is the fleet's own address: no build is open, so recording
     // one would make a reload land somewhere the reader did not choose.
-    if (overview) {
-      history.replaceState(null, "", `${location.pathname}${location.search}`);
-      return;
-    }
-    const h = new URLSearchParams();
-    h.set("b", String(current));
-    // In a fleet the name goes in beside the position, because it is the half
-    // that keeps meaning something in another release. Both are written, so a
-    // link made before this still opens what it always did.
-    const named = fleetMode ? entries[current]?.name : undefined;
-    if (named) h.set("n", named);
-    h.set("t", tab);
-    history.replaceState(null, "", "#" + h.toString());
+    const frag = overview ? "" : "#" + h.toString();
+    const url = overview ? `${location.pathname}${location.search}` : frag;
+    const place = overview ? "" : String(current);
+    // This state came from the history, so the entry it belongs to is already
+    // the current one: replace it rather than pushing another, which would
+    // strand the forward direction. It is still written, so a name typed on
+    // its own comes back canonical, with the position beside it.
+    const fromNav = fromHistory.current;
+    fromHistory.current = false;
+    const moved = !fromNav && lastPlace.current !== null && lastPlace.current !== place;
+    lastPlace.current = place;
+    shown.current = frag;
+    history[moved ? "pushState" : "replaceState"](null, "", url);
   }, [current, tab, overview, wantName, fleetMode, entries]);
 
   useEffect(() => {

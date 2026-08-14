@@ -114,12 +114,22 @@ function QuestionIcon() {
   );
 }
 
-function readHash(): { b: number; t: Tab } {
+/**
+ * Which build and which tab the address asks for.
+ *
+ * Two ways of naming the build, because they answer in different places. `b`
+ * is its position, which is all a dropped set or a served site has. `n` is its
+ * name, which is the only half that survives a change of release: a profile
+ * added or retired shifts every build after it, so position 42 in one snapshot
+ * is a different camera in the next. Where both are present the name wins.
+ */
+function readHash(): { b: number; n: string | null; t: Tab } {
   const h = new URLSearchParams(window.location.hash.replace(/^#/, ""));
   const raw = h.get("t");
   const t = (raw && TAB_ALIASES[raw]) ?? (raw as Tab | null);
   return {
     b: Number(h.get("b") ?? 0) || 0,
+    n: h.get("n"),
     t: t && TABS.some((x) => x.id === t) ? t : "flash",
   };
 }
@@ -152,13 +162,21 @@ function Viewer() {
   // every build change.
   const [fleet, setFleet] = useState<{ tag: string | null; tags: string[] } | null>(null);
   const [fleetMode] = useState(() => fleetSpec() !== null);
+  // A build the address names but that nothing has resolved yet, since the
+  // index that can answer arrives with the snapshot. Only in fleet mode: a
+  // dropped set or a served site is addressed by position, and there two
+  // reports may legitimately carry the same name.
+  const [wantName, setWantName] = useState(() => (fleetSpec() !== null ? readHash().n : null));
+  // The build a change of release could not carry over, so the listing can say
+  // why it is the listing being looked at.
+  const [missing, setMissing] = useState<string | null>(null);
   // A fleet opens on its overview, not on some arbitrary first build -- unless
   // the URL already names a build, which is what a shared link does.
-  const [overview, setOverview] = useState(
-    () =>
-      fleetSpec() !== null &&
-      !new URLSearchParams(window.location.hash.replace(/^#/, "")).has("b")
-  );
+  const [overview, setOverview] = useState(() => {
+    if (fleetSpec() === null) return false;
+    const h = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    return !h.has("b") && !h.has("n");
+  });
   const [initError, setInitError] = useState<string | null>(null);
   const [progress, setProgress] = useState<string | null>(null);
 
@@ -194,7 +212,34 @@ function Viewer() {
     return staticReports.map((r, i) => ({ id: i, name: r.build.name }));
   }, [api, staticReports]);
 
+  // Resolve a named build against the index, once there is one. Not being in
+  // this snapshot is an answer rather than a failure -- a profile gets added
+  // or retired between runs -- and the listing is where a reader can pick
+  // something that does exist.
   useEffect(() => {
+    if (!wantName || entries.length === 0) return;
+    const i = entries.findIndex((e) => e.name === wantName);
+    setWantName(null);
+    if (i >= 0) {
+      setCurrent(i);
+      setOverview(false);
+    } else {
+      setMissing(wantName);
+      setOverview(true);
+    }
+  }, [wantName, entries]);
+
+  // The notice belongs to arriving at the listing, so leaving it ends the
+  // notice -- coming back later by choice should not be told about a build the
+  // reader has since moved on from.
+  useEffect(() => {
+    if (!overview) setMissing(null);
+  }, [overview]);
+
+  useEffect(() => {
+    // Still resolving: the address the reader arrived with is the one that
+    // says what is wanted, so leave it alone until it has been answered.
+    if (wantName) return;
     // The overview is the fleet's own address: no build is open, so recording
     // one would make a reload land somewhere the reader did not choose.
     if (overview) {
@@ -203,13 +248,21 @@ function Viewer() {
     }
     const h = new URLSearchParams();
     h.set("b", String(current));
+    // In a fleet the name goes in beside the position, because it is the half
+    // that keeps meaning something in another release. Both are written, so a
+    // link made before this still opens what it always did.
+    const named = fleetMode ? entries[current]?.name : undefined;
+    if (named) h.set("n", named);
     h.set("t", tab);
     history.replaceState(null, "", "#" + h.toString());
-  }, [current, tab, overview]);
+  }, [current, tab, overview, wantName, fleetMode, entries]);
 
   useEffect(() => {
     setLoadError(null);
-    if (api === "loading" || overview) return;
+    // A pending name has not chosen a build yet, and `current` is still
+    // whatever the URL's position said. Reading it now would open the wrong
+    // one for a moment, and pull down the tarball to do it.
+    if (api === "loading" || overview || wantName) return;
     if (api !== null) {
       if (entries.length === 0) return;
       api
@@ -219,7 +272,7 @@ function Viewer() {
     } else {
       setReport(staticReports[current] ?? staticReports[0] ?? null);
     }
-  }, [api, current, entries, staticReports, overview]);
+  }, [api, current, entries, staticReports, overview, wantName]);
 
   // Fetch-with-cache for secondary reports (drift baselines).
   const cacheRef = useRef<Map<number, Report>>(new Map());
@@ -355,7 +408,14 @@ function Viewer() {
           {fleet && fleet.tags.length > 0 && (
             /* Switching snapshots reloads the page rather than swapping the
                data underneath: a different release is a different fleet, and
-               the URL should say which one is being read. */
+               the URL should say which one is being read.
+
+               What does carry across is which build was open. Switching
+               release while reading a camera is asking about that camera in
+               another release, not asking to start again, so the name and the
+               tab go into the new address -- by name, never by position, which
+               means nothing between two snapshots. A release that does not
+               have it lands on the listing, which says so. */
             <select
               className="select"
               data-help="help_snapshot"
@@ -364,7 +424,15 @@ function Viewer() {
               onChange={(e) => {
                 const u = new URL(location.href);
                 u.searchParams.set("fleet", e.target.value);
-                u.hash = "";
+                const named = overview ? undefined : entries[current]?.name;
+                if (named) {
+                  const h = new URLSearchParams();
+                  h.set("n", named);
+                  h.set("t", tab);
+                  u.hash = "#" + h.toString();
+                } else {
+                  u.hash = "";
+                }
                 location.assign(u.toString());
               }}
             >
@@ -471,6 +539,7 @@ function Viewer() {
       {overview && entries.length > 0 ? (
         <Fleet
           entries={entries}
+          missing={missing}
           onOpen={(i) => {
             setCurrent(i);
             setTab("flash");

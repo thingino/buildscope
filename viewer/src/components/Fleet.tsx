@@ -42,9 +42,14 @@ type View = "table" | "map";
 
 export default function Fleet({
   entries,
+  missing,
   onOpen,
 }: {
   entries: IndexEntry[];
+  /** A build carried here from another release that this one does not have.
+   *  Without it the reader cannot tell "not built in this release" apart from
+   *  the listing simply forgetting where they were. */
+  missing?: string | null;
   onOpen: (i: number) => void;
 }) {
   const t = useT();
@@ -160,6 +165,7 @@ export default function Fleet({
             onChange={(e) => setQ(e.target.value)}
           />
         </div>
+        {missing && <div className="muted trunc-note">{t("fleet_missing", { name: missing })}</div>}
         {view === "map" && mappable ? (
           <div className={`fmap ${numbers ? "with-nums" : ""}`}>
             <div className="fmap-legend">

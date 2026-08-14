@@ -188,8 +188,8 @@ export default function Kernel({ report }: { report: Report }) {
               <tbody>
                 {configShown.map((e) => (
                   <tr key={e.key}>
-                    <td>{e.key}</td>
-                    <td className={valueClass(e.value)}>{e.value}</td>
+                    <td className="machine">{e.key}</td>
+                    <td className={`machine ${valueClass(e.value)}`}>{e.value}</td>
                   </tr>
                 ))}
               </tbody>
@@ -240,9 +240,9 @@ export default function Kernel({ report }: { report: Report }) {
                 <tbody>
                   {modules.map((m) => (
                     <tr key={m.path}>
-                      <td>{m.name}</td>
+                      <td className="machine">{m.name}</td>
                       <td className="num">{humanBytes(m.bytes)}</td>
-                      <td>{m.package ?? <span className="muted">–</span>}</td>
+                      <td className="machine">{m.package ?? <span className="muted">–</span>}</td>
                       <td>
                         {m.autoloaded ? (
                           <span className="chip chip-auto">{t("load_auto")}</span>

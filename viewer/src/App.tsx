@@ -417,7 +417,7 @@ function Viewer() {
                means nothing between two snapshots. A release that does not
                have it lands on the listing, which says so. */
             <select
-              className="select"
+              className="select machine"
               data-help="help_snapshot"
               value={fleet.tag ?? ""}
               title={t("title_snapshot")}
@@ -445,7 +445,7 @@ function Viewer() {
           )}
           {entries.length > 1 && (
             <select
-              className="select"
+              className="select machine"
               value={current}
               onChange={(e) => {
                 setCurrent(Number(e.target.value));

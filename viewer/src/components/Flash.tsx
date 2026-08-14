@@ -239,7 +239,7 @@ function UbiVolumes({ img, t }: { img: ImageReport; t: TFn }) {
               return (
                 <tr key={v.id} className={placed ? "" : "dim"}>
                   <td>
-                    {v.name || `vol${v.id}`}
+                    <span className="machine">{v.name || `vol${v.id}`}</span>
                     <span className="muted"> id {v.id}</span>
                     {v.autoresize && <span className="chip"> autoresize</span>}
                     {v.has_holes && <span className="crit"> {t("volume_holes")}</span>}
@@ -312,7 +312,7 @@ export default function Flash({ report }: { report: Report }) {
                   return (
                     <tr key={p.name} className={p.overlaps ? "dim" : ""}>
                       <td>
-                        {p.name}
+                        <span className="machine">{p.name}</span>
                         {p.read_only ? <span className="muted"> {t("read_only_short")}</span> : null}
                         {p.overlaps ? <span className="muted"> {t("spans")}</span> : null}
                       </td>
@@ -320,7 +320,7 @@ export default function Flash({ report }: { report: Report }) {
                         {hex(p.offset)}–{hex(p.offset + size)}
                       </td>
                       <td className="num">{humanBytes(size)}</td>
-                      <td>{p.image ?? <span className="muted">–</span>}</td>
+                      <td className="machine">{p.image ?? <span className="muted">–</span>}</td>
                       <td className="num">{p.content_bytes !== null ? humanBytes(p.content_bytes) : "–"}</td>
                       <td className="num">{p.used_bytes !== null ? humanBytes(p.used_bytes) : "–"}</td>
                       <td className="num">{size > 0 && !p.overlaps ? humanBytes(Math.max(0, size - used)) : "–"}</td>
@@ -351,7 +351,7 @@ export default function Flash({ report }: { report: Report }) {
 
       <div className="panel">
         <div className="panel-head">
-          <span className="panel-title">{t("images_dir")}</span>
+          <span className="panel-title machine">{t("images_dir")}</span>
           <span className="muted">{t("n_files", { n: report.images.length })}</span>
         </div>
         <div className="tbl-wrap">
@@ -370,12 +370,12 @@ export default function Flash({ report }: { report: Report }) {
               .sort((a, b) => b.bytes - a.bytes)
               .map((i) => (
                 <tr key={i.name}>
-                  <td>{i.name}</td>
+                  <td className="machine">{i.name}</td>
                   <td className="num">{humanBytes(i.bytes)}</td>
                   <td>
-                    <span className={`chip fmt-${i.format}`}>{i.format}</span>
+                    <span className={`chip machine fmt-${i.format}`}>{i.format}</span>
                   </td>
-                  <td>{i.partition ?? <span className="muted">–</span>}</td>
+                  <td className="machine">{i.partition ?? <span className="muted">–</span>}</td>
                   <td className="mono-dim">{imageNote(i)}</td>
                 </tr>
               ))}

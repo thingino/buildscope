@@ -193,7 +193,7 @@ export default function Files({ report }: { report: Report }) {
           <td className="num">{dir ? child.files : ""}</td>
           <td>
             {pkg && (
-              <span className="pkg-chip">
+              <span className="pkg-chip machine">
                 <span className="dot" style={{ background: CATEGORY_COLOR[categorize(pkg)] }} />
                 {pkg === UNATTRIBUTED ? t("overlay_post_build") : pkg}
               </span>

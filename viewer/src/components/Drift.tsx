@@ -318,7 +318,7 @@ export default function Drift({
         <span className="muted">{t("baseline")}</span>
         {byRelease ? (
           <select
-            className="select"
+            className="select machine"
             data-help="help_baseline_release"
             value={baseTag}
             onChange={(e) => setBaseTag(e.target.value)}
@@ -331,7 +331,7 @@ export default function Drift({
           </select>
         ) : (
           <select
-            className="select"
+            className="select machine"
             data-help="help_baseline_build"
             value={baseIdx}
             onChange={(e) => setBaseIdx(Number(e.target.value))}

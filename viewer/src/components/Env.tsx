@@ -27,7 +27,7 @@ function EnvPanel({ img, t }: { img: ImageReport; t: TFn }) {
     <div className="panel">
       <div className="panel-head">
         <span className="panel-title">
-          {t("env_title")} <span className="muted">{img.name}</span>
+          {t("env_title")} <span className="muted machine">{img.name}</span>
         </span>
         <span className="muted">
           {t("n_vars", { n: d.var_count as number })} · {humanBytes(d.used_bytes as number)}{" "}

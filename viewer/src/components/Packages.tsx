@@ -386,7 +386,7 @@ function NotShipped({ report }: { report: Report }) {
           {rows.map((r) => (
             <tr key={r.path}>
               <td className="mono-dim">{r.path}</td>
-              <td>{r.package}</td>
+              <td className="machine">{r.package}</td>
               <td className="num">{r.source_bytes > 0 ? humanBytes(r.source_bytes) : "–"}</td>
             </tr>
           ))}

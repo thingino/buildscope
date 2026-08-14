@@ -1876,6 +1876,19 @@ body.help-on [data-help] {
   direction: ltr;
 }
 
+/* `.machine` carries no appearance of its own: it marks content that is a
+   build name, a release tag or another identifier, for the rule below. Most
+   such text survives an RTL run intact, because its internal punctuation sits
+   between two Latin runs -- but a leading or trailing run of digits or
+   punctuation is moved to the other end, so "360_ap1pa3_..." reads
+   "ap1pa3_..._360". Which names those are is the data's business, not the
+   layout's, so the marker goes on everything that holds one. */
+[dir="rtl"] .machine,
+[dir="rtl"] .buildname,
+[dir="rtl"] .builtin-item,
+[dir="rtl"] .fmap-num,
+[dir="rtl"] .tree-dir,
+[dir="rtl"] .tree-name,
 [dir="rtl"] .mono-dim,
 [dir="rtl"] .pkg-name,
 [dir="rtl"] .trunc,

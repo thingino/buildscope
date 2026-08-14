@@ -73,8 +73,11 @@ export default function FleetEntry() {
             <option value="" disabled>
               {t("fleet_entry_pick")}
             </option>
+            {/* Only the tags are machine text here: the placeholder above is
+                a translated phrase, so the marker goes on the options rather
+                than on the select. */}
             {tags.map((tag) => (
-              <option key={tag} value={tag}>
+              <option className="machine" key={tag} value={tag}>
                 {tag}
               </option>
             ))}

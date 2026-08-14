@@ -170,7 +170,7 @@ export default function Fleet({
           <div className={`fmap ${numbers ? "with-nums" : ""}`}>
             <div className="fmap-legend">
               {[...hues].map(([name, hue]) => (
-                <span key={name} className="fmap-key">
+                <span key={name} className="fmap-key machine">
                   <i style={{ background: hue }} />
                   {name}
                 </span>
@@ -302,11 +302,11 @@ export default function Fleet({
                 const st = frac === null ? "good" : fillStatus(frac);
                 return (
                   <tr key={`${i}:${e.name}`} className="rowlink" onClick={() => onOpen(i)}>
-                    <td>{e.name}</td>
-                    <td className="muted">{e.build_ref ?? "–"}</td>
+                    <td className="machine">{e.name}</td>
+                    <td className="muted machine">{e.build_ref ?? "–"}</td>
                     <td className="num">{e.flash_bytes ? humanBytes(e.flash_bytes) : "–"}</td>
                     <td className="num">{e.rootfs_bytes ? humanBytes(e.rootfs_bytes) : "–"}</td>
-                    <td className="muted">{e.fullest_partition ?? "–"}</td>
+                    <td className="muted machine">{e.fullest_partition ?? "–"}</td>
                     <td className={`num ${frac !== null && frac > 0.85 ? `tx-${st}` : ""}`}>
                       {frac === null ? "–" : pct(frac)}
                     </td>
